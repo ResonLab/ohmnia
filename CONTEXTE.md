@@ -19,6 +19,11 @@ signale-le** : quelque chose a été cassé entre-temps.
 Emplacement du projet : `C:\Users\colin\Desktop\Gestion\APP`
 Données de l'utilisateur : `%APPDATA%\Ohmnia\` (jamais dans le projet)
 
+> **L'utilisateur travaille dans l'Invite de commandes (`cmd.exe`), pas PowerShell.**
+> Quand tu lui donnes une commande, utilise la syntaxe cmd ou précise le terminal.
+> Exemple : `set VAR=valeur` (cmd) et non `$env:VAR = "valeur"` (PowerShell).
+> Repère : `C:\...>` = cmd · `PS C:\...>` = PowerShell.
+
 ---
 
 ## 1. Le projet en une page
@@ -73,6 +78,13 @@ Données de l'utilisateur : `%APPDATA%\Ohmnia\` (jamais dans le projet)
 5. **Tableaux larges coupés** quand la fenêtre n'est pas en plein écran.
    → `overflow-x: auto` sur `.carte` + `minWidth` sur la fenêtre.
 6. **Ajout rapide inutilisable** : il manquait les destinations Facture, Devis et Client.
+7. **Un test de cohérence mal conçu** exigeait la *présence* d'un placeholder :
+   il échouait dès que l'utilisateur le remplaçait, c'est-à-dire dès qu'il faisait
+   ce qu'on lui demandait. Une vérification doit constater un état correct, pas
+   figer un état transitoire.
+8. **Une documentation non vérifiée dérive.** CONTEXTE.md annonçait des compteurs
+   faux quelques heures après sa rédaction. D'où la suite `coherence-documentation.mjs`
+   qui vérifie automatiquement ses affirmations.
 
 ---
 
@@ -201,14 +213,19 @@ ils devront recevoir le même traitement, ou être renvoyés sous forme de clé.
 - **Décompte TVA trimestriel** — écarté pour la même raison.
 - Ces deux points redeviendront pertinents dès qu'il dépassera le seuil.
 
-### Publication — non faite
+### Publication — partiellement faite
 
-Rien n'est encore publié : pas de dépôt Git, pas de release GitHub, pas de site.
-La marche à suivre complète est dans [SITE-GITHUB.md](SITE-GITHUB.md) :
-dépôt → jeton d'accès → `npm run publish:win` → GitHub Pages.
+**Fait** : dépôt public [github.com/Leimmingz/ohmnia](https://github.com/Leimmingz/ohmnia)
+créé, branche `main` poussée. `gh` (GitHub CLI) installé mais **pas authentifié**
+(`gh auth login` demande une interaction).
 
-Tant que ce n'est pas fait, l'auto-updater et le bouton « Lire sur le site » de
-l'écran de conditions pointent vers des placeholders.
+**En attente** : une branche `securite-et-documentation` est poussée et non fusionnée.
+À intégrer avec `git checkout main && git merge securite-et-documentation && git push`.
+
+**Reste à faire** : aucune release publiée, aucun site. Marche à suivre complète dans
+[SITE-GITHUB.md](SITE-GITHUB.md) : jeton d'accès → `npm run publish:win` → GitHub Pages.
+
+Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ---
 
@@ -235,7 +252,20 @@ l'écran de conditions pointent vers des placeholders.
 Compte GitHub du projet : **Leimmingz**, dépôt prévu `ohmnia`.
 `npm test` rappelle ce qui reste à remplacer sans faire échouer la vérification.
 
-## 10. Ton de travail attendu
+## 10. Sécurité — incident à connaître
+
+Un jeton d'accès GitHub a été exposé en capture d'écran pendant le développement.
+Il a été signalé et doit avoir été révoqué. **Si tu vois un secret dans une capture
+ou un message, signale-le immédiatement et en premier**, avant toute autre réponse.
+
+Rappels appliqués au projet :
+- `.gitignore` exclut `.env` et `.claude/`
+- Aucun secret n'est stocké dans le code
+- Le mot de passe des sauvegardes chiffrées n'est enregistré nulle part (par choix)
+
+---
+
+## 11. Ton de travail attendu
 
 L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »). Il attend :
 - qu'on **teste réellement** ce qu'on livre, pas qu'on affirme que ça marche ;
