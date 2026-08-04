@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ohmnia — Gestion locale pour indépendants</title>
+<meta name="description" content="Ohmnia est une application desktop de gestion (facturation, devis, comptabilité simplifiée, inventaire) qui fonctionne entièrement en local, hors ligne.">
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #1a2130;
+    --border: rgba(255,255,255,.09);
+    --fg: #e7ecf3;
+    --fg-dim: #9aa7b8;
+    --fg-faint: #6f7d90;
+    --grad: linear-gradient(120deg, #1BE7B6, #0E9CD9);
+    --stripe: rgba(255,255,255,.045);
+    --radius: 14px;
+    --maxw: 1120px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f8fa;
+      --card: #ffffff;
+      --border: rgba(13,17,23,.12);
+      --fg: #131a24;
+      --fg-dim: #4e5b6d;
+      --fg-faint: #778396;
+      --stripe: rgba(13,17,23,.05);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  a { color: #16b9b0; text-decoration: none; }
+  @media (prefers-color-scheme: dark) { a { color: #4fd8c4; } }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* header */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar { display: flex; align-items: center; gap: 16px; height: 66px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; letter-spacing: -.01em; font-size: 19px; }
+  .mark {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--grad);
+    display: grid; place-items: center;
+    color: #06222c; font-size: 21px; font-weight: 700; line-height: 1;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a { color: var(--fg-dim); font-size: 15px; }
+  .nav a:hover { color: var(--fg); text-decoration: none; }
+  @media (max-width: 720px) { .nav .hide-sm { display: none; } }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 12px 20px; border-radius: 10px;
+    background: var(--grad); color: #062229;
+    font-weight: 600; font-size: 15px; min-height: 44px;
+    border: 0; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { text-decoration: none; filter: brightness(1.06); }
+  .btn-ghost {
+    background: transparent; color: var(--fg);
+    border: 1px solid var(--border);
+  }
+
+  /* hero */
+  .hero { padding-top: 92px; padding-bottom: 72px; }
+  h1 {
+    font-size: clamp(34px, 5.4vw, 58px);
+    line-height: 1.08; letter-spacing: -.03em;
+    margin: 0 0 22px; max-width: 19ch; font-weight: 650;
+  }
+  .lede { font-size: clamp(17px, 2vw, 20px); color: var(--fg-dim); max-width: 56ch; margin: 0 0 34px; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .cta-note { font-size: 14px; color: var(--fg-faint); margin-top: 14px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 14px; font-size: 13.5px; color: var(--fg-dim);
+    margin-bottom: 26px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #1BE7B6; }
+
+  /* argument central */
+  .band { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 72px 0; }
+  .band-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: start; }
+  h2 { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.15; letter-spacing: -.02em; margin: 0 0 16px; font-weight: 650; }
+  .section-head { max-width: 60ch; margin-bottom: 42px; }
+  .section-head p { color: var(--fg-dim); margin: 0; }
+  ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  ul.checks li { display: grid; grid-template-columns: 20px 1fr; gap: 12px; color: var(--fg-dim); font-size: 16px; }
+  ul.checks b { color: var(--fg); font-weight: 600; }
+  .tick { width: 18px; height: 18px; border-radius: 5px; background: var(--grad); margin-top: 4px; }
+
+  /* features */
+  section { padding: 84px 0; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 26px;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--fg-dim); font-size: 15.5px; }
+  .card .num { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; color: var(--fg-faint); display: block; margin-bottom: 14px; }
+
+  /* shots */
+  .shots { display: grid; gap: 18px; grid-template-columns: repeat(2, 1fr); }
+  .shot { grid-column: span 1; }
+  .shot.wide { grid-column: 1 / -1; }
+  .frame {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .frame-bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .frame-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+  .ph {
+    position: relative; aspect-ratio: 16 / 10; display: grid; place-items: center;
+    background-image: repeating-linear-gradient(135deg, var(--stripe) 0 10px, transparent 10px 20px);
+  }
+  .ph.tall { aspect-ratio: 16 / 11; }
+  .ph span {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; color: var(--fg-faint); text-align: center;
+    padding: 8px 14px; border: 1px dashed var(--border); border-radius: 8px;
+    background: var(--bg);
+  }
+  .shot figcaption { color: var(--fg-faint); font-size: 14px; margin-top: 10px; }
+
+  /* download */
+  .download { text-align: center; }
+  .download .inner {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; padding: 56px 32px;
+  }
+  .download h2 { margin-bottom: 12px; }
+  .download p { color: var(--fg-dim); max-width: 48ch; margin: 0 auto 28px; }
+  .platforms { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 22px; font-size: 14px; color: var(--fg-faint); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .avertissement {
+    max-width: 62ch; margin: 30px auto 0 !important; text-align: left;
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; font-size: 14.5px; color: var(--fg-dim) !important;
+  }
+  .avertissement b { color: var(--fg); font-weight: 600; }
+
+  footer { border-top: 1px solid var(--border); padding: 44px 0 60px; color: var(--fg-faint); font-size: 14.5px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 18px 34px; align-items: center; }
+  .foot span { flex: 0 1 auto; min-width: 0; }
+  .foot .sep { margin-left: auto; flex: none; white-space: nowrap; display: flex; gap: 22px; }
+
+  @media (max-width: 900px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .band-grid { grid-template-columns: 1fr; gap: 34px; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .hero { padding-top: 60px; padding-bottom: 48px; }
+    section, .band { padding: 56px 0; }
+    .cards, .shots { grid-template-columns: 1fr; }
+    .foot .sep { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand"><span class="mark">Ω</span> Ohmnia</div>
+    <nav class="nav">
+      <a class="hide-sm" href="#fonctionnalites">Fonctionnalités</a>
+      <a class="hide-sm" href="#apercu">Aperçu</a>
+      <a href="#telecharger">Télécharger</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="pill"><span class="dot"></span> Application desktop Windows · fonctionne hors ligne</div>
+    <h1>La gestion de votre activité, <span class="grad-text">entièrement sur votre ordinateur</span></h1>
+    <p class="lede">Facturation, devis, comptabilité simplifiée et inventaire dans une seule application installée sur votre machine. Aucun compte, aucun serveur, aucune connexion requise.</p>
+    <div class="cta-row">
+      <a class="btn" id="dl-hero" href="https://github.com/Leimmingz/ohmnia/releases/latest">Télécharger la dernière version</a>
+      <a class="btn btn-ghost" href="#fonctionnalites">Voir les fonctionnalités</a>
+    </div>
+    <p class="cta-note">Windows · installation locale</p>
+  </div>
+
+  <div class="band">
+    <div class="wrap band-grid">
+      <div>
+        <h2>Vos données ne quittent jamais votre machine</h2>
+        <p style="color:var(--fg-dim);margin:0;max-width:52ch">Ohmnia stocke l'intégralité de vos dossiers dans un fichier local que vous contrôlez. Il n'existe aucune synchronisation implicite, aucun envoi de statistiques d'usage et aucun accès distant à votre comptabilité.</p>
+      </div>
+      <ul class="checks">
+        <li><span class="tick"></span><span><b>Stockage local.</b> Une base de données sur votre disque, sauvegardable comme n'importe quel fichier.</span></li>
+        <li><span class="tick"></span><span><b>Aucun compte.</b> Pas d'inscription, pas d'authentification distante.</span></li>
+        <li><span class="tick"></span><span><b>Aucune télémétrie.</b> Le seul accès réseau possible est la vérification de mise à jour — désactivée par défaut, et vers l'adresse que vous configurez vous-même.</span></li>
+        <li><span class="tick"></span><span><b>Fonctionnement hors ligne.</b> Toutes les fonctions de gestion restent disponibles sans connexion.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <section id="fonctionnalites">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Fonctionnalités</h2>
+        <p>Les outils courants d'une activité indépendante, sans dépendance à un service en ligne.</p>
+      </div>
+      <div class="cards">
+        <article class="card"><span class="num">01</span><h3>Facturation et devis</h3><p>Création de devis et de factures, conversion en un clic, export PDF prêt à envoyer.</p></article>
+        <article class="card"><span class="num">02</span><h3>Rappels de paiement</h3><p>Suivi des échéances et relances des factures impayées selon vos délais.</p></article>
+        <article class="card"><span class="num">03</span><h3>Suivi du temps</h3><p>Enregistrement des heures par client et par projet, report direct en ligne de facture.</p></article>
+        <article class="card"><span class="num">04</span><h3>Inventaire</h3><p>Gestion des articles et des mouvements de stock, avec alertes de seuil.</p></article>
+        <article class="card"><span class="num">05</span><h3>Comptabilité simplifiée</h3><p>Journal des recettes et dépenses, import de relevés bancaires (CSV et CAMT.053) et rapprochement automatique.</p></article>
+        <article class="card"><span class="num">06</span><h3>Sauvegardes chiffrées</h3><p>Archives chiffrées de vos données, sur le support de votre choix.</p></article>
+        <article class="card"><span class="num">07</span><h3>Multi-pays</h3><p>Réglages de taxe et mentions légales pour la Suisse, la France, la Belgique, le Luxembourg et l'Allemagne — des points de départ à vérifier, pas une certification.</p></article>
+        <article class="card"><span class="num">08</span><h3>Export ouvert</h3><p>Vos écritures, clients et articles exportables en CSV et PDF à tout moment.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="apercu" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Aperçu</h2>
+        <p>Interface de l'application sur poste de travail.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot wide" style="margin:0">
+          <div class="frame">
+            <div class="frame-bar"><i></i><i></i><i></i></div>
+            <div class="ph" style="aspect-ratio:16/8"><span>capture — tableau de bord (1600 × 800)</span></div>
+          </div>
+          <figcaption>Tableau de bord : encours, échéances et activité récente.</figcaption>
+        </figure>
+        <figure class="shot" style="margin:0">
+          <div class="frame">
+            <div class="frame-bar"><i></i><i></i><i></i></div>
+            <div class="ph tall"><span>capture — édition de facture</span></div>
+          </div>
+          <figcaption>Édition d'une facture et export PDF.</figcaption>
+        </figure>
+        <figure class="shot" style="margin:0">
+          <div class="frame">
+            <div class="frame-bar"><i></i><i></i><i></i></div>
+            <div class="ph tall"><span>capture — inventaire / alertes de stock</span></div>
+          </div>
+          <figcaption>Inventaire avec alertes de seuil.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="telecharger" class="download" style="padding-top:0">
+    <div class="wrap">
+      <div class="inner">
+        <h2>Télécharger Ohmnia</h2>
+        <p>La dernière version est publiée sur GitHub. Téléchargez l'installeur et lancez-le.</p>
+        <a class="btn" id="dl-main" href="https://github.com/Leimmingz/ohmnia/releases/latest">Dernière release sur GitHub</a>
+        <div class="platforms"><span>Windows (.exe)</span></div>
+        <p class="avertissement">
+          <b>Au premier lancement, Windows peut afficher un avertissement SmartScreen</b>
+          (« Windows a protégé votre ordinateur »). L'installeur n'est pas signé par un
+          certificat commercial, ce qui est courant pour une application indépendante.
+          Cliquez sur <b>Informations complémentaires</b>, puis <b>Exécuter quand même</b>.
+          Le code source est public si vous souhaitez le vérifier avant d'installer.
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="brand" style="font-size:16px"><span class="mark" style="width:26px;height:26px;font-size:16px;border-radius:7px">Ω</span> Ohmnia</span>
+    <span>Logiciel local · aucune télémétrie · vos données restent sur votre machine.</span>
+    <span class="sep">
+      <a href="conditions.html">Conditions d'utilisation</a>
+      <a href="https://github.com/Leimmingz/ohmnia">Code source</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Dépôt unique : modifier ici pour pointer vers un autre dépôt.
+  var repo = 'Leimmingz/ohmnia';
+  var url = 'https://github.com/' + repo + '/releases/latest';
+  ['dl-hero', 'dl-main'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.href = url;
+  });
+})();
+</script>
+</body>
+</html>

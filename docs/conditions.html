@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conditions d'utilisation — Ohmnia</title>
+<meta name="description" content="Conditions d'utilisation de l'application Ohmnia : ce qu'elle est, ce qu'elle ne garantit pas, et où s'arrête la responsabilité de l'éditeur.">
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #1a2130;
+    --border: rgba(255,255,255,.09);
+    --fg: #e7ecf3;
+    --fg-dim: #9aa7b8;
+    --fg-faint: #6f7d90;
+    --grad: linear-gradient(120deg, #1BE7B6, #0E9CD9);
+    --radius: 14px;
+    --maxw: 760px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f8fa;
+      --card: #ffffff;
+      --border: rgba(13,17,23,.12);
+      --fg: #131a24;
+      --fg-dim: #4e5b6d;
+      --fg-faint: #778396;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.68;
+    text-wrap: pretty;
+  }
+  a { color: #16b9b0; text-decoration: none; }
+  @media (prefers-color-scheme: dark) { a { color: #4fd8c4; } }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar { display: flex; align-items: center; gap: 16px; height: 66px; max-width: 1120px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; letter-spacing: -.01em; font-size: 19px; color: var(--fg); }
+  .brand:hover { text-decoration: none; }
+  .mark {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--grad);
+    display: grid; place-items: center;
+    color: #06222c; font-size: 21px; font-weight: 700; line-height: 1;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a { color: var(--fg-dim); font-size: 15px; }
+  .nav a:hover { color: var(--fg); text-decoration: none; }
+
+  main { padding: 72px 0 96px; }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.12; letter-spacing: -.03em;
+    margin: 0 0 14px; font-weight: 650;
+  }
+  .meta { color: var(--fg-faint); font-size: 14.5px; margin: 0 0 34px; }
+  .resume {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 24px;
+    color: var(--fg-dim); font-size: 16px; margin-bottom: 14px;
+  }
+  .resume b { color: var(--fg); font-weight: 600; }
+  .note-source { color: var(--fg-faint); font-size: 14px; margin: 0 0 48px; }
+
+  h2 {
+    font-size: clamp(20px, 2.6vw, 24px); line-height: 1.25;
+    letter-spacing: -.015em; font-weight: 650;
+    margin: 46px 0 14px; scroll-margin-top: 86px;
+  }
+  h2:first-of-type { margin-top: 0; }
+  section p { color: var(--fg-dim); margin: 0 0 15px; }
+  section p:last-child { margin-bottom: 0; }
+
+  .sommaire { border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 52px; }
+  .sommaire h3 { margin: 0 0 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-faint); }
+  .sommaire ol { margin: 0; padding-left: 20px; display: grid; gap: 7px; color: var(--fg-dim); font-size: 15.5px; }
+
+  footer { border-top: 1px solid var(--border); padding: 40px 0 60px; color: var(--fg-faint); font-size: 14.5px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; max-width: 1120px; }
+  .foot .sep { margin-left: auto; display: flex; gap: 22px; }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    main { padding: 48px 0 64px; }
+    .foot .sep { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar" style="max-width:1120px">
+    <a class="brand" href="index.html"><span class="mark">Ω</span> Ohmnia</a>
+    <nav class="nav">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#telecharger">Télécharger</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h1>Conditions d'utilisation</h1>
+  <p class="meta">Version 1.0 · Application Ohmnia</p>
+
+  <p class="resume">
+    En résumé : vos données restent chez vous, mais l'application ne garantit pas votre conformité légale et fiscale — cette responsabilité reste la vôtre.
+  </p>
+  <p class="note-source">
+    Ce texte reprend celui affiché dans l'application au premier lancement. En cas de
+    divergence, le texte affiché dans l'application fait foi. Il ne s'agit pas des
+    conditions générales de vente que vous établissez pour vos propres clients.
+  </p>
+
+  <nav class="sommaire">
+    <h3>Sommaire</h3>
+    <ol>
+      <li><a href="#s1">Ce qu'est Ohmnia</a></li>
+      <li><a href="#s2">Ohmnia ne vous rend pas conforme</a></li>
+      <li><a href="#s3">Vos données et vos sauvegardes</a></li>
+      <li><a href="#s4">Absence de garantie</a></li>
+      <li><a href="#s5">Limitation de responsabilité</a></li>
+      <li><a href="#s6">Mises à jour</a></li>
+      <li><a href="#s7">Acceptation</a></li>
+    </ol>
+  </nav>
+
+  <section>
+    <h2 id="s1">1. Ce qu'est Ohmnia</h2>
+    <p>Ohmnia est un outil de gestion qui fonctionne entièrement sur votre ordinateur. Il vous aide à établir des factures et des devis, à tenir un journal de vos mouvements, à suivre un inventaire et votre temps de travail.</p>
+    <p>Vos données restent sur votre machine. Elles ne sont transmises à personne, ni à l'éditeur, ni à un service tiers. Le seul accès réseau possible est la vérification de mise à jour, désactivée par défaut.</p>
+  </section>
+
+  <section>
+    <h2 id="s2">2. Ohmnia ne vous rend pas conforme</h2>
+    <p>C'est le point le plus important de ce document. Utiliser Ohmnia ne signifie pas que votre comptabilité, vos factures ou vos déclarations sont conformes aux règles qui s'appliquent à vous.</p>
+    <p>Les taux de taxe, seuils, formats d'identifiant et mentions légales proposés par l'application sont des points de départ. Ils évoluent, varient selon l'activité et le pays, et peuvent être obsolètes au moment où vous les utilisez.</p>
+    <p>Le panneau « Conformité » est une liste de contrôle automatique, pas une certification. Il vérifie ce qu'un logiciel peut vérifier — la présence de certaines mentions, la continuité de la numérotation — et rien de plus.</p>
+    <p>La responsabilité de vos obligations légales, fiscales et comptables reste entièrement la vôtre. En cas de doute, adressez-vous à un fiduciaire, un comptable ou à votre administration fiscale.</p>
+  </section>
+
+  <section>
+    <h2 id="s3">3. Vos données et vos sauvegardes</h2>
+    <p>L'application crée des sauvegardes automatiques locales, et vous propose une sauvegarde chiffrée vers un support externe. Ces mécanismes ne remplacent pas votre propre organisation.</p>
+    <p>Une panne de disque, un vol, un incendie ou une erreur de manipulation peuvent détruire vos données. Conservez au moins une copie hors de votre ordinateur, et vérifiez de temps en temps qu'elle est lisible.</p>
+    <p>Le mot de passe des sauvegardes chiffrées n'est stocké nulle part. S'il est perdu, la sauvegarde est définitivement illisible : personne, y compris l'éditeur, ne peut la récupérer.</p>
+  </section>
+
+  <section>
+    <h2 id="s4">4. Absence de garantie</h2>
+    <p>Ohmnia est fourni tel quel, sans garantie de fonctionnement ininterrompu ni d'absence d'erreur. Un logiciel peut contenir des défauts, y compris dans des calculs.</p>
+    <p>Vérifiez vos documents avant de les envoyer à un client et vos chiffres avant toute déclaration. Ne vous reposez pas aveuglément sur un total affiché.</p>
+  </section>
+
+  <section>
+    <h2 id="s5">5. Limitation de responsabilité</h2>
+    <p>Dans les limites permises par la loi, l'éditeur ne répond pas des dommages découlant de l'utilisation de l'application : perte de données, perte d'exploitation, manque à gagner, redressement fiscal ou litige avec un client.</p>
+    <p>Cette limitation ne s'applique pas en cas de faute grave ou intentionnelle, ni dans les situations où la loi impose une responsabilité qui ne peut être écartée. Selon votre pays, certaines de ces exclusions peuvent être sans effet à votre égard.</p>
+  </section>
+
+  <section>
+    <h2 id="s6">6. Mises à jour</h2>
+    <p>Les mises à jour automatiques sont désactivées tant que vous n'avez pas indiqué de source. Si vous les activez, l'application contacte l'adresse que vous avez configurée pour comparer les numéros de version.</p>
+    <p>Une mise à jour peut modifier le fonctionnement de l'application. Une sauvegarde de votre base est effectuée automatiquement avant chaque installation.</p>
+  </section>
+
+  <section>
+    <h2 id="s7">7. Acceptation</h2>
+    <p>En utilisant Ohmnia, vous reconnaissez avoir lu ces conditions et accepté que la conformité de votre activité relève de votre seule responsabilité.</p>
+    <p>Si vous n'acceptez pas ces conditions, n'utilisez pas l'application.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot" style="max-width:1120px">
+    <span>Logiciel local · aucune télémétrie · vos données restent sur votre machine.</span>
+    <span class="sep">
+      <a href="index.html">Accueil</a>
+      <a href="https://github.com/Leimmingz/ohmnia">Code source</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>
