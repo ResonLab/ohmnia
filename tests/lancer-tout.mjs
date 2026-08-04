@@ -14,7 +14,8 @@ const SUITES = [
   ['Analyseurs de relevés bancaires', 'parseurs-bancaires.mjs'],
   ['Chiffrement des sauvegardes externes', 'chiffrement.mjs'],
   ['Checkpoint WAL avant sauvegarde', 'sauvegarde-wal.cjs'],
-  ['Contraintes inventaire non bloquantes', 'contraintes-inventaire.cjs']
+  ['Contraintes inventaire non bloquantes', 'contraintes-inventaire.cjs'],
+  ['Cohérence de la documentation', 'coherence-documentation.mjs']
 ]
 
 let echecs = 0

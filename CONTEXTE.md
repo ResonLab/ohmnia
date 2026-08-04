@@ -5,6 +5,20 @@
 > Le [README.md](README.md) contient les commandes et les règles de code ; ce fichier-ci
 > contient l'historique des décisions, les pièges connus et ce qui reste à faire.
 
+## Démarrage immédiat
+
+```bash
+npm install          # première fois seulement
+npm run verifier     # doit passer avant et après toute modification
+npm run dev          # lance l'application
+```
+
+Si `npm run verifier` échoue avant même que tu aies touché au code, **arrête-toi et
+signale-le** : quelque chose a été cassé entre-temps.
+
+Emplacement du projet : `C:\Users\colin\Desktop\Gestion\APP`
+Données de l'utilisateur : `%APPDATA%\Ohmnia\` (jamais dans le projet)
+
 ---
 
 ## 1. Le projet en une page
@@ -92,7 +106,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  6 suites — `npm run verifier`
+tests/                  7 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -187,11 +201,20 @@ ils devront recevoir le même traitement, ou être renvoyés sous forme de clé.
 - **Décompte TVA trimestriel** — écarté pour la même raison.
 - Ces deux points redeviendront pertinents dès qu'il dépassera le seuil.
 
+### Publication — non faite
+
+Rien n'est encore publié : pas de dépôt Git, pas de release GitHub, pas de site.
+La marche à suivre complète est dans [SITE-GITHUB.md](SITE-GITHUB.md) :
+dépôt → jeton d'accès → `npm run publish:win` → GitHub Pages.
+
+Tant que ce n'est pas fait, l'auto-updater et le bouton « Lire sur le site » de
+l'écran de conditions pointent vers des placeholders.
+
 ---
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 6 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 7 suites de tests, **tout passe**.
 - Version `0.1.0`. Installateur : `release\Ohmnia Setup 0.1.0.exe` (96 Mo) avec
   `latest.yml` pour l'auto-updater.
 - Base de l'utilisateur : `%APPDATA%\Ohmnia\gestion.sqlite`, 25 tables, intégrité `ok`.
@@ -204,10 +227,13 @@ ils devront recevoir le même traitement, ou être renvoyés sous forme de clé.
 
 ### Placeholders à remplacer avant diffusion
 
-| Fichier | Valeur | Remplacer par |
+| Fichier | Valeur | État |
 |---|---|---|
-| `electron-builder.yml` | `owner: VOTRE-COMPTE-GITHUB` | le compte GitHub réel |
-| `src/shared/conditions.ts` | `URL_CONDITIONS` | l'adresse de la page publique |
+| `electron-builder.yml` | `owner` | ✔ renseigné : `Leimmingz` |
+| `src/shared/conditions.ts` | `URL_CONDITIONS` | pointe vers le dépôt ; à basculer sur l'adresse GitHub Pages une fois le site en ligne |
+
+Compte GitHub du projet : **Leimmingz**, dépôt prévu `ohmnia`.
+`npm test` rappelle ce qui reste à remplacer sans faire échouer la vérification.
 
 ## 10. Ton de travail attendu
 

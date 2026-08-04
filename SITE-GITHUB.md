@@ -35,7 +35,7 @@ pour que l'auto-updater fonctionne sans authentification), sans README ni .gitig
 Puis :
 
 ```bash
-git remote add origin https://github.com/TON-COMPTE/ohmnia.git
+git remote add origin https://github.com/Leimmingz/ohmnia.git
 ```
 
 ```bash
@@ -48,31 +48,106 @@ git branch -M main && git push -u origin main
 
 ### Une seule fois : renseigner ton dépôt
 
-Dans `electron-builder.yml`, remplace `VOTRE-COMPTE-GITHUB` par ton nom d'utilisateur :
+Dans `electron-builder.yml`, le compte est déjà renseigné :
 
 ```yaml
 publish:
   - provider: github
-    owner: TON-COMPTE
+    owner: Leimmingz
     repo: ohmnia
 ```
 
 ### Une seule fois : créer un jeton d'accès
 
-`electron-builder` doit pouvoir téléverser sur tes releases.
+`electron-builder` doit prouver à GitHub qu'il a le droit de téléverser sur ton dépôt.
+C'est le rôle du jeton (*token*).
 
-1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new
-   token (classic)**
-2. Coche uniquement **`repo`**
-3. Copie le jeton (il ne sera plus affiché)
+**1. Créer le jeton sur GitHub**
 
-Puis, dans le terminal, avant de publier :
+- Va sur [github.com/settings/tokens](https://github.com/settings/tokens)
+- **Generate new token** → **Generate new token (classic)**
+- Note : `Publication Ohmnia` — Expiration : 90 jours ou *No expiration*
+- Coche **uniquement la case `repo`** (elle coche ses sous-cases automatiquement)
+- **Generate token** en bas de page
+- **Copie le jeton immédiatement** : il commence par `ghp_` et ne sera plus jamais
+  réaffiché. Si tu le perds, il faudra en générer un autre.
+
+**2. Le donner au terminal**
+
+⚠️ **La commande dépend du terminal utilisé.** Les deux existent sous Windows et
+n'ont pas la même syntaxe. Si tu te trompes, tu obtiens
+`La syntaxe du nom de fichier, de répertoire ou de volume est incorrecte`.
+
+Pour savoir où tu es : regarde le début de la ligne.
+`C:\...>` = Invite de commandes · `PS C:\...>` = PowerShell.
+
+**Invite de commandes** (`cmd.exe`) — ni guillemets, ni espaces autour du `=` :
 
 ```bash
-$env:GH_TOKEN = "colle-ton-jeton-ici"
+set GH_TOKEN=ghp_colle-ton-jeton-ici
 ```
 
-Ce jeton est un mot de passe : ne le mets jamais dans un fichier du projet.
+Vérification :
+
+```bash
+echo %GH_TOKEN%
+```
+
+**PowerShell** — avec guillemets, espaces autorisés :
+
+```bash
+$env:GH_TOKEN = "ghp_colle-ton-jeton-ici"
+```
+
+Vérification :
+
+```bash
+$env:GH_TOKEN.Substring(0,7)
+```
+
+Dans les deux cas, enchaîne avec `npm run publish:win` **dans la même fenêtre**.
+
+> **Important** : cette variable ne vit que dans la fenêtre ouverte. Si tu la fermes,
+> il faudra retaper la ligne à la prochaine publication. C'est volontaire : c'est le
+> réglage le plus sûr.
+
+**3. Si tu ne veux pas la retaper à chaque fois**
+
+Enregistrement permanent pour ton compte Windows.
+
+Invite de commandes :
+
+```bash
+setx GH_TOKEN "ghp_ton-jeton"
+```
+
+PowerShell :
+
+```bash
+[Environment]::SetEnvironmentVariable("GH_TOKEN", "ghp_ton-jeton", "User")
+```
+
+Ferme puis rouvre le terminal pour que ce soit pris en compte. Le jeton est alors
+stocké dans ta session Windows — pratique, mais accessible à tout programme lancé
+par ton compte. À éviter sur un ordinateur partagé.
+
+Pour le retirer plus tard (invite de commandes) :
+
+```bash
+reg delete HKCU\Environment /v GH_TOKEN /f
+```
+
+### Sécurité du jeton — à lire
+
+**Ce jeton est un mot de passe.** Qui l'a peut écrire sur tous tes dépôts.
+
+- Ne le mets jamais dans un fichier du projet, ne le commite pas.
+- **Ne le montre jamais dans une capture d'écran** — c'est la fuite la plus courante.
+  Masque-le, ou ne copie que son début.
+- Si tu penses qu'il a pu être vu : va sur
+  [github.com/settings/tokens](https://github.com/settings/tokens), **supprime-le**,
+  et génère-en un nouveau. C'est gratuit et immédiat.
+- Un jeton avec une date d'expiration (90 jours) limite les dégâts en cas de fuite.
 
 ### À chaque nouvelle version
 
@@ -96,7 +171,7 @@ Elle est créée en **brouillon** : va sur la page Releases du dépôt et clique
 ### Côté utilisateurs
 
 Dans **Paramètres de l'app → Mises à jour** : source « Dépôt GitHub », dépôt
-`TON-COMPTE/ohmnia`, et coche la vérification automatique. À chaque nouvelle release
+`Leimmingz/ohmnia`, et coche la vérification automatique. À chaque nouvelle release
 publiée, l'app propose la mise à jour.
 
 `npm run package:win` construit **sans rien envoyer** — utile pour tester en local.
@@ -110,7 +185,7 @@ publiée, l'app propose la mise à jour.
 1. Crée un dossier `docs/` à la racine du projet et places-y ton `index.html`.
 2. Sur GitHub : **Settings → Pages → Source : Deploy from a branch**, branche `main`,
    dossier `/docs`.
-3. Le site est publié sur `https://TON-COMPTE.github.io/ohmnia/` (compte quelques
+3. Le site est publié sur `https://Leimmingz.github.io/ohmnia/` (compte quelques
    minutes la première fois).
 
 ### Faire concevoir la page
@@ -154,7 +229,7 @@ L'application affiche au premier lancement un écran de conditions, avec un bout
 2. Dans `src/shared/conditions.ts`, remplace `URL_CONDITIONS` par l'adresse réelle :
 
    ```ts
-   export const URL_CONDITIONS = 'https://TON-COMPTE.github.io/ohmnia/conditions.html'
+   export const URL_CONDITIONS = 'https://Leimmingz.github.io/ohmnia/conditions.html'
    ```
 
 3. Si tu modifies le texte des conditions, **incrémente aussi `VERSION_CONDITIONS`** :
@@ -164,7 +239,7 @@ Garde les deux versions synchronisées : le texte dans l'app fait foi pour l'uti
 la page web sert de référence consultable.
 
 **Le lien de téléchargement toujours à jour** :
-`https://github.com/TON-COMPTE/ohmnia/releases/latest`
+`https://github.com/Leimmingz/ohmnia/releases/latest`
 
 ---
 

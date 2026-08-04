@@ -7,4 +7,7 @@ data/
 Backups/
 Factures/
 Devis/
+
+# Secrets et configuration locale : ne doivent jamais partir sur le dépôt.
 .env
+.claude/

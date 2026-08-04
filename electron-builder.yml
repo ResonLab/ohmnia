@@ -21,7 +21,7 @@ win:
 # indiqué ci-dessous — pensez à y mettre le vôtre.
 publish:
   - provider: github
-    owner: VOTRE-COMPTE-GITHUB
+    owner: Leimmingz
     repo: ohmnia
 nsis:
   oneClick: false
