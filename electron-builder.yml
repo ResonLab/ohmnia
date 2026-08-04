@@ -1,0 +1,36 @@
+appId: ch.colin.ohmnia
+productName: Ohmnia
+directories:
+  buildResources: build
+  output: release
+files:
+  - out/**/*
+  - build/icon.png
+  - package.json
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+# Génère `latest.yml` à côté de l'installateur : c'est ce fichier que les autres
+# postes lisent pour savoir qu'une nouvelle version existe.
+#
+# `npm run package:win` construit seulement en local (rien n'est envoyé).
+# `npm run publish:win` téléverse en plus sur les GitHub Releases du dépôt
+# indiqué ci-dessous — pensez à y mettre le vôtre.
+publish:
+  - provider: github
+    owner: VOTRE-COMPTE-GITHUB
+    repo: ohmnia
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Ohmnia
+  # Raccourci de désinstallation visible dans le menu Démarrer, en plus de
+  # l'entrée dans "Applications et fonctionnalités" de Windows.
+  uninstallDisplayName: Ohmnia - Gestion
+  deleteAppDataOnUninstall: false

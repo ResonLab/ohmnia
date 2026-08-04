@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.04">
+  <BkToCstmrStmt>
+    <Stmt>
+      <Ntry>
+        <Amt Ccy="CHF">150.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <BookgDt><Dt>2026-12-20</Dt></BookgDt>
+        <ValDt><Dt>2026-12-20</Dt></ValDt>
+        <NtryDtls><TxDtls><RmtInf><Ustrd>Paiement devis D0001 Garage Dupont</Ustrd></RmtInf></TxDtls></NtryDtls>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="CHF">82.40</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <ValDt><Dt>2026-12-18</Dt></ValDt>
+        <AddtlNtryInf>CARTE ESSENCE SOCAR SION</AddtlNtryInf>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="CHF">1250.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <ValDt><Dt>2026-12-15</Dt></ValDt>
+        <NtryDtls><TxDtls><RltdPties><Dbtr><Nm>Commune de Sion</Nm></Dbtr></RltdPties></TxDtls></NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

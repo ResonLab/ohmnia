@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+release/
+*.log
+data/
+Backups/
+Factures/
+Devis/
+.env
