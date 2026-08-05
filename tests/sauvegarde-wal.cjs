@@ -2,8 +2,9 @@
 const { DatabaseSync } = require('node:sqlite')
 const { copyFileSync, existsSync, rmSync, mkdirSync, statSync } = require('node:fs')
 const { join } = require('node:path')
+const { tmpdir } = require('node:os')
 
-const DOSSIER = join(process.env.TEMP, 'ohmnia-test-wal')
+const DOSSIER = join(tmpdir(), 'ohmnia-test-wal')
 rmSync(DOSSIER, { recursive: true, force: true })
 mkdirSync(DOSSIER, { recursive: true })
 

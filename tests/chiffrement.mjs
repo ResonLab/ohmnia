@@ -1,7 +1,9 @@
 // Vérifie le chiffrement/déchiffrement de la sauvegarde externe.
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto'
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { DatabaseSync } from 'node:sqlite'
 
 const MAGIC = Buffer.from('OHMNIA01', 'utf-8')
 const TAILLE_SEL = 16
@@ -42,11 +44,31 @@ const verifier = (intitule, condition) => {
 }
 
 const MDP = 'MonMotDePasse2026'
-const cheminBase = join(process.env.APPDATA, 'Ohmnia', 'gestion.sqlite')
-const base = readFileSync(cheminBase)
-console.log(`Base source : ${base.length} octets\n`)
 
-console.log('--- Aller-retour sur la vraie base ---')
+// Le test fabrique sa propre base plutôt que de lire celle de l'utilisateur.
+// Lire `%APPDATA%\Ohmnia\gestion.sqlite` rendait ce test dépendant de la machine
+// du développeur : il échouait partout ailleurs, et faisait passer de vraies
+// données comptables dans une suite de tests.
+const DOSSIER = join(tmpdir(), 'ohmnia-test-chiffrement')
+rmSync(DOSSIER, { recursive: true, force: true })
+mkdirSync(DOSSIER, { recursive: true })
+
+const cheminBase = join(DOSSIER, 'gestion.sqlite')
+{
+  const base = new DatabaseSync(cheminBase)
+  base.exec('CREATE TABLE clients (id INTEGER PRIMARY KEY, nom TEXT)')
+  base.exec('CREATE TABLE factures (id INTEGER PRIMARY KEY, numero TEXT, montant REAL)')
+  const ajouter = base.prepare('INSERT INTO factures (numero, montant) VALUES (?, ?)')
+  // Assez de lignes pour que le fichier dépasse une page SQLite.
+  for (let i = 1; i <= 200; i += 1) ajouter.run(`F${String(i).padStart(4, '0')}`, i * 12.5)
+  base.prepare('INSERT INTO clients (nom) VALUES (?)').run('Client de test')
+  base.close()
+}
+
+const base = readFileSync(cheminBase)
+console.log(`Base de test : ${base.length} octets\n`)
+
+console.log('--- Aller-retour sur une vraie base SQLite ---')
 const paquet = chiffrer(base, MDP)
 verifier('le fichier chiffre commence par la signature', paquet.subarray(0, 8).toString() === 'OHMNIA01')
 verifier('le contenu est bien chiffre (pas de SQLite en clair)', !paquet.includes(Buffer.from('SQLite format 3')))
@@ -83,7 +105,7 @@ try {
 }
 
 console.log('\n--- Ecriture sur disque puis relecture ---')
-const dossier = join(process.env.TEMP, 'ohmnia-test-externe')
+const dossier = join(DOSSIER, 'externe')
 if (!existsSync(dossier)) mkdirSync(dossier, { recursive: true })
 const chemin = join(dossier, 'test.ohmnia')
 writeFileSync(chemin, paquet)
