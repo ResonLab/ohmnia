@@ -12,6 +12,8 @@
     "start": "electron-vite preview",
     "package:win": "electron-vite build && electron-builder --win --publish never",
     "publish:win": "electron-vite build && electron-builder --win --publish always",
+    "package:linux": "electron-vite build && electron-builder --linux --publish never",
+    "publish:linux": "electron-vite build && electron-builder --linux --publish always",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "node tests/lancer-tout.mjs",
     "verifier": "npm run typecheck && npm test"

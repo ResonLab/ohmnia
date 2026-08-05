@@ -118,7 +118,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  7 suites — `npm run verifier`
+tests/                  8 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -231,7 +231,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 7 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 8 suites de tests, **tout passe**.
 - Version `0.1.0`. Installateur : `release\Ohmnia Setup 0.1.0.exe` (96 Mo) avec
   `latest.yml` pour l'auto-updater.
 - Base de l'utilisateur : `%APPDATA%\Ohmnia\gestion.sqlite`, 25 tables, intégrité `ok`.

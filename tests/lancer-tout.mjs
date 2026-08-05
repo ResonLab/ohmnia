@@ -15,7 +15,8 @@ const SUITES = [
   ['Chiffrement des sauvegardes externes', 'chiffrement.mjs'],
   ['Checkpoint WAL avant sauvegarde', 'sauvegarde-wal.cjs'],
   ['Contraintes inventaire non bloquantes', 'contraintes-inventaire.cjs'],
-  ['Cohérence de la documentation', 'coherence-documentation.mjs']
+  ['Cohérence de la documentation', 'coherence-documentation.mjs'],
+  ['Cohérence du site vitrine', 'coherence-site.mjs']
 ]
 
 let echecs = 0

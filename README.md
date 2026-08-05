@@ -1,135 +1,119 @@
+<div align="center">
+
+<img src="docs/logo.svg" alt="Ohmnia" width="80" height="80" />
+
 # Ohmnia
 
-Application de gestion locale pour technicien électronicien indépendant (Suisse).
-Tout fonctionne **hors ligne** : aucune donnée ne quitte l'ordinateur.
+**Gestion pour indépendants — facturation, devis, compta · 100 % local**
 
-> Reprise du projet par une IA ou par toi après une pause : lis [CONTEXTE.md](CONTEXTE.md).
-> Publication sur GitHub et site vitrine : [SITE-GITHUB.md](SITE-GITHUB.md).
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Leimmingz/ohmnia/releases/latest)
+[![Electron](https://img.shields.io/badge/Electron-43-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
+[![SQLite](https://img.shields.io/badge/SQLite-local-003b57?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![Site](https://img.shields.io/badge/Site-leimmingz.github.io-16b981?style=flat-square)](https://leimmingz.github.io/ohmnia/)
+[![Licence](https://img.shields.io/badge/Licence-MIT-9f5cf7?style=flat-square)](LICENSE)
 
-## Lancer et construire
+*Aucun compte · aucun serveur · aucune télémétrie*
 
-```bash
-npm run dev          # lance l'app en développement (rechargement à chaud)
-npm run verifier     # typecheck + toutes les suites de tests
-npm run package:win  # construit release\Ohmnia Setup X.Y.Z.exe (sans publier)
-npm run publish:win  # construit ET publie sur les GitHub Releases
-```
+🌐 **[Site web](https://leimmingz.github.io/ohmnia/)** &nbsp;·&nbsp; 📥 **[Télécharger](https://github.com/Leimmingz/ohmnia/releases/latest)** &nbsp;·&nbsp; 📄 **[Conditions](https://leimmingz.github.io/ohmnia/conditions.html)**
 
-`npm run verifier` doit passer avant toute publication : il vérifie les types,
-la cohérence des canaux IPC, la sécurité Electron, les analyseurs de relevés
-bancaires, le chiffrement des sauvegardes et les correctifs de régression connus.
+</div>
 
-## Où sont mes données
+---
+
+## À propos
+
+Ohmnia remplace le classeur Excel + macros VBA d'un indépendant par une vraie application. Factures, devis, suivi du temps, inventaire, journal des recettes et dépenses — le tout dans un fichier SQLite sur ton disque.
+
+**Rien ne part sur Internet.** Pas de compte à créer, pas de serveur, pas de statistiques d'usage. Le seul accès réseau possible est la vérification de mise à jour, désactivée par défaut.
+
+Le revers est assumé : personne ne peut récupérer tes données à ta place. Fais des copies.
+
+---
+
+## Installation
+
+👉 **[Télécharger la dernière version](https://github.com/Leimmingz/ohmnia/releases/latest)**
+
+Lance `Ohmnia Setup X.Y.Z.exe`. Windows affichera un avertissement SmartScreen au premier lancement : l'exe n'est pas signé par un certificat commercial. **Informations complémentaires** → **Exécuter quand même**.
+
+---
+
+## Ce que ça fait
+
+| Module | Détail |
+|---|---|
+| **Facturation** | Devis → facture en un clic, export PDF, duplication, modèles |
+| **Rappels** | Échéances suivies, relances des impayés selon tes délais |
+| **Suivi du temps** | Chrono par client et projet, report direct en ligne de facture |
+| **Inventaire** | Articles, mouvements, alertes de seuil, décrément automatique |
+| **Journal** | Recettes et dépenses, justificatifs photo, graphiques |
+| **Banque** | Import CSV et CAMT.053, rapprochement automatique |
+| **Sauvegardes** | Copies locales horodatées + archives chiffrées AES-256-GCM |
+| **Multi-pays** | CH · FR · BE · LU · DE — taux, formats et mentions légales |
+| **Audit** | Clôture d'exercice, verrou, contrôle de la numérotation |
+
+> ⚠️ **Ohmnia ne te rend pas conforme.** Les taux et seuils proposés sont des points de départ, pas une certification. Voir les [conditions d'utilisation](https://leimmingz.github.io/ohmnia/conditions.html).
+
+---
+
+## Où sont tes données
 
 | Quoi | Où |
 |---|---|
 | Base de données | `%APPDATA%\Ohmnia\gestion.sqlite` |
-| Sauvegardes automatiques | `%APPDATA%\Ohmnia\Backups\` |
-| Justificatifs (photos) | `%APPDATA%\Ohmnia\Justificatifs\` |
-| Logo de l'entreprise | `%APPDATA%\Ohmnia\Logo\` |
-| PDF générés | `Documents\Ohmnia\{Factures,Devis,Rappels}\` (modifiable) |
+| Sauvegardes | `%APPDATA%\Ohmnia\Backups\` |
+| Justificatifs | `%APPDATA%\Ohmnia\Justificatifs\` |
+| PDF générés | `Documents\Ohmnia\{Factures,Devis,Rappels}\` |
 
-Une sauvegarde est créée automatiquement **au démarrage** et **avant chaque export PDF**.
-Désinstaller l'application ne supprime jamais ces données.
+Une sauvegarde est créée **au démarrage** et **avant chaque export PDF**. Désinstaller l'application ne supprime jamais ces données.
 
-## Diffuser une mise à jour aux autres postes
+---
 
-L'auto-update est **désactivé par défaut** : sans adresse configurée, l'application
-ne fait aucun accès réseau. Pour l'activer, il faut un endroit accessible en HTTP
-où déposer les fichiers de version.
-
-### 1. Construire la nouvelle version
-
-Incrémenter `version` dans `package.json` (ex. `0.1.0` → `0.2.0`), puis :
+## Développement
 
 ```bash
-npm run package:win
+npm install
+npm run dev          # lance l'app avec rechargement à chaud
+npm run verifier     # typecheck + 8 suites de tests — doit passer avant toute publication
+npm run package:win  # construit l'installeur, sans rien envoyer
+npm run publish:win  # construit ET publie sur les GitHub Releases
 ```
 
-Le dossier `release\` contient alors les trois fichiers nécessaires :
-`latest.yml`, `Ohmnia Setup X.Y.Z.exe` et son `.blockmap`.
+### Pile
 
-### 2. Publier ces fichiers
+**Electron 43** · **React 19** · **TypeScript** · **`node:sqlite`** (module intégré à Node — aucune compilation native, aucun rebuild à chaque montée de version d'Electron).
 
-Copier **tout le contenu de `release\`** vers l'emplacement choisi :
+Sécurité : `contextIsolation`, `sandbox`, `nodeIntegration: false`, CSP stricte, requêtes SQL toujours préparées.
 
-| Situation | Solution |
-|---|---|
-| Postes sur le même réseau | Dossier partagé servi en HTTP (IIS, ou `npx http-server` sur un poste allumé). Reste entièrement sur le réseau local. |
-| Postes à distance | Une *release* GitHub, ou n'importe quel hébergement web statique. |
-
-### 3. Configurer chaque poste, une seule fois
-
-Dans **Paramètres de l'app → Mises à jour**, renseigner l'adresse (celle qui expose
-`latest.yml`), par exemple `http://192.168.1.20/ohmnia`, et cocher la vérification
-automatique au démarrage si souhaité.
-
-Ensuite, à chaque nouvelle version publiée, les postes proposent la mise à jour.
-Le téléchargement et l'installation restent des actions explicites de l'utilisateur ;
-une sauvegarde de la base est faite automatiquement avant le redémarrage.
-
-**Limite connue** : l'exe n'étant pas signé avec un certificat commercial, Windows
-SmartScreen peut avertir à la première installation sur un poste.
-
-## Structure du code
+### Structure
 
 ```
 src/
-  main/                 process principal (Node) — accès disque et base de données
-    index.ts            création de la fenêtre, enregistrement des modules IPC
-    pdf.ts              génération des PDF (facture, devis, rappel)
-    db/
-      schema.sql        toutes les tables (source de vérité du schéma)
-      database.ts       ouverture, PRAGMA, transactions, checkpoint WAL
-      migrations.ts     ajout de colonnes sans perte de données
-      backup.ts         sauvegardes locales horodatées + rotation
-      sauvegardeExterne.ts  sauvegarde chiffrée AES-256-GCM
-      audit.ts          traçage et verrou des exercices clôturés
-    ipc/                un fichier par domaine métier (clients, factures, …)
-  preload/index.ts      pont sécurisé : seule porte entre l'interface et le système
-  renderer/src/         interface React
-    App.tsx             menu et navigation
-    pages/              un fichier par écran
-    components/         éléments réutilisables (modale, logo, graphiques…)
-    lib/                thème et valeurs suggérées
-  shared/
-    types.ts            types partagés entre les trois couches
-    calculs.ts          TOUTES les formules métier (divisions protégées)
+  main/          process Node — seul à toucher le disque et la base
+    db/          schéma, migrations, sauvegardes, chiffrement, audit
+    ipc/         un fichier par domaine métier
+  preload/       pont sécurisé : seule porte entre l'interface et le système
+  renderer/      interface React (17 écrans)
+  shared/        types, calculs, profils pays, traductions
+tests/           8 suites — npm run verifier
 ```
 
-## Règles à respecter si tu modifies le code
+### Les règles qui comptent
 
-1. **Les formules vivent dans `src/shared/calculs.ts`**, jamais dupliquées ailleurs.
-   Toute division passe par `diviserSansErreur()` pour éviter les `NaN`/`Infinity`.
+1. **Une formule = un seul endroit** : `src/shared/calculs.ts`. Toute division passe par `diviserSansErreur()`.
+2. **Ajouter une colonne** → `schema.sql` **et** `COLONNES_ATTENDUES` de `migrations.ts`. Ne jamais supprimer la base pour appliquer un changement.
+3. **Opération multi-tables** → `dansUneTransaction()`.
+4. **Copier le fichier de base** → `viderJournalWal()` d'abord. En mode WAL, sans checkpoint la copie est inutilisable.
+5. **Nouveau canal IPC** → le déclarer dans `src/main/ipc/*.ts` **et** dans `src/preload/index.ts`. `npm test` vérifie l'appariement.
+6. **Pas de `window.prompt()`** dans Electron → composant `Modale`.
+7. **Le PDF ne contient aucune information interne** (notes, marges, case « à imprimer »).
 
-2. **Ajouter une colonne à une table existante** : l'écrire dans `schema.sql`
-   (nouvelles installations) **et** dans `COLONNES_ATTENDUES` de `migrations.ts`
-   (installations existantes). Ne jamais supprimer la base pour appliquer un changement.
+Le code, les commentaires et les colonnes SQL sont **en français**, volontairement : ce projet doit rester relisable par son auteur, qui n'est pas développeur de métier. Pas d'ORM, pas de state manager, du SQL écrit à la main.
 
-3. **Toute opération touchant plusieurs tables** passe par `dansUneTransaction()` :
-   soit tout réussit, soit rien n'est modifié.
+📖 Historique des décisions, pièges connus et reste à faire : **[CONTEXTE.md](CONTEXTE.md)** · Publication et site : **[SITE-GITHUB.md](SITE-GITHUB.md)**
 
-4. **Copier le fichier de la base** exige d'abord `viderJournalWal()`. En mode WAL,
-   les écritures récentes sont dans `gestion.sqlite-wal` : sans checkpoint, la copie
-   est incomplète voire inutilisable.
+---
 
-5. **Nouveau canal IPC** : le déclarer dans `src/main/ipc/*.ts` (`ipcMain.handle`)
-   **et** dans `src/preload/index.ts` (`ipcRenderer.invoke`). Le renderer n'a jamais
-   d'accès direct au disque ou à la base.
+## Licence
 
-6. **`window.prompt()` ne fonctionne pas dans Electron.** Utiliser le composant
-   `Modale` pour toute saisie ponctuelle. `alert()` et `confirm()` fonctionnent.
-
-7. **Le document PDF ne doit contenir aucune information interne** (notes de travail,
-   case « à imprimer », marges). Il est volontairement en thème clair, contrairement
-   à l'interface.
-
-## Choix techniques
-
-- **`node:sqlite` plutôt que `better-sqlite3`** : module intégré à Node, donc aucune
-  compilation native, aucun rebuild à chaque montée de version d'Electron, et pas
-  besoin de Visual Studio Build Tools.
-- **Sécurité Electron** : `contextIsolation: true`, `nodeIntegration: false`,
-  `sandbox: true`, CSP stricte, requêtes SQL toujours préparées.
-- **Pas d'ORM, pas de state manager** : SQL lisible écrit à la main, hooks React
-  standards. Objectif : que le code reste modifiable sans expertise.
+[MIT](LICENSE) — fais-en ce que tu veux, sans garantie.

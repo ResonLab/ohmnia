@@ -13,6 +13,27 @@ win:
     - target: nsis
       arch:
         - x64
+linux:
+  icon: build/icon.png
+  category: Office
+  synopsis: Gestion locale pour indépendants
+  description: >-
+    Facturation, devis, suivi du temps, inventaire et comptabilité simplifiée.
+    Toutes les données restent sur la machine.
+  desktop:
+    entry:
+      Name: Ohmnia
+      Comment: Gestion locale pour indépendants
+  target:
+    # AppImage : un seul fichier exécutable, sans installation, et c'est le
+    # seul format Linux que l'auto-updater sait mettre à jour.
+    - target: AppImage
+      arch:
+        - x64
+    # deb : pour installer proprement sur Debian et Ubuntu (pas d'auto-update).
+    - target: deb
+      arch:
+        - x64
 # Génère `latest.yml` à côté de l'installateur : c'est ce fichier que les autres
 # postes lisent pour savoir qu'une nouvelle version existe.
 #

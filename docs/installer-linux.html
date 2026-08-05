@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installer Ohmnia sur Linux — Ohmnia</title>
+<meta name="description" content="Comment installer Ohmnia sur Linux, expliqué pas à pas, sans supposer de connaissances techniques.">
+<script>
+(function () {
+  try {
+    var choix = localStorage.getItem('ohmnia-theme')
+    var sombre = choix ? choix === 'sombre'
+      : !matchMedia('(prefers-color-scheme: light)').matches
+    document.documentElement.setAttribute('data-theme', sombre ? 'sombre' : 'clair')
+  } catch (e) { /* navigation privée : on garde le thème du système */ }
+})()
+</script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --lien: #4fd8c4; --bg-2: #0a0f16; --card: #1a2130;
+    --border: rgba(255,255,255,.09);
+    --fg: #e7ecf3; --fg-dim: #9aa7b8; --fg-faint: #6f7d90;
+    --grad: linear-gradient(120deg, #1BE7B6, #0E9CD9);
+    --aurora-op: .26; --radius: 14px;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --encours: #1BE7B6; --prevu: #0E9CD9; --etude: #c9a227; --ecarte: #7c8697;
+  }
+  @media (prefers-color-scheme: light) {
+    /* Sans JavaScript, on suit le réglage du système. */
+    :root:not([data-theme]) {
+      --bg: #f6f8fa; --bg-2: #eef2f6; --card: #ffffff;
+      --border: rgba(13,17,23,.12);
+      --fg: #131a24; --fg-dim: #4e5b6d; --fg-faint: #778396;
+      --aurora-op: .15; --lien: #16b9b0; --etude: #8a6d0b;
+    }
+  }
+  /* Choix explicite de l'utilisateur : il l'emporte sur le système. */
+  :root[data-theme="clair"] {
+      --bg: #f6f8fa; --bg-2: #eef2f6; --card: #ffffff;
+      --border: rgba(13,17,23,.12);
+      --fg: #131a24; --fg-dim: #4e5b6d; --fg-faint: #778396;
+      --aurora-op: .15; --lien: #16b9b0; --etude: #8a6d0b;
+    }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+  @view-transition { navigation: auto; }
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root) { animation: sortiePage .32s cubic-bezier(.4,0,1,1) both; }
+    ::view-transition-new(root) { animation: entreePage .48s cubic-bezier(.16,1,.3,1) both; }
+    header .brand svg { view-transition-name: logo-ohmnia; }
+  }
+  @keyframes sortiePage { to { opacity: 0; transform: translateY(-14px) scale(.99); } }
+  @keyframes entreePage { from { opacity: 0; transform: translateY(20px) scale(.995); } }
+
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 17px; line-height: 1.68; text-wrap: pretty; overflow-x: hidden;
+  }
+  a { color: var(--lien); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 0 24px; }
+  .wrap.large { max-width: 1120px; }
+
+  .aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .aurora i { position: absolute; display: block; border-radius: 50%; filter: blur(110px); opacity: var(--aurora-op); }
+  .aurora .a1 { width: 500px; height: 500px; background: #1BE7B6; top: -200px; left: -160px; animation: derive1 38s ease-in-out infinite alternate; }
+  .aurora .a2 { width: 540px; height: 540px; background: #0E9CD9; top: 40%; right: -240px; animation: derive2 46s ease-in-out infinite alternate; }
+  @keyframes derive1 { to { transform: translate3d(120px, 120px, 0) scale(1.2); } }
+  @keyframes derive2 { to { transform: translate3d(-140px, -100px, 0) scale(1.14); } }
+
+  .progres { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform: scaleX(0); transform-origin: left; background: var(--grad); z-index: 20; }
+
+  .js .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .75s var(--ease) var(--d, 0s), transform .75s var(--ease) var(--d, 0s);
+    will-change: opacity, transform;
+  }
+  .js .reveal.vu { opacity: 1; transform: none; }
+  .js .entree { opacity: 0; transform: translateY(20px); }
+  .js .charge .entree { animation: monte .9s var(--ease) forwards; animation-delay: var(--d, 0s); }
+  @keyframes monte { to { opacity: 1; transform: none; } }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid transparent;
+    transition: border-color .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  header.pose { border-bottom-color: var(--border); box-shadow: 0 10px 30px -24px rgba(0,0,0,.9); }
+  .bar { display: flex; align-items: center; gap: 16px; height: 68px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; letter-spacing: -.01em; font-size: 19px; color: var(--fg); }
+  .brand:hover { text-decoration: none; }
+  .brand svg { display: block; transition: transform .6s var(--ease); }
+  .brand:hover svg { transform: rotate(-8deg) scale(1.08); }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 22px; }
+  .nav a { color: var(--fg-dim); font-size: 15px; position: relative; white-space: nowrap; }
+  .nav a::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 1.5px;
+    background: var(--grad); transform: scaleX(0); transform-origin: right;
+    transition: transform .4s var(--ease);
+  }
+  .nav a:hover { color: var(--fg); text-decoration: none; }
+  .nav a:hover::after { transform: scaleX(1); transform-origin: left; }
+  .nav a.ici { color: var(--fg); }
+  .nav a.ici::after { transform: scaleX(1); }
+
+  /* ─── sélecteur de langue ────────────────────────────────── */
+  .langue {
+    margin-left: 14px; flex: none;
+    display: grid; place-items: center;
+    min-width: 40px; height: 40px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--fg-dim); font-size: 13px; font-weight: 600;
+    letter-spacing: .04em;
+    transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+  }
+  .langue:hover { text-decoration: none; color: var(--fg); border-color: rgba(27,231,182,.5); transform: translateY(-1px); }
+  @media (max-width: 700px) { .langue { margin-left: 10px; min-width: 36px; height: 36px; padding: 0 8px; } }
+
+  /* ─── bouton clair / sombre ──────────────────────────────── */
+  .theme {
+    margin-left: 18px; flex: none;
+    width: 40px; height: 40px; display: grid; place-items: center;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--fg-dim); cursor: pointer;
+    transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+  }
+  .theme:hover { color: var(--fg); border-color: rgba(27,231,182,.5); transform: translateY(-1px); }
+  .theme svg { display: block; }
+  /* On montre l'icône de ce vers quoi le clic emmène. */
+  .theme .i-clair { display: none; }
+  :root[data-theme="sombre"] .theme .i-clair { display: block; }
+  :root[data-theme="sombre"] .theme .i-sombre { display: none; }
+  @media (max-width: 700px) { .theme { margin-left: 12px; width: 36px; height: 36px; } }
+
+  /* ─── guide d'installation ───────────────────────────────── */
+  .avert {
+    border: 1px solid rgba(201,162,39,.45);
+    background: color-mix(in srgb, #c9a227 9%, transparent);
+    border-radius: var(--radius); padding: 18px 22px; margin: 0 0 48px;
+    color: var(--fg-dim); font-size: 15.5px;
+  }
+  .avert b { color: var(--fg); }
+  .etapes { counter-reset: e; list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 22px; }
+  .etapes > li { counter-increment: e; display: grid; grid-template-columns: 38px 1fr; gap: 16px; color: var(--fg-dim); font-size: 16px; }
+  .etapes > li::before {
+    content: counter(e); width: 32px; height: 32px; border-radius: 9px;
+    background: var(--grad); color: #062229; display: grid; place-items: center;
+    font-weight: 700; font-size: 15px;
+  }
+  .etapes b { color: var(--fg); font-weight: 600; }
+  .etapes .aparte { display: block; margin-top: 8px; font-size: 14.5px; color: var(--fg-faint); }
+  .lequel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 26px 0 0; }
+  .lequel div {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px; color: var(--fg-dim); font-size: 15.5px;
+  }
+  .lequel b { display: block; color: var(--fg); font-size: 16.5px; margin-bottom: 6px; }
+  .souci { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 18px; }
+  .souci:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  .souci b { display: block; color: var(--fg); font-weight: 600; margin-bottom: 4px; }
+  .souci p { margin: 0; color: var(--fg-dim); font-size: 15.5px; }
+  @media (max-width: 640px) { .lequel { grid-template-columns: 1fr; } }
+
+  main { padding: 76px 0 100px; }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.12; letter-spacing: -.03em; margin: 0 0 16px; font-weight: 650; }
+  .chapeau { font-size: clamp(17px, 2vw, 19px); color: var(--fg-dim); margin: 0 0 22px; }
+  .avis {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 22px; color: var(--fg-faint); font-size: 15px; margin: 0 0 56px;
+    background: color-mix(in srgb, var(--card) 50%, transparent);
+  }
+
+  h2 {
+    font-size: clamp(19px, 2.4vw, 22px); line-height: 1.25; letter-spacing: -.015em;
+    font-weight: 650; margin: 0 0 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .puce { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .puce.encours { background: var(--encours); box-shadow: 0 0 0 0 rgba(27,231,182,.6); animation: pulse 2.6s ease-out infinite; }
+  .puce.prevu { background: var(--prevu); }
+  .puce.etude { background: var(--etude); }
+  .puce.ecarte { background: var(--ecarte); }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(27,231,182,.55); }
+    70% { box-shadow: 0 0 0 10px rgba(27,231,182,0); }
+    100% { box-shadow: 0 0 0 0 rgba(27,231,182,0); }
+  }
+
+  section { margin-bottom: 54px; }
+  .items { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .items li {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px;
+    color: var(--fg-dim); font-size: 15.5px;
+    transition: transform .4s var(--ease), border-color .4s var(--ease);
+  }
+  .items li:hover { transform: translateX(4px); border-color: rgba(27,231,182,.32); }
+  .items b { display: block; color: var(--fg); font-weight: 600; font-size: 16.5px; margin-bottom: 6px; }
+  .items p { margin: 0 0 10px; }
+  .items p:last-child { margin-bottom: 0; }
+  .etat {
+    display: inline-block; font-size: 12.5px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px; margin-bottom: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .etat.encours { background: rgba(27,231,182,.14); color: var(--encours); }
+  .etat.prevu { background: rgba(14,156,217,.16); color: var(--prevu); }
+  .etat.etude { background: rgba(201,162,39,.16); color: var(--etude); }
+  .etat.ecarte { background: rgba(124,134,151,.16); color: var(--ecarte); }
+  .items.pale li { opacity: .82; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .88em; background: color-mix(in srgb, var(--fg) 9%, transparent);
+    padding: 2px 6px; border-radius: 5px;
+  }
+
+  .idee {
+    text-align: center; margin-top: 72px; padding: 34px 28px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: color-mix(in srgb, var(--card) 55%, transparent);
+  }
+  .idee p { color: var(--fg-dim); margin: 0 0 18px; }
+  .btn {
+    position: relative; overflow: hidden;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 13px 22px; border-radius: 10px;
+    background: var(--grad); color: #062229;
+    font-weight: 600; font-size: 15px; min-height: 46px;
+    transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+    box-shadow: 0 10px 26px -16px rgba(27,231,182,.9);
+  }
+  .btn::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: -75%; width: 55%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.42), transparent);
+    transform: skewX(-18deg); transition: left .7s var(--ease);
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-2px); box-shadow: 0 18px 38px -18px rgba(27,231,182,.95); }
+  .btn:hover::before { left: 125%; }
+
+  footer { border-top: 1px solid var(--border); padding: 40px 0 60px; color: var(--fg-faint); font-size: 14.5px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+  .foot .sep { margin-left: auto; display: flex; gap: 22px; flex-wrap: wrap; }
+
+  @media (max-width: 880px) { .nav { gap: 15px; } .nav a { font-size: 14px; } }
+  @media (max-width: 700px) {
+    /* Place comptée : on ne garde que le premier et le dernier lien,
+       le reste reste atteignable depuis le pied de page. */
+    .nav a { display: none; }
+    .nav a:first-child, .nav a:last-child { display: block; }
+    .brand .nom { display: none; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    main { padding: 48px 0 64px; }
+    .foot .sep { margin-left: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .js .reveal, .js .entree { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; }
+    .aurora i, .puce.encours { animation: none !important; }
+    .items li:hover, .btn:hover { transform: none; }
+    .btn::before { display: none; }
+    .progres { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i></div>
+<div class="progres" id="progres" aria-hidden="true"></div>
+
+<header id="entete">
+  <div class="wrap large bar">
+    <a class="brand" href="index.html">
+      <svg width="34" height="34" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="ohm-a" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#1BE7B6"/><stop offset="1" stop-color="#0E9CD9"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#ohm-a)"/>
+        <path d="M20 47c6-3 7.5-7 5-13.5C22.5 26 25 17 32 17s9.5 9 7 16.5C36.5 40 38 44 44 47" stroke="#062B33" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15.5 47h7M41.5 47h7" stroke="#062B33" stroke-width="4.6" stroke-linecap="round"/>
+        <circle cx="12" cy="20" r="2.6" fill="#062B33"/>
+        <path d="M12 20h6" stroke="#062B33" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="52" cy="20" r="2.6" fill="#062B33"/>
+        <path d="M52 20h-6" stroke="#062B33" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <span class="nom">Ohmnia</span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Accueil</a>
+      <a href="apropos.html">À propos</a>
+      <a href="suite.html">La suite</a>
+      <a href="index.html#telecharger">Télécharger</a>
+    </nav>
+      <a class="langue" href="en/install-linux.html" hreflang="en" title="Read this page in English">EN</a>
+      <button class="theme" id="theme" type="button" aria-label="Basculer entre le thème clair et sombre" title="Thème clair / sombre">
+        <svg class="i-clair" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.3 6.3 4.8 4.8M19.2 19.2l-1.5-1.5M17.7 6.3l1.5-1.5M4.8 19.2l1.5-1.5"/>
+        </svg>
+        <svg class="i-sombre" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/>
+        </svg>
+      </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h1 class="entree" style="--d:.05s">Installer Ohmnia sur Linux</h1>
+  <p class="chapeau entree" style="--d:.14s">
+    Pas à pas, sans rien supposer. Si vous n'avez jamais installé de programme
+    sur Linux, cette page est faite pour vous : il n'y a aucune commande à taper.
+  </p>
+
+  <p class="avert entree" style="--d:.22s">
+    <b>La version Linux n'est pas encore publiée.</b> Cette page décrit la marche
+    à suivre pour le jour où elle le sera. En attendant, seule la version Windows
+    est disponible au téléchargement.
+  </p>
+
+  <section class="reveal">
+    <h2>Lequel des deux fichiers prendre</h2>
+    <p>
+      Deux fichiers seront proposés. Ils installent la même application : seule la
+      manière de la ranger sur votre ordinateur change.
+    </p>
+    <div class="lequel">
+      <div>
+        <b>Le fichier .deb</b>
+        Si vous êtes sur <b>Ubuntu</b>, <b>Linux Mint</b>, <b>Debian</b> ou <b>Pop!_OS</b>.
+        C'est le plus simple : Ohmnia s'installe comme un programme normal et apparaît
+        dans votre menu d'applications.
+      </div>
+      <div>
+        <b>Le fichier .AppImage</b>
+        Pour <b>toutes les autres</b> (Fedora, Manjaro, openSUSE, Arch…), ou si le
+        .deb refuse de s'installer. C'est un fichier unique qui se lance directement,
+        sans rien installer.
+      </div>
+    </div>
+    <p style="margin-top:22px">
+      Vous ne savez pas quel Linux vous avez ? Prenez le <b>.AppImage</b> : il
+      fonctionne partout.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <h2>Avec le fichier .deb</h2>
+    <ol class="etapes">
+      <li><span><b>Téléchargez</b> le fichier qui se termine par <code>.deb</code> depuis la page de téléchargement. Il arrive dans votre dossier <b>Téléchargements</b>.</span></li>
+      <li><span><b>Double-cliquez dessus.</b> Une fenêtre d'installation s'ouvre.
+        <span class="aparte">Si rien ne se passe : clic droit sur le fichier → <b>Ouvrir avec</b> → <b>Installation de logiciels</b>.</span></span></li>
+      <li><span>Cliquez sur <b>Installer</b>, puis saisissez le mot de passe de votre session quand il vous est demandé. C'est normal : installer un programme demande votre autorisation.</span></li>
+      <li><span>Ouvrez votre <b>menu d'applications</b> et cherchez <b>Ohmnia</b>. C'est fini.</span></li>
+    </ol>
+  </section>
+
+  <section class="reveal">
+    <h2>Avec le fichier .AppImage</h2>
+    <p>
+      Un AppImage est un fichier unique qui contient tout le programme. Il ne
+      s'installe pas : vous le rangez où vous voulez et vous le lancez. Une seule
+      étape est un peu inhabituelle — il faut dire à Linux que ce fichier a le droit
+      de s'exécuter. C'est une sécurité, elle se règle en trois clics.
+    </p>
+    <ol class="etapes">
+      <li><span><b>Téléchargez</b> le fichier qui se termine par <code>.AppImage</code>.</span></li>
+      <li><span><b>Rangez-le</b> où vous le retrouverez — votre dossier personnel, ou un dossier <b>Applications</b> que vous créez. Évitez de le laisser dans Téléchargements, où vous risquez de le supprimer par mégarde.</span></li>
+      <li><span><b>Clic droit sur le fichier</b> → <b>Propriétés</b> → onglet <b>Permissions</b>, puis cochez <b>Autoriser l'exécution du fichier comme un programme</b>. Fermez la fenêtre.
+        <span class="aparte">Selon votre version de Linux, la case peut s'appeler « Exécutable » ou « Autoriser l'exécution ». C'est la même chose.</span></span></li>
+      <li><span><b>Double-cliquez</b> sur le fichier. Ohmnia s'ouvre.</span></li>
+    </ol>
+  </section>
+
+  <section class="reveal">
+    <h2>Si quelque chose ne va pas</h2>
+    <div class="souci">
+      <b>Je double-clique sur l'AppImage et il ne se passe rien</b>
+      <p>La case d'exécution n'est pas cochée. Reprenez l'étape 3 ci-dessus : clic droit → Propriétés → Permissions.</p>
+    </div>
+    <div class="souci">
+      <b>Un message parle de « FUSE » ou de « libfuse »</b>
+      <p>Il manque un composant que certaines versions récentes de Linux ne fournissent plus d'origine. Ouvrez votre logithèque, cherchez <code>libfuse2</code> et installez-le, puis relancez. Si vous préférez éviter, prenez le fichier .deb à la place.</p>
+    </div>
+    <div class="souci">
+      <b>Le .deb refuse de s'installer</b>
+      <p>Votre version de Linux n'utilise probablement pas ce format. Prenez le fichier .AppImage, qui fonctionne partout.</p>
+    </div>
+    <div class="souci">
+      <b>Ohmnia n'apparaît pas dans mon menu après le .deb</b>
+      <p>Déconnectez-vous puis reconnectez-vous à votre session : le menu se reconstruit à ce moment-là.</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <h2>Où sont vos données sur Linux</h2>
+    <p>
+      Comme sur Windows, tout reste sur votre ordinateur. Vos données sont rangées
+      dans un dossier caché de votre dossier personnel :
+    </p>
+    <p><code>~/.config/Ohmnia</code></p>
+    <p>
+      Pour le voir dans votre gestionnaire de fichiers, appuyez sur <b>Ctrl + H</b> —
+      cela affiche les dossiers cachés. Vous n'avez normalement aucune raison d'aller
+      y toucher à la main : passez plutôt par <b>Paramètres de l'app</b> dans Ohmnia,
+      qui sait ouvrir ce dossier pour vous et faire vos sauvegardes.
+    </p>
+  </section>
+
+  <div class="idee reveal">
+    <p>Prêt à essayer ?</p>
+    <a class="btn" href="index.html#telecharger">Aller au téléchargement</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap large foot">
+    <span>Logiciel local · aucune télémétrie · vos données restent sur votre machine.</span>
+    <span class="sep">
+      <a href="index.html">Accueil</a>
+      <a href="reseau.html">Réseau et NAS</a>
+      <a href="conditions.html">Conditions d'utilisation</a>
+      <a href="https://github.com/Leimmingz/ohmnia">Code source</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  document.documentElement.className += ' js';
+
+  function afficherEntete() { document.body.classList.add('charge'); }
+  requestAnimationFrame(afficherEntete);
+  setTimeout(afficherEntete, 300);
+
+  var cibles = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('vu'); obs.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: .1 });
+    cibles.forEach(function (c) { obs.observe(c); });
+  } else {
+    cibles.forEach(function (c) { c.classList.add('vu'); });
+  }
+
+  // Bascule clair / sombre, mémorisée d'une visite à l'autre.
+  var boutonTheme = document.getElementById('theme');
+  if (boutonTheme) {
+    boutonTheme.addEventListener('click', function () {
+      var sombre = document.documentElement.getAttribute('data-theme') !== 'sombre';
+      document.documentElement.setAttribute('data-theme', sombre ? 'sombre' : 'clair');
+      try { localStorage.setItem('ohmnia-theme', sombre ? 'sombre' : 'clair'); } catch (e) {}
+    });
+  }
+
+  var entete = document.getElementById('entete');
+  var progres = document.getElementById('progres');
+  var tic = false;
+
+  function surDefilement() {
+    entete.classList.toggle('pose', scrollY > 8);
+    var defilable = document.documentElement.scrollHeight - innerHeight;
+    var part = defilable > 0 ? scrollY / defilable : 0;
+    progres.style.transform = 'scaleX(' + Math.min(1, Math.max(0, part)) + ')';
+  }
+
+  addEventListener('scroll', function () {
+    if (tic) return;
+    tic = true;
+    requestAnimationFrame(function () { surDefilement(); tic = false; });
+  }, { passive: true });
+
+  surDefilement();
+})();
+</script>
+</body>
+</html>

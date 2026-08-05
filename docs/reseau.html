@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plusieurs postes et NAS — Ohmnia</title>
+<meta name="description" content="Ce qui fonctionne et ce qui ne fonctionne pas quand plusieurs postes veulent partager les données d'Ohmnia, et pourquoi une base SQLite ne se pose pas sur un NAS.">
+<script>
+(function () {
+  try {
+    var choix = localStorage.getItem('ohmnia-theme')
+    var sombre = choix ? choix === 'sombre'
+      : !matchMedia('(prefers-color-scheme: light)').matches
+    document.documentElement.setAttribute('data-theme', sombre ? 'sombre' : 'clair')
+  } catch (e) { /* navigation privée : on garde le thème du système */ }
+})()
+</script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --lien: #4fd8c4; --bg-2: #0a0f16; --card: #1a2130;
+    --border: rgba(255,255,255,.09);
+    --fg: #e7ecf3; --fg-dim: #9aa7b8; --fg-faint: #6f7d90;
+    --grad: linear-gradient(120deg, #1BE7B6, #0E9CD9);
+    --aurora-op: .26; --radius: 14px;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --oui: #1BE7B6; --non: #ff6b6b;
+  }
+  @media (prefers-color-scheme: light) {
+    /* Sans JavaScript, on suit le réglage du système. */
+    :root:not([data-theme]) {
+      --bg: #f6f8fa; --bg-2: #eef2f6; --card: #ffffff;
+      --border: rgba(13,17,23,.12);
+      --fg: #131a24; --fg-dim: #4e5b6d; --fg-faint: #778396;
+      --aurora-op: .15; --lien: #16b9b0; --non: #d64545;
+    }
+  }
+  /* Choix explicite de l'utilisateur : il l'emporte sur le système. */
+  :root[data-theme="clair"] {
+      --bg: #f6f8fa; --bg-2: #eef2f6; --card: #ffffff;
+      --border: rgba(13,17,23,.12);
+      --fg: #131a24; --fg-dim: #4e5b6d; --fg-faint: #778396;
+      --aurora-op: .15; --lien: #16b9b0; --non: #d64545;
+    }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+  @view-transition { navigation: auto; }
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root) { animation: sortiePage .32s cubic-bezier(.4,0,1,1) both; }
+    ::view-transition-new(root) { animation: entreePage .48s cubic-bezier(.16,1,.3,1) both; }
+    header .brand svg { view-transition-name: logo-ohmnia; }
+  }
+  @keyframes sortiePage { to { opacity: 0; transform: translateY(-14px) scale(.99); } }
+  @keyframes entreePage { from { opacity: 0; transform: translateY(20px) scale(.995); } }
+
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 17px; line-height: 1.68; text-wrap: pretty; overflow-x: hidden;
+  }
+  a { color: var(--lien); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  .wrap.large { max-width: 1120px; }
+
+  .aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .aurora i { position: absolute; display: block; border-radius: 50%; filter: blur(110px); opacity: var(--aurora-op); }
+  .aurora .a1 { width: 500px; height: 500px; background: #1BE7B6; top: -200px; left: -160px; animation: derive1 38s ease-in-out infinite alternate; }
+  .aurora .a2 { width: 540px; height: 540px; background: #0E9CD9; top: 40%; right: -240px; animation: derive2 46s ease-in-out infinite alternate; }
+  @keyframes derive1 { to { transform: translate3d(120px, 120px, 0) scale(1.2); } }
+  @keyframes derive2 { to { transform: translate3d(-140px, -100px, 0) scale(1.14); } }
+
+  .progres { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform: scaleX(0); transform-origin: left; background: var(--grad); z-index: 20; }
+
+  .js .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .75s var(--ease) var(--d, 0s), transform .75s var(--ease) var(--d, 0s);
+    will-change: opacity, transform;
+  }
+  .js .reveal.vu { opacity: 1; transform: none; }
+  .js .entree { opacity: 0; transform: translateY(20px); }
+  .js .charge .entree { animation: monte .9s var(--ease) forwards; animation-delay: var(--d, 0s); }
+  @keyframes monte { to { opacity: 1; transform: none; } }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid transparent;
+    transition: border-color .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  header.pose { border-bottom-color: var(--border); box-shadow: 0 10px 30px -24px rgba(0,0,0,.9); }
+  .bar { display: flex; align-items: center; gap: 16px; height: 68px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; letter-spacing: -.01em; font-size: 19px; color: var(--fg); }
+  .brand:hover { text-decoration: none; }
+  .brand svg { display: block; transition: transform .6s var(--ease); }
+  .brand:hover svg { transform: rotate(-8deg) scale(1.08); }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 22px; }
+  .nav a { color: var(--fg-dim); font-size: 15px; position: relative; white-space: nowrap; }
+  .nav a::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 1.5px;
+    background: var(--grad); transform: scaleX(0); transform-origin: right;
+    transition: transform .4s var(--ease);
+  }
+  .nav a:hover { color: var(--fg); text-decoration: none; }
+  .nav a:hover::after { transform: scaleX(1); transform-origin: left; }
+  .nav a.ici { color: var(--fg); }
+  .nav a.ici::after { transform: scaleX(1); }
+
+  /* ─── sélecteur de langue ────────────────────────────────── */
+  .langue {
+    margin-left: 14px; flex: none;
+    display: grid; place-items: center;
+    min-width: 40px; height: 40px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--fg-dim); font-size: 13px; font-weight: 600;
+    letter-spacing: .04em;
+    transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+  }
+  .langue:hover { text-decoration: none; color: var(--fg); border-color: rgba(27,231,182,.5); transform: translateY(-1px); }
+  @media (max-width: 700px) { .langue { margin-left: 10px; min-width: 36px; height: 36px; padding: 0 8px; } }
+
+  /* ─── bouton clair / sombre ──────────────────────────────── */
+  .theme {
+    margin-left: 18px; flex: none;
+    width: 40px; height: 40px; display: grid; place-items: center;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--fg-dim); cursor: pointer;
+    transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+  }
+  .theme:hover { color: var(--fg); border-color: rgba(27,231,182,.5); transform: translateY(-1px); }
+  .theme svg { display: block; }
+  /* On montre l'icône de ce vers quoi le clic emmène. */
+  .theme .i-clair { display: none; }
+  :root[data-theme="sombre"] .theme .i-clair { display: block; }
+  :root[data-theme="sombre"] .theme .i-sombre { display: none; }
+  @media (max-width: 700px) { .theme { margin-left: 12px; width: 36px; height: 36px; } }
+
+  main { padding: 76px 0 100px; }
+  h1 { font-size: clamp(29px, 5vw, 42px); line-height: 1.12; letter-spacing: -.03em; margin: 0 0 16px; font-weight: 650; }
+  .chapeau { font-size: clamp(17px, 2vw, 19px); color: var(--fg-dim); margin: 0 0 48px; }
+
+  h2 {
+    font-size: clamp(20px, 2.6vw, 25px); line-height: 1.25; letter-spacing: -.015em;
+    font-weight: 650; margin: 0 0 16px; position: relative;
+    display: inline-block; padding-bottom: 12px;
+  }
+  h2::after {
+    content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 62px;
+    background: var(--grad); transform: scaleX(0); transform-origin: left;
+    transition: transform .9s var(--ease) .18s;
+  }
+  .js .reveal.vu h2::after { transform: scaleX(1); }
+  html:not(.js) h2::after { transform: scaleX(1); }
+
+  section { margin-bottom: 56px; }
+  section p { color: var(--fg-dim); margin: 0 0 16px; }
+  section p:last-child { margin-bottom: 0; }
+  section b { color: var(--fg); font-weight: 600; }
+
+  .alerte {
+    border: 1px solid rgba(255,107,107,.4);
+    background: color-mix(in srgb, var(--non) 8%, transparent);
+    border-radius: var(--radius); padding: 22px 24px; margin-bottom: 26px;
+  }
+  .alerte p { color: var(--fg-dim); margin: 0 0 14px; }
+  .alerte p:last-child { margin-bottom: 0; }
+  .alerte .titre { color: var(--non); font-weight: 650; font-size: 16px; }
+
+  /* ─── « que voulez-vous faire ? » ───────────────────────── */
+  .choix { display: grid; gap: 12px; margin: 0 0 60px; }
+  .choix a {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; color: var(--fg);
+    transition: transform .4s var(--ease), border-color .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  .choix a:hover {
+    text-decoration: none; transform: translateX(4px);
+    border-color: rgba(27,231,182,.45);
+    box-shadow: 0 18px 36px -28px rgba(14,156,217,.8);
+  }
+  .choix b { display: block; font-weight: 600; font-size: 16px; }
+  .choix span { display: block; color: var(--fg-faint); font-size: 14.5px; margin-top: 2px; }
+  .choix .fleche { color: #1BE7B6; font-size: 20px; transition: transform .4s var(--ease); }
+  .choix a:hover .fleche { transform: translateX(4px); }
+
+  .cas { display: grid; gap: 14px; margin: 26px 0 0; padding: 0; list-style: none; }
+  .cas li {
+    display: grid; grid-template-columns: 26px 1fr; gap: 14px; align-items: start;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    color: var(--fg-dim); font-size: 15.5px;
+  }
+  .cas b { display: block; color: var(--fg); font-weight: 600; margin-bottom: 3px; }
+  .marque { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .marque.oui { background: rgba(27,231,182,.16); color: var(--oui); }
+  .marque.non { background: rgba(255,107,107,.16); color: var(--non); }
+
+  .etapes { counter-reset: e; list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 18px; }
+  .etapes li { counter-increment: e; display: grid; grid-template-columns: 34px 1fr; gap: 16px; color: var(--fg-dim); font-size: 15.5px; }
+  .etapes li::before {
+    content: counter(e); width: 30px; height: 30px; border-radius: 9px;
+    background: var(--grad); color: #062229; display: grid; place-items: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .etapes b { color: var(--fg); font-weight: 600; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .88em; background: color-mix(in srgb, var(--fg) 9%, transparent);
+    padding: 2px 6px; border-radius: 5px;
+  }
+
+  footer { border-top: 1px solid var(--border); padding: 40px 0 60px; color: var(--fg-faint); font-size: 14.5px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+  .foot .sep { margin-left: auto; display: flex; gap: 22px; flex-wrap: wrap; }
+
+  @media (max-width: 880px) { .nav { gap: 15px; } .nav a { font-size: 14px; } }
+  @media (max-width: 700px) {
+    /* Place comptée : on ne garde que le premier et le dernier lien,
+       le reste reste atteignable depuis le pied de page. */
+    .nav a { display: none; }
+    .nav a:first-child, .nav a:last-child { display: block; }
+    .brand .nom { display: none; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    main { padding: 48px 0 64px; }
+    .foot .sep { margin-left: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .js .reveal, .js .entree { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; }
+    .aurora i { animation: none !important; }
+    h2::after { transform: scaleX(1) !important; transition: none !important; }
+    .progres { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i></div>
+<div class="progres" id="progres" aria-hidden="true"></div>
+
+<header id="entete">
+  <div class="wrap large bar">
+    <a class="brand" href="index.html">
+      <svg width="34" height="34" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="ohm-a" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#1BE7B6"/><stop offset="1" stop-color="#0E9CD9"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#ohm-a)"/>
+        <path d="M20 47c6-3 7.5-7 5-13.5C22.5 26 25 17 32 17s9.5 9 7 16.5C36.5 40 38 44 44 47" stroke="#062B33" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15.5 47h7M41.5 47h7" stroke="#062B33" stroke-width="4.6" stroke-linecap="round"/>
+        <circle cx="12" cy="20" r="2.6" fill="#062B33"/>
+        <path d="M12 20h6" stroke="#062B33" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="52" cy="20" r="2.6" fill="#062B33"/>
+        <path d="M52 20h-6" stroke="#062B33" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <span class="nom">Ohmnia</span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Accueil</a>
+      <a href="apropos.html">À propos</a>
+      <a href="suite.html">La suite</a>
+      <a class="ici" href="reseau.html">Réseau</a>
+      <a href="index.html#telecharger">Télécharger</a>
+    </nav>
+      <a class="langue" href="en/network.html" hreflang="en" title="Read this page in English">EN</a>
+      <button class="theme" id="theme" type="button" aria-label="Basculer entre le thème clair et sombre" title="Thème clair / sombre">
+        <svg class="i-clair" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.3 6.3 4.8 4.8M19.2 19.2l-1.5-1.5M17.7 6.3l1.5-1.5M4.8 19.2l1.5-1.5"/>
+        </svg>
+        <svg class="i-sombre" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/>
+        </svg>
+      </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h1 class="entree" style="--d:.05s">Ohmnia et votre NAS</h1>
+  <p class="chapeau entree" style="--d:.14s">
+    Trois choses différentes se cachent derrière « mettre Ohmnia sur le NAS ».
+    Choisissez la vôtre : chacune se règle en quelques minutes, sauf la dernière,
+    qui n'existe pas encore et pour laquelle il vaut mieux savoir pourquoi.
+  </p>
+
+  <nav class="choix entree" style="--d:.22s">
+    <a href="#sauvegarde">
+      <span><b>Mettre mes données à l'abri sur le NAS</b>
+      <span>Le plus courant. Sauvegarde chiffrée automatique. 2 minutes.</span></span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+    <a href="#deux-postes">
+      <span><b>Travailler depuis deux ordinateurs</b>
+      <span>Seul, à tour de rôle. Bureau et portable, par exemple.</span></span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+    <a href="#mises-a-jour">
+      <span><b>Mettre à jour tous les postes depuis le NAS</b>
+      <span>Sans passer par Internet. À régler une seule fois.</span></span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+    <a href="#plusieurs">
+      <span><b>Travailler à plusieurs en même temps</b>
+      <span>Pas encore possible — et surtout, à ne pas bricoler.</span></span>
+      <span class="fleche" aria-hidden="true">→</span>
+    </a>
+  </nav>
+
+  <section class="reveal">
+    <h2 id="sauvegarde">Mettre vos données à l'abri sur le NAS</h2>
+    <p>
+      C'est le besoin réel derrière la plupart des questions sur le NAS, et c'est
+      le plus simple : vos données restent sur votre ordinateur, et une copie
+      chiffrée part régulièrement sur le NAS. Si l'ordinateur meurt, tout est là.
+    </p>
+    <ol class="etapes">
+      <li><span>Sur votre NAS, créez un dossier partagé, par exemple <code>Ohmnia-sauvegardes</code>, et connectez-le comme lecteur réseau sur le poste.</span></li>
+      <li><span>Dans Ohmnia, ouvrez <b>Paramètres de l'app</b> → <b>Sauvegarde externe chiffrée</b>, puis <b>Choisir le dossier…</b> et désignez ce dossier.</span></li>
+      <li><span>Choisissez un mot de passe, et <b>notez-le ailleurs qu'ici</b> — sur papier, dans un gestionnaire de mots de passe. Il n'est stocké nulle part : perdu, l'archive devient définitivement illisible.</span></li>
+      <li><span>Cliquez sur <b>Sauvegarder maintenant (chiffré)</b>. Refaites-le régulièrement, ou après chaque grosse saisie.</span></li>
+    </ol>
+    <p style="margin-top:24px">
+      L'archive est chiffrée avant d'être écrite : même si quelqu'un accède au
+      NAS, il ne peut rien lire sans le mot de passe. Et comme il s'agit d'un
+      dépôt ponctuel et non d'un accès permanent, il n'y a aucun risque pour la base.
+    </p>
+    <p>
+      <b>Vérifiez une fois que ça remarche.</b> Une sauvegarde jamais testée est
+      une sauvegarde inconnue : faites une restauration d'essai sur un poste sans
+      importance, ou au minimum ouvrez le dossier pour voir le fichier arriver.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <h2 id="deux-postes">Travailler depuis deux ordinateurs</h2>
+    <p>
+      Un fixe au bureau, un portable en déplacement, une seule personne aux
+      commandes : le NAS sert de point de passage. La règle à retenir tient en une
+      phrase — <b>un seul ordinateur détient les données à la fois</b>.
+    </p>
+    <ol class="etapes">
+      <li><span><b>Fermez Ohmnia</b> sur le poste que vous quittez, pour qu'aucune écriture ne soit en cours.</span></li>
+      <li><span><b>Sauvegarder maintenant (chiffré)</b> vers le dossier du NAS.</span></li>
+      <li><span>Sur l'autre ordinateur, dans le même écran, <b>restaurez</b> cette sauvegarde. Elle remplace les données locales.</span></li>
+      <li><span>Travaillez normalement, et refaites l'opération dans l'autre sens en repartant.</span></li>
+    </ol>
+    <p style="margin-top:24px">
+      Prenez l'habitude de sauvegarder en <b>partant</b>, pas en arrivant. Si vous
+      oubliez, vous restaurerez une version plus ancienne par-dessus votre travail
+      récent, et il n'y a pas de fusion possible entre deux bases.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <h2 id="mises-a-jour">Mettre à jour tous les postes depuis le NAS</h2>
+    <p>
+      Utile dès qu'il y a plus d'un poste : chacun se met à jour depuis le réseau
+      local, sans que rien ne sorte de chez vous.
+    </p>
+    <ol class="etapes">
+      <li><span>Déposez sur le NAS le contenu du dossier de version — l'installeur, <code>latest.yml</code> et le fichier <code>.blockmap</code> — dans un dossier servi en HTTP.</span></li>
+      <li><span>Sur chaque poste, ouvrez <b>Paramètres de l'app</b> → <b>Mises à jour</b>, saisissez l'adresse de ce dossier (par exemple <code>http://192.168.1.20/ohmnia</code>) et cliquez sur <b>Enregistrer l'adresse</b>.</span></li>
+      <li><span>Cochez la vérification automatique si vous voulez que les postes proposent la mise à jour d'eux-mêmes.</span></li>
+    </ol>
+    <p style="margin-top:24px">
+      Le téléchargement et l'installation restent des gestes explicites de
+      l'utilisateur, et une sauvegarde de la base est faite automatiquement avant
+      chaque installation.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <h2 id="plusieurs">Travailler à plusieurs en même temps</h2>
+    <p>
+      Ce n'est pas possible aujourd'hui, et la tentation naturelle — déplacer le
+      fichier de base sur le NAS pour que tout le monde l'ouvre — est précisément
+      ce qu'il ne faut pas faire.
+    </p>
+    <div class="alerte">
+      <p class="titre">Pourquoi cela détruit les données</p>
+      <p>
+        Ohmnia range tout dans un fichier SQLite. Pour empêcher deux écritures de
+        se marcher dessus, SQLite s'appuie sur le <b>verrouillage de fichiers</b>
+        du système. Ce verrouillage n'est pas fiable à travers un partage réseau :
+        sur SMB ou NFS, les verrous sont approximatifs, parfois ignorés.
+      </p>
+      <p>
+        Deux postes qui écrivent sur la même base réseau finissent par produire un
+        fichier abîmé. Et ça ne prévient pas : l'application continue de
+        fonctionner, le problème se découvre des semaines plus tard — sur des
+        sauvegardes qui ont fidèlement copié la base déjà corrompue.
+      </p>
+      <p>
+        Ce n'est pas une limite d'Ohmnia mais de SQLite, et elle vaut pour tous les
+        logiciels qui l'utilisent. Un dossier synchronisé (Dropbox, OneDrive,
+        Synology Drive) est encore pire : il copie le fichier en pleine écriture et
+        fabrique des versions en conflit.
+      </p>
+    </div>
+    <p>
+      Une vraie version multi-postes demande <b>un serveur qui détient la base</b>,
+      installé sur le NAS, l'application devenant un client qui lui parle par le
+      réseau. Cela implique des comptes et des droits, la gestion de deux personnes
+      modifiant la même facture, et la sécurisation du service. C'est un projet à
+      part entière, et un produit différent de celui décrit sur ce site : les
+      données ne seraient plus sur votre machine, mais sur le NAS de l'entreprise.
+    </p>
+    <p>
+      Le sujet est à l'étude. Tant qu'il n'est pas traité correctement, rien de tel
+      n'est proposé au téléchargement — plutôt que de livrer un bricolage qui perd
+      la comptabilité de quelqu'un.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap large foot">
+    <span>Logiciel local · aucune télémétrie · vos données restent sur votre machine.</span>
+    <span class="sep">
+      <a href="index.html">Accueil</a>
+      <a href="conditions.html">Conditions d'utilisation</a>
+      <a href="https://github.com/Leimmingz/ohmnia">Code source</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  document.documentElement.className += ' js';
+
+  function afficherEntete() { document.body.classList.add('charge'); }
+  requestAnimationFrame(afficherEntete);
+  setTimeout(afficherEntete, 300);
+
+  var cibles = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('vu'); obs.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: .1 });
+    cibles.forEach(function (c) { obs.observe(c); });
+  } else {
+    cibles.forEach(function (c) { c.classList.add('vu'); });
+  }
+
+  // Bascule clair / sombre, mémorisée d'une visite à l'autre.
+  var boutonTheme = document.getElementById('theme');
+  if (boutonTheme) {
+    boutonTheme.addEventListener('click', function () {
+      var sombre = document.documentElement.getAttribute('data-theme') !== 'sombre';
+      document.documentElement.setAttribute('data-theme', sombre ? 'sombre' : 'clair');
+      try { localStorage.setItem('ohmnia-theme', sombre ? 'sombre' : 'clair'); } catch (e) {}
+    });
+  }
+
+  var entete = document.getElementById('entete');
+  var progres = document.getElementById('progres');
+  var tic = false;
+
+  function surDefilement() {
+    entete.classList.toggle('pose', scrollY > 8);
+    var defilable = document.documentElement.scrollHeight - innerHeight;
+    var part = defilable > 0 ? scrollY / defilable : 0;
+    progres.style.transform = 'scaleX(' + Math.min(1, Math.max(0, part)) + ')';
+  }
+
+  addEventListener('scroll', function () {
+    if (tic) return;
+    tic = true;
+    requestAnimationFrame(function () { surDefilement(); tic = false; });
+  }, { passive: true });
+
+  surDefilement();
+})();
+</script>
+</body>
+</html>
