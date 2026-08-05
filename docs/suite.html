@@ -335,38 +335,30 @@
 
   /* ─── arrivée au rythme du défilement ────────────────────── */
   /* --p vaut 1 par défaut : sans JavaScript, tout est visible et immobile. */
-  .defile .card,
-  .defile .shot,
-  .defile .items li,
-  .defile .choix a,
-  .defile .cas li,
-  .defile .chiffres li,
-  .defile .etapes > li,
+  .js .defile .card,
+  .js .defile .shot,
+  .js .defile .items li,
+  .js .defile .choix a,
+  .js .defile .cas li,
+  .js .defile .chiffres li,
+  .js .defile .etapes > li,
   .defile ul.checks li,
-  .defile .section-head,
-  .defile .encadre,
-  .defile .alerte,
-  .defile .inner,
-  .defile .idee,
-  .defile .final,
-  .defile section > h2,
-  .defile section > p {
-    opacity: calc(.08 + .92 * var(--p, 1));
-    transform:
-      translateY(calc((1 - var(--p, 1)) * 52px))
-      scale(calc(.955 + .045 * var(--p, 1)));
+  .js .defile .section-head,
+  .js .defile .encadre,
+  .js .defile .alerte,
+  .js .defile .inner,
+  .js .defile .idee,
+  .js .defile .final,
+  .js .defile section > h2,
+  .js .defile section > p {
+    /* Le texte ne descend jamais sous 60 % d'opacite : il doit rester lisible
+       avant meme d'etre « arrive ». A 8 %, il passait pour absent, et une page
+       fraichement ouverte semblait vide sous la ligne de flottaison. */
+    opacity: calc(.6 + .4 * var(--p, 1));
+    transform: translateY(calc((1 - var(--p, 1)) * 26px));
     will-change: opacity, transform;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .defile .card, .defile .shot, .defile .items li, .defile .choix a,
-    .defile .cas li, .defile .chiffres li, .defile .etapes > li,
-    .defile ul.checks li, .defile .section-head, .defile .encadre,
-    .defile .alerte, .defile .inner, .defile .idee, .defile .final,
-    .defile section > h2, .defile section > p {
-      opacity: 1 !important; transform: none !important;
-    }
-  }
 
   /* ─── interrupteur d'animations ──────────────────────────── */
   .anim {
@@ -410,14 +402,17 @@
   }
 
   /* ─── arrivée plus marquée sur les blocs visuels ─────────── */
-  .defile .card,
-  .defile .shot,
-  .defile .chiffres li {
+  .js .defile .card,
+  .js .defile .shot,
+  .js .defile .chiffres li {
+    /* Les blocs visuels supportent un effet franc : ce ne sont pas des
+       paragraphes qu'on cherche a lire avant qu'ils arrivent. */
+    opacity: calc(.18 + .82 * var(--p, 1));
     transform:
-      translateY(calc((1 - var(--p, 1)) * 64px))
-      scale(calc(.94 + .06 * var(--p, 1)))
-      rotateX(calc((1 - var(--p, 1)) * 9deg));
-    filter: blur(calc((1 - var(--p, 1)) * 5px));
+      translateY(calc((1 - var(--p, 1)) * 58px))
+      scale(calc(.945 + .055 * var(--p, 1)))
+      rotateX(calc((1 - var(--p, 1)) * 8deg));
+    filter: blur(calc((1 - var(--p, 1)) * 4px));
   }
   .cards, .shots, .chiffres { perspective: 1100px; }
 </style>
