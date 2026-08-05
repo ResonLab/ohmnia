@@ -376,6 +376,20 @@
     animation: none !important;
     transition: none !important;
   }
+  /* Couper les animations ne doit JAMAIS laisser un element invisible.
+     Les etats de depart (.entree et .reveal a opacite 0) ne sont reveles que
+     par une animation ou une transition : les supprimer sans retablir l'etat
+     final laissait la page blanche. Bug reel : accueil entierement vide. */
+  :root[data-anim="non"] .entree,
+  :root[data-anim="non"] .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  :root[data-anim="non"] h2::after,
+  :root[data-anim="non"] .resume::before {
+    transform: scaleX(1) scaleY(1) !important;
+  }
   :root[data-anim="non"] .defile .card,
   :root[data-anim="non"] .defile .shot,
   :root[data-anim="non"] .defile .items li,
