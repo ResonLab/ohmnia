@@ -174,8 +174,40 @@ export function enregistrerHandlersMaj(): void {
   ipcMain.handle('maj:verifier', async () => {
     const config = configurationUtilisable()
     diffuserEtat({ statut: 'verification', versionActuelle: app.getVersion() })
-    const updater = await preparerUpdater(config)
-    await updater.checkForUpdates()
+
+    // Sans ce garde-fou, une vérification qui n'aboutit jamais laissait
+    // l'écran figé sur « Vérification en cours… », sans message ni sortie.
+    // Un serveur injoignable ou une coupure réseau donnent exactement cela.
+    const DELAI_MAX = 20_000
+    let expire: NodeJS.Timeout | undefined
+
+    try {
+      const updater = await preparerUpdater(config)
+      await Promise.race([
+        updater.checkForUpdates(),
+        new Promise((_resolut, rejeter) => {
+          expire = setTimeout(
+            () =>
+              rejeter(
+                new Error(
+                  'La vérification a pris trop de temps. Vérifiez votre connexion, ' +
+                    "puis réessayez. L'application reste utilisable normalement."
+                )
+              ),
+            DELAI_MAX
+          )
+        })
+      ])
+    } catch (erreur) {
+      // L'erreur est renvoyée à l'appelant ET diffusée : sans cela, l'écran
+      // resterait sur l'état « vérification » même après un échec.
+      const message = erreur instanceof Error ? erreur.message : String(erreur)
+      diffuserEtat({ statut: 'erreur', versionActuelle: app.getVersion(), message })
+      throw new Error(message)
+    } finally {
+      clearTimeout(expire)
+    }
+
     return etat
   })
 

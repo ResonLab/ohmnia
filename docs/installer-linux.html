@@ -308,6 +308,53 @@
     .js .reveal h2 { letter-spacing: -.02em !important; transition: none !important; }
     .hero, .band-grid > div:first-child { animation: none !important; }
   }
+
+  /* ─── défilement : réglages fins ─────────────────────────── */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+      /* Les cartes se soulèvent en entrant dans l'écran, puis se reposent. */
+      .cards .card {
+        animation: respire linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 40%;
+      }
+
+      /* Les puces de la liste « vos données » arrivent l'une après l'autre. */
+      ul.checks li {
+        animation: glisseDroite linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 70%;
+      }
+
+      /* Les captures se dévoilent par le bas, comme un store qui s'ouvre. */
+      .shot .frame {
+        animation: devoile linear both;
+        animation-timeline: view();
+        animation-range: entry 5% entry 75%;
+      }
+
+      /* Les encadrés des pages de texte se redressent doucement. */
+      .items li, .choix a, .cas li, .etapes > li {
+        animation: redresse linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 60%;
+      }
+
+      /* Le pied de page remonte quand on atteint le bas. */
+      footer .foot {
+        animation: monteDoux linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 90%;
+      }
+    }
+  }
+
+  @keyframes respire { from { transform: translateY(18px) scale(.985); } }
+  @keyframes glisseDroite { from { opacity: .25; transform: translateX(-14px); } }
+  @keyframes devoile { from { opacity: .55; transform: translateY(26px) scale(.99); } }
+  @keyframes redresse { from { opacity: .35; transform: translateY(16px); } }
+  @keyframes monteDoux { from { opacity: .3; transform: translateY(18px); } }
 </style>
 </head>
 <body>
