@@ -297,8 +297,14 @@
      arrière est donc exacte. Les navigateurs sans cette fonction l'ignorent. */
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
-      .hero { animation: heroSortie linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
-      .band-grid > div:first-child { animation: venirDeGauche linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+      .hero { animation-name: heroSortie;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+      .band-grid > div:first-child { animation-name: venirDeGauche;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
     }
   }
   @keyframes heroSortie { to { opacity: .18; transform: translateY(-52px) scale(.975); } }
@@ -311,52 +317,6 @@
     .hero, .band-grid > div:first-child { animation: none !important; }
   }
 
-  /* ─── défilement : réglages fins ─────────────────────────── */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-
-      /* Les cartes se soulèvent en entrant dans l'écran, puis se reposent. */
-      .cards .card {
-        animation: respire linear both;
-        animation-timeline: view();
-        animation-range: entry 10% cover 40%;
-      }
-
-      /* Les puces de la liste « vos données » arrivent l'une après l'autre. */
-      ul.checks li {
-        animation: glisseDroite linear both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 70%;
-      }
-
-      /* Les captures se dévoilent par le bas, comme un store qui s'ouvre. */
-      .shot .frame {
-        animation: devoile linear both;
-        animation-timeline: view();
-        animation-range: entry 5% entry 75%;
-      }
-
-      /* Les encadrés des pages de texte se redressent doucement. */
-      .items li, .choix a, .cas li, .etapes > li {
-        animation: redresse linear both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 60%;
-      }
-
-      /* Le pied de page remonte quand on atteint le bas. */
-      footer .foot {
-        animation: monteDoux linear both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 90%;
-      }
-    }
-  }
-
-  @keyframes respire { from { transform: translateY(18px) scale(.985); } }
-  @keyframes glisseDroite { from { opacity: .25; transform: translateX(-14px); } }
-  @keyframes devoile { from { opacity: .55; transform: translateY(26px) scale(.99); } }
-  @keyframes redresse { from { opacity: .35; transform: translateY(16px); } }
-  @keyframes monteDoux { from { opacity: .3; transform: translateY(18px); } }
 
   /* ─── éclat : effets marqués ─────────────────────────────── */
 
@@ -390,6 +350,103 @@
     .card::before, .items li::before, .choix a::before,
     .cas li::before, .systeme::before { display: none; }
     .btn:not(.btn-ghost)::after { animation: none; opacity: .35; }
+  }
+
+
+  /* ─── tout le contenu arrive au rythme du defilement ─────── */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      /* L'apparition unique laisse la main : c'est la molette qui commande,
+         donc remonter defait l'animation au lieu de la figer. */
+      .js .reveal { opacity: 1; filter: none; transform: none; transition: none; }
+
+      .reveal {
+        animation-name: contenuPose;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 68%;
+      }
+      /* Les elements d'une meme liste se posent l'un apres l'autre. */
+      .reveal:nth-child(even) { animation-range: entry 7% entry 80%; }
+
+      footer .foot, .final, .idee {
+        animation-name: contenuPose;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 85%;
+      }
+    }
+  }
+  @keyframes contenuPose {
+    from { opacity: 0; transform: translateY(38px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+  }
+  /* ─── cartes : arrivée commandée par le défilement ───────── */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+      /* L'apparition unique ne doit plus interférer : c'est le défilement
+         qui pilote entièrement opacité et position. */
+      .js .cards .card.reveal,
+      .js .shots .shot.reveal,
+      .js .items li.reveal,
+      .js .chiffres li.reveal {
+        opacity: 1; filter: none; transform: none; transition: none;
+      }
+
+      .cards .card {
+        animation-name: cartePose;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 70%;
+      }
+      /* Décalage par colonne : la deuxième puis la troisième se posent après. */
+      .cards .card:nth-child(3n + 2) { animation-range: entry 8% entry 82%; }
+      .cards .card:nth-child(3n + 3) { animation-range: entry 16% entry 94%; }
+
+      .shots .shot {
+        animation-name: cartePose;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-range: entry 0% entry 75%;
+        animation-timeline: view();
+      }
+
+      .items li, .choix a, .cas li {
+        animation-name: cartePose;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 72%;
+      }
+      .items li:nth-child(even), .cas li:nth-child(even) { animation-range: entry 8% entry 84%; }
+
+      .chiffres li {
+        animation-name: cartePose;
+        animation-duration: auto; /* obligatoire : pilotee par le defilement */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 68%;
+      }
+      .chiffres li:nth-child(2) { animation-range: entry 6% entry 76%; }
+      .chiffres li:nth-child(3) { animation-range: entry 12% entry 84%; }
+      .chiffres li:nth-child(4) { animation-range: entry 18% entry 92%; }
+    }
+  }
+
+  /* Franc : on voit la carte venir se poser, et repartir en remontant. */
+  @keyframes cartePose {
+    from { opacity: 0; transform: translateY(64px) scale(.93) rotateX(12deg); }
+    to   { opacity: 1; transform: none; }
   }
 </style>
 </head>
