@@ -504,6 +504,63 @@
   @keyframes devoile { from { opacity: .55; transform: translateY(26px) scale(.99); } }
   @keyframes redresse { from { opacity: .35; transform: translateY(16px); } }
   @keyframes monteDoux { from { opacity: .3; transform: translateY(18px); } }
+
+  /* ─── éclat : effets marqués ─────────────────────────────── */
+
+  /* Halo qui suit le curseur sur les cartes. Les variables --mx / --my
+     sont posées par le script ; sans JavaScript, rien ne s'affiche. */
+  .card, .items li, .choix a, .cas li, .systeme, .frame {
+    position: relative;
+  }
+  .card::before, .items li::before, .choix a::before, .cas li::before, .systeme::before {
+    content: '';
+    position: absolute; inset: 0; border-radius: inherit;
+    background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%),
+                rgba(27,231,182,.14), transparent 62%);
+    opacity: 0; transition: opacity .4s var(--ease);
+    pointer-events: none;
+  }
+  .card:hover::before, .items li:hover::before, .choix a:hover::before,
+  .cas li:hover::before, .systeme:hover::before { opacity: 1; }
+
+  /* Halo qui respire sous le bouton principal. */
+  .btn:not(.btn-ghost) { isolation: isolate; }
+  .btn:not(.btn-ghost)::after {
+    content: ''; position: absolute; inset: -3px; z-index: -1;
+    border-radius: inherit; background: var(--grad);
+    filter: blur(14px); opacity: .45;
+    animation: halo 3.4s ease-in-out infinite;
+  }
+  @keyframes halo { 0%, 100% { opacity: .3; } 50% { opacity: .7; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card::before, .items li::before, .choix a::before,
+    .cas li::before, .systeme::before { display: none; }
+    .btn:not(.btn-ghost)::after { animation: none; opacity: .35; }
+  }
+
+  /* ─── chiffres animés ────────────────────────────────────── */
+  .chiffres {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+    margin: 0; padding: 0; list-style: none;
+  }
+  .chiffres li {
+    text-align: center; padding: 26px 14px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: color-mix(in srgb, var(--card) 55%, transparent);
+    transition: transform .45s var(--ease), border-color .45s var(--ease);
+  }
+  .chiffres li:hover { transform: translateY(-5px); border-color: rgba(27,231,182,.4); }
+  .chiffres .valeur {
+    display: block; font-size: clamp(34px, 5vw, 52px); font-weight: 700;
+    line-height: 1; letter-spacing: -.03em;
+    background: var(--grad); background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: flux 9s ease-in-out infinite;
+    font-variant-numeric: tabular-nums;
+  }
+  .chiffres .quoi { display: block; margin-top: 10px; font-size: 14.5px; color: var(--fg-dim); }
+  @media (max-width: 760px) { .chiffres { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
@@ -577,6 +634,17 @@
       </ul>
     </div>
   </div>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <ul class="chiffres">
+        <li class="reveal"><span class="valeur" data-vers="17">0</span><span class="quoi">management screens</span></li>
+        <li class="reveal" style="--d:.07s"><span class="valeur" data-vers="5">0</span><span class="quoi">countries supported</span></li>
+        <li class="reveal" style="--d:.14s"><span class="valeur" data-vers="100" data-suffixe=" %">0</span><span class="quoi">local, offline</span></li>
+        <li class="reveal" style="--d:.21s"><span class="valeur" data-vers="0">0</span><span class="quoi">data sent anywhere</span></li>
+      </ul>
+    </div>
+  </section>
 
   <section id="features">
     <div class="wrap">
@@ -794,6 +862,62 @@
 
   addEventListener('resize', surDefilement, { passive: true });
   surDefilement();
+})();
+</script>
+
+<script>
+(function () {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // Halo qui suit le curseur : on ne pose que deux variables CSS, le rendu
+  // est fait par le navigateur. Pas de calcul de style en JavaScript.
+  var cartes = document.querySelectorAll('.card, .items li, .choix a, .cas li, .systeme');
+  cartes.forEach(function (el) {
+    el.addEventListener('pointermove', function (e) {
+      var r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      el.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  var doux = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var valeurs = document.querySelectorAll('.chiffres .valeur');
+  if (!valeurs.length) return;
+
+  function compter(el) {
+    var cible = parseFloat(el.dataset.vers);
+    var suffixe = el.dataset.suffixe || '';
+    if (doux) { el.textContent = cible + suffixe; return; }
+
+    var debut = performance.now();
+    var duree = 1100;
+    function pas(maintenant) {
+      var p = Math.min(1, (maintenant - debut) / duree);
+      // Ralentit en fin de course : le chiffre se pose au lieu de s'arrêter net.
+      var adouci = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(cible * adouci) + suffixe;
+      if (p < 1) requestAnimationFrame(pas);
+    }
+    requestAnimationFrame(pas);
+    // Filet : requestAnimationFrame est suspendu dans un onglet en arriere-plan.
+    // Sans cela, le visiteur pourrait decouvrir « 0 ecrans » en revenant dessus.
+    setTimeout(function () { el.textContent = cible + suffixe; }, duree + 400);
+  }
+
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        if (e.isIntersecting) { compter(e.target); obs.unobserve(e.target); }
+      });
+    }, { threshold: .5 });
+    valeurs.forEach(function (v) { obs.observe(v); });
+  } else {
+    valeurs.forEach(compter);
+  }
 })();
 </script>
 </body>
