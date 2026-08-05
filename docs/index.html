@@ -521,100 +521,40 @@
   @media (max-width: 760px) { .chiffres { grid-template-columns: repeat(2, 1fr); } }
 
 
-  /* ─── tout le contenu arrive au rythme du defilement ─────── */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      /* L'apparition unique laisse la main : c'est la molette qui commande,
-         donc remonter defait l'animation au lieu de la figer. */
-      .js .reveal { opacity: 1; filter: none; transform: none; transition: none; }
 
-      .reveal {
-        animation-name: contenuPose;
-        animation-duration: auto; /* obligatoire : pilotee par le defilement */
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 68%;
-      }
-      /* Les elements d'une meme liste se posent l'un apres l'autre. */
-      .reveal:nth-child(even) { animation-range: entry 7% entry 80%; }
+  /* ─── arrivée au rythme du défilement ────────────────────── */
+  /* --p vaut 1 par défaut : sans JavaScript, tout est visible et immobile. */
+  .defile .card,
+  .defile .shot,
+  .defile .items li,
+  .defile .choix a,
+  .defile .cas li,
+  .defile .chiffres li,
+  .defile .etapes > li,
+  .defile ul.checks li,
+  .defile .section-head,
+  .defile .encadre,
+  .defile .alerte,
+  .defile .inner,
+  .defile .idee,
+  .defile .final,
+  .defile section > h2,
+  .defile section > p {
+    opacity: calc(.08 + .92 * var(--p, 1));
+    transform:
+      translateY(calc((1 - var(--p, 1)) * 52px))
+      scale(calc(.955 + .045 * var(--p, 1)));
+    will-change: opacity, transform;
+  }
 
-      footer .foot, .final, .idee {
-        animation-name: contenuPose;
-        animation-duration: auto; /* obligatoire : pilotee par le defilement */
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 85%;
-      }
+  @media (prefers-reduced-motion: reduce) {
+    .defile .card, .defile .shot, .defile .items li, .defile .choix a,
+    .defile .cas li, .defile .chiffres li, .defile .etapes > li,
+    .defile ul.checks li, .defile .section-head, .defile .encadre,
+    .defile .alerte, .defile .inner, .defile .idee, .defile .final,
+    .defile section > h2, .defile section > p {
+      opacity: 1 !important; transform: none !important;
     }
-  }
-  @keyframes contenuPose {
-    from { opacity: 0; transform: translateY(38px) scale(.985); }
-    to   { opacity: 1; transform: none; }
-  }
-  /* ─── cartes : arrivée commandée par le défilement ───────── */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-
-      /* L'apparition unique ne doit plus interférer : c'est le défilement
-         qui pilote entièrement opacité et position. */
-      .js .cards .card.reveal,
-      .js .shots .shot.reveal,
-      .js .items li.reveal,
-      .js .chiffres li.reveal {
-        opacity: 1; filter: none; transform: none; transition: none;
-      }
-
-      .cards .card {
-        animation-name: cartePose;
-        animation-duration: auto; /* obligatoire : pilotee par le defilement */
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 70%;
-      }
-      /* Décalage par colonne : la deuxième puis la troisième se posent après. */
-      .cards .card:nth-child(3n + 2) { animation-range: entry 8% entry 82%; }
-      .cards .card:nth-child(3n + 3) { animation-range: entry 16% entry 94%; }
-
-      .shots .shot {
-        animation-name: cartePose;
-        animation-duration: auto; /* obligatoire : pilotee par le defilement */
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-range: entry 0% entry 75%;
-        animation-timeline: view();
-      }
-
-      .items li, .choix a, .cas li {
-        animation-name: cartePose;
-        animation-duration: auto; /* obligatoire : pilotee par le defilement */
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 72%;
-      }
-      .items li:nth-child(even), .cas li:nth-child(even) { animation-range: entry 8% entry 84%; }
-
-      .chiffres li {
-        animation-name: cartePose;
-        animation-duration: auto; /* obligatoire : pilotee par le defilement */
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 68%;
-      }
-      .chiffres li:nth-child(2) { animation-range: entry 6% entry 76%; }
-      .chiffres li:nth-child(3) { animation-range: entry 12% entry 84%; }
-      .chiffres li:nth-child(4) { animation-range: entry 18% entry 92%; }
-    }
-  }
-
-  /* Franc : on voit la carte venir se poser, et repartir en remontant. */
-  @keyframes cartePose {
-    from { opacity: 0; transform: translateY(64px) scale(.93) rotateX(12deg); }
-    to   { opacity: 1; transform: none; }
   }
 </style>
 </head>
@@ -973,6 +913,61 @@
   } else {
     valeurs.forEach(compter);
   }
+})();
+</script>
+
+<script>
+(function () {
+  var doux = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (doux) return;
+
+  var SELECTEUR = '.card, .shot, .items li, .choix a, .cas li, .chiffres li,' +
+    ' .etapes > li, ul.checks li, .section-head, .encadre, .alerte,' +
+    ' .inner, .idee, .final, section > h2, section > p';
+
+  var elements = [].slice.call(document.querySelectorAll(SELECTEUR));
+  if (!elements.length) return;
+
+  // Les voisins d'une même liste se posent l'un après l'autre.
+  elements.forEach(function (el) {
+    var rang = [].indexOf.call(el.parentNode.children, el);
+    el._decalage = (rang % 3) * 0.13;
+  });
+
+  // La classe n'est posée qu'ici : sans JavaScript, aucun élément n'est masqué.
+  document.body.classList.add('defile');
+
+  var tic = false;
+  function calculer() {
+    var hauteur = innerHeight;
+    // L'élément commence à se poser en entrant par le bas et finit d'arriver
+    // après avoir remonté de 45 % de la hauteur d'écran.
+    var course = hauteur * 0.45;
+
+    for (var i = 0; i < elements.length; i++) {
+      var el = elements[i];
+      var r = el.getBoundingClientRect();
+
+      if (r.top > hauteur) { el.style.setProperty('--p', '0'); continue; }
+      if (r.bottom < 0) { el.style.setProperty('--p', '1'); continue; }
+
+      var p = (hauteur - r.top) / course - el._decalage;
+      p = p < 0 ? 0 : p > 1 ? 1 : p;
+      el.style.setProperty('--p', p.toFixed(3));
+    }
+  }
+
+  addEventListener('scroll', function () {
+    if (tic) return;
+    tic = true;
+    requestAnimationFrame(function () { calculer(); tic = false; });
+  }, { passive: true });
+
+  addEventListener('resize', calculer, { passive: true });
+
+  calculer();
+  // Filet : requestAnimationFrame est suspendu dans un onglet en arrière-plan.
+  setTimeout(calculer, 300);
 })();
 </script>
 </body>
