@@ -55,13 +55,36 @@ jobs:
       - name: Vérifier
         run: npm run verifier
 
+      - name: Compiler l'application
+        run: npx electron-vite build
+
+      # Les cibles sont construites séparément : si le paquet .deb échoue, on
+      # veut quand même savoir si l'AppImage est passé, et l'inverse.
+      - name: Construire l'AppImage
+        if: ${{ matrix.nom == 'linux' && !startsWith(github.ref, 'refs/tags/v') }}
+        run: npx electron-builder --linux AppImage --publish never
+        env:
+          DEBUG: electron-builder
+
+      - name: Construire le paquet .deb
+        if: ${{ matrix.nom == 'linux' && !startsWith(github.ref, 'refs/tags/v') }}
+        run: npx electron-builder --linux deb --publish never
+        env:
+          DEBUG: electron-builder
+
       - name: Construire sans publier
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        run: npx electron-vite build && npx electron-builder ${{ matrix.cible }} --publish never
+        if: ${{ matrix.nom == 'windows' && !startsWith(github.ref, 'refs/tags/v') }}
+        run: npx electron-builder ${{ matrix.cible }} --publish never
+
+      # Dit noir sur blanc ce qui a ete produit, meme quand une cible a echoue.
+      - name: Lister ce qui a été produit
+        if: always()
+        shell: bash
+        run: ls -la release/ 2>/dev/null || echo 'aucun dossier release/'
 
       - name: Construire et déposer la release (brouillon)
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: npx electron-vite build && npx electron-builder ${{ matrix.cible }} --publish always
+        run: npx electron-builder ${{ matrix.cible }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
