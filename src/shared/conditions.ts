@@ -12,11 +12,14 @@
 export const VERSION_CONDITIONS = '1.0'
 
 /**
- * Page publique reprenant ces conditions.
- * Pointe pour l'instant vers le dépôt ; à remplacer par l'adresse GitHub Pages
- * (`https://leimmingz.github.io/ohmnia/conditions.html`) une fois le site en ligne.
+ * Page publique reprenant ces conditions, ouverte par le bouton « Lire sur le site »
+ * de l'écran d'acceptation.
+ *
+ * Le texte de cette page est vérifié automatiquement contre ce fichier par
+ * `tests/coherence-site.mjs` : si l'un des deux change sans l'autre,
+ * `npm run verifier` échoue.
  */
-export const URL_CONDITIONS = 'https://github.com/Leimmingz/ohmnia'
+export const URL_CONDITIONS = 'https://leimmingz.github.io/ohmnia/conditions.html'
 
 export interface SectionConditions {
   titre: string

@@ -183,7 +183,9 @@ graphiques) · Inventaire (alertes de seuil, décrément auto) · Modèles de pr
 L'écran d'acceptation bloque l'application tant qu'il n'est pas validé. La case ne
 s'active qu'après défilement complet du texte. **Incrémenter `VERSION_CONDITIONS`
 à chaque modification du texte** : l'écran réapparaît alors pour relecture.
-`URL_CONDITIONS` pointe vers la page publique — à mettre à jour après publication du site.
+`URL_CONDITIONS` pointe vers https://leimmingz.github.io/ohmnia/conditions.html.
+La suite `tests/coherence-site.mjs` compare le texte de la page publique à ce fichier :
+modifier l'un sans l'autre fait échouer `npm run verifier`.
 
 ---
 
@@ -222,8 +224,15 @@ créé, branche `main` poussée. `gh` (GitHub CLI) installé mais **pas authenti
 **En attente** : une branche `securite-et-documentation` est poussée et non fusionnée.
 À intégrer avec `git checkout main && git merge securite-et-documentation && git push`.
 
-**Reste à faire** : aucune release publiée, aucun site. Marche à suivre complète dans
-[SITE-GITHUB.md](SITE-GITHUB.md) : jeton d'accès → `npm run publish:win` → GitHub Pages.
+**Fait** : le site est en ligne sur https://leimmingz.github.io/ohmnia/ (GitHub Pages,
+branche `main`, dossier `/docs`). Douze pages, six en français et six en anglais
+dans `docs/en/`. Licence MIT ajoutée.
+
+**Reste à faire** : aucune release publiée. Marche à suivre dans
+[SITE-GITHUB.md](SITE-GITHUB.md) : jeton d'accès → `npm run publish:win`.
+La cible Linux (AppImage et `.deb`) est configurée mais jamais construite :
+electron-builder ne sait pas produire un paquet Linux depuis Windows, il faut
+WSL ou GitHub Actions.
 
 Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
@@ -247,7 +256,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 | Fichier | Valeur | État |
 |---|---|---|
 | `electron-builder.yml` | `owner` | ✔ renseigné : `Leimmingz` |
-| `src/shared/conditions.ts` | `URL_CONDITIONS` | pointe vers le dépôt ; à basculer sur l'adresse GitHub Pages une fois le site en ligne |
+| `src/shared/conditions.ts` | `URL_CONDITIONS` | ✔ bascule sur l'adresse GitHub Pages faite |
 
 Compte GitHub du projet : **Leimmingz**, dépôt prévu `ohmnia`.
 `npm test` rappelle ce qui reste à remplacer sans faire échouer la vérification.
