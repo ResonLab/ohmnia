@@ -55,6 +55,13 @@ jobs:
       - name: Vérifier
         run: npm run verifier
 
+      # Le paquet .deb est fabriqué avec fakeroot, que l'image Ubuntu 24.04 des
+      # runners ne fournit plus. Sans lui, la construction du .deb échoue en
+      # quelques secondes, alors que l'AppImage passe très bien.
+      - name: Installer les outils de paquetage Debian
+        if: ${{ matrix.nom == 'linux' }}
+        run: sudo apt-get update && sudo apt-get install -y fakeroot
+
       - name: Compiler l'application
         run: npx electron-vite build
 
