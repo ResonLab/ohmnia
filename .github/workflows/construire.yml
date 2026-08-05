@@ -40,10 +40,10 @@ jobs:
     name: ${{ matrix.nom }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Node 24 : `node:sqlite` est un module intégré, il n'existe pas avant.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -99,7 +99,7 @@ jobs:
       # pendant 14 jours, même sans release.
       - name: Joindre les installeurs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ohmnia-${{ matrix.nom }}
           retention-days: 14

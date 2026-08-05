@@ -241,7 +241,11 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 ## 9. État actuel
 
 - `npm run verifier` : typecheck + 8 suites de tests, **tout passe**.
-- Version `0.1.0`. Installateur : `release\Ohmnia Setup 0.1.0.exe` (96 Mo) avec
+- Version `0.1.1`. Construite par GitHub Actions pour Windows et Linux.
+  L'ancienne release `0.1.0`, televersee a la main, a une auto-mise a jour
+  cassee : son `latest.yml` annonce `Ohmnia-Setup-0.1.0.exe` alors que le
+  fichier en ligne s'appelle `Ohmnia.Setup.0.1.0.exe` (404). A supprimer.
+  Ancien installateur local : `release\Ohmnia Setup 0.1.0.exe` (96 Mo) avec
   `latest.yml` pour l'auto-updater.
 - Base de l'utilisateur : `%APPDATA%\Ohmnia\gestion.sqlite`, 25 tables, intégrité `ok`.
 - Les données de test créées pendant le développement ont été **supprimées**.
