@@ -149,6 +149,42 @@ reg delete HKCU\Environment /v GH_TOKEN /f
   et génère-en un nouveau. C'est gratuit et immédiat.
 - Un jeton avec une date d'expiration (90 jours) limite les dégâts en cas de fuite.
 
+### Construire pour Linux : il faut passer par GitHub
+
+`electron-builder` **ne sait pas produire un paquet Linux depuis Windows** : AppImage
+et `.deb` exigent des outils qui n'existent que sous Linux. `npm run package:linux`
+depuis l'invite de commandes échouera.
+
+Deux solutions. La plus simple est de laisser GitHub construire à ta place, avec le
+workflow [`.github/workflows/construire.yml`](.github/workflows/construire.yml) :
+
+1. Va sur ton dépôt → onglet **Actions** → **Construire et publier** → **Run workflow**.
+2. GitHub construit Windows **et** Linux, après avoir lancé `npm run verifier`.
+3. Les installeurs apparaissent en pièces jointes en bas de la page du travail,
+   téléchargeables pendant 14 jours. **Rien n'est publié.**
+
+Aucun jeton à créer : GitHub en fournit un automatiquement, valable seulement pour
+ce dépôt et le temps de l'exécution.
+
+L'autre solution est d'installer une distribution dans WSL et de construire en local ;
+c'est plus lourd, et inutile si le workflow suffit.
+
+### Publier une version depuis GitHub
+
+Plutôt que `npm run publish:win` avec ton jeton personnel, tu peux étiqueter la
+version et laisser GitHub faire les deux systèmes :
+
+```bash
+git tag v0.2.0 && git push --tags
+```
+
+La *release* est créée en **brouillon**, avec les installeurs Windows et Linux et
+les fichiers d'auto-mise à jour. Elle reste invisible tant que tu n'as pas cliqué
+**Publish release**.
+
+> Pense à incrémenter `version` dans `package.json` **avant** de poser l'étiquette :
+> c'est ce numéro-là que lit l'auto-updater, pas le nom de l'étiquette.
+
 ### À chaque nouvelle version
 
 1. Incrémente `version` dans `package.json` (`0.1.0` → `0.2.0`).
