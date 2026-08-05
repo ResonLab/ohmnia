@@ -15,6 +15,16 @@
   } catch (e) { /* navigation privée : on garde le thème du système */ }
 })()
 </script>
+<script>
+(function () {
+  try {
+    var choix = localStorage.getItem('ohmnia-anim')
+    var actif = choix ? choix === 'oui'
+      : !matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.documentElement.setAttribute('data-anim', actif ? 'oui' : 'non')
+  } catch (e) { /* navigation privée : on suit le réglage du système */ }
+})()
+</script>
 <style>
   :root {
     --bg: #0d1117;
@@ -386,6 +396,59 @@
       opacity: 1 !important; transform: none !important;
     }
   }
+
+  /* ─── interrupteur d'animations ──────────────────────────── */
+  .anim {
+    margin-left: 12px; flex: none;
+    width: 40px; height: 40px; display: grid; place-items: center;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--fg-dim); cursor: pointer;
+    transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+  }
+  .anim:hover { color: var(--fg); border-color: rgba(27,231,182,.5); transform: translateY(-1px); }
+  .anim svg { display: block; }
+  .anim .i-non { display: none; }
+  :root[data-anim="non"] .anim .i-oui { display: none; }
+  :root[data-anim="non"] .anim .i-non { display: block; }
+  @media (max-width: 700px) { .anim { margin-left: 8px; width: 36px; height: 36px; } }
+
+  /* Choix explicite de couper : rien ne bouge, nulle part. */
+  :root[data-anim="non"] *,
+  :root[data-anim="non"] *::before,
+  :root[data-anim="non"] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  :root[data-anim="non"] .defile .card,
+  :root[data-anim="non"] .defile .shot,
+  :root[data-anim="non"] .defile .items li,
+  :root[data-anim="non"] .defile .choix a,
+  :root[data-anim="non"] .defile .cas li,
+  :root[data-anim="non"] .defile .chiffres li,
+  :root[data-anim="non"] .defile .etapes > li,
+  :root[data-anim="non"] .defile ul.checks li,
+  :root[data-anim="non"] .defile .section-head,
+  :root[data-anim="non"] .defile .encadre,
+  :root[data-anim="non"] .defile .alerte,
+  :root[data-anim="non"] .defile .inner,
+  :root[data-anim="non"] .defile .idee,
+  :root[data-anim="non"] .defile .final,
+  :root[data-anim="non"] .defile section > h2,
+  :root[data-anim="non"] .defile section > p {
+    opacity: 1 !important; transform: none !important; filter: none !important;
+  }
+
+  /* ─── arrivée plus marquée sur les blocs visuels ─────────── */
+  .defile .card,
+  .defile .shot,
+  .defile .chiffres li {
+    transform:
+      translateY(calc((1 - var(--p, 1)) * 64px))
+      scale(calc(.94 + .06 * var(--p, 1)))
+      rotateX(calc((1 - var(--p, 1)) * 9deg));
+    filter: blur(calc((1 - var(--p, 1)) * 5px));
+  }
+  .cards, .shots, .chiffres { perspective: 1100px; }
 </style>
 </head>
 <body>
@@ -421,6 +484,14 @@
       <a href="index.html#telecharger">Télécharger</a>
     </nav>
       <a class="langue" href="en/install-linux.html" hreflang="en" title="Read this page in English">EN</a>
+      <button class="anim" id="anim" type="button" aria-label="Activer ou couper les animations" title="Animations">
+        <svg class="i-oui" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 12c2.5-4.5 5-4.5 7.5 0s5 4.5 7.5 0"/><path d="M3 17.5c2.5-4.5 5-4.5 7.5 0s5 4.5 7.5 0"/>
+        </svg>
+        <svg class="i-non" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 14.5c2.5-4.5 5-4.5 7.5 0s5 4.5 7.5 0"/><path d="M4 20 20 4"/>
+        </svg>
+      </button>
       <button class="theme" id="theme" type="button" aria-label="Basculer entre le thème clair et sombre" title="Thème clair / sombre">
         <svg class="i-clair" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="4.2"/>
@@ -626,8 +697,9 @@
 
 <script>
 (function () {
-  var doux = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (doux) return;
+  // Le choix explicite de l'utilisateur prime sur le réglage du système.
+  function anime() { return document.documentElement.getAttribute('data-anim') !== 'non'; }
+  if (!anime()) { /* les éléments restent visibles, sans calcul */ }
 
   var SELECTEUR = '.card, .shot, .items li, .choix a, .cas li, .chiffres li,' +
     ' .etapes > li, ul.checks li, .section-head, .encadre, .alerte,' +
@@ -647,6 +719,11 @@
 
   var tic = false;
   function calculer() {
+    // Animations coupees : on pose tout a l'arrivee et on ne calcule plus rien.
+    if (!anime()) {
+      for (var j = 0; j < elements.length; j++) elements[j].style.setProperty('--p', '1');
+      return;
+    }
     var hauteur = innerHeight;
     // L'élément commence à se poser en entrant par le bas et finit d'arriver
     // après avoir remonté de 45 % de la hauteur d'écran.
@@ -659,7 +736,15 @@
       if (r.top > hauteur) { el.style.setProperty('--p', '0'); continue; }
       if (r.bottom < 0) { el.style.setProperty('--p', '1'); continue; }
 
-      var p = (hauteur - r.top) / course - el._decalage;
+      // Un element entierement visible est arrive, point. Sans cette regle,
+      // les derniers elements d'une page restaient a mi-chemin : il n'y a plus
+      // de defilement disponible pour terminer leur course.
+      var p;
+      if (r.bottom <= hauteur) {
+        p = 1;
+      } else {
+        p = (hauteur - r.top) / course - el._decalage;
+      }
       p = p < 0 ? 0 : p > 1 ? 1 : p;
       el.style.setProperty('--p', p.toFixed(3));
     }
@@ -676,6 +761,20 @@
   calculer();
   // Filet : requestAnimationFrame est suspendu dans un onglet en arrière-plan.
   setTimeout(calculer, 300);
+})();
+</script>
+
+<script>
+(function () {
+  var bouton = document.getElementById('anim');
+  if (!bouton) return;
+  bouton.addEventListener('click', function () {
+    var actif = document.documentElement.getAttribute('data-anim') !== 'oui';
+    document.documentElement.setAttribute('data-anim', actif ? 'oui' : 'non');
+    try { localStorage.setItem('ohmnia-anim', actif ? 'oui' : 'non'); } catch (e) {}
+    // Le calcul du défilement doit repartir immédiatement, sans recharger.
+    dispatchEvent(new Event('scroll'));
+  });
 })();
 </script>
 </body>
