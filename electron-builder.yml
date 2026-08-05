@@ -18,9 +18,8 @@ linux:
   category: Office
   # Un paquet Debian exige un mainteneur avec une adresse e-mail, sinon la
   # construction du .deb echoue. Cette valeur est inscrite dans le paquet et
-  # visible de tous ceux qui le telechargent : on utilise donc l'adresse de
-  # redirection fournie par GitHub plutot qu'une adresse personnelle.
-  maintainer: Leimmingz <leimmingz@users.noreply.github.com>
+  # visible de tous ceux qui le telechargent.
+  maintainer: Ohmnia <ohmnia@proton.me>
   synopsis: Gestion locale pour indépendants
   description: >-
     Facturation, devis, suivi du temps, inventaire et comptabilité simplifiée.

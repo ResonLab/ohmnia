@@ -14,7 +14,7 @@
 
 *Aucun compte · aucun serveur · aucune télémétrie*
 
-🌐 **[Site web](https://leimmingz.github.io/ohmnia/)** &nbsp;·&nbsp; 📥 **[Télécharger](https://github.com/Leimmingz/ohmnia/releases/latest)** &nbsp;·&nbsp; 📄 **[Conditions](https://leimmingz.github.io/ohmnia/conditions.html)**
+🌐 **[Site web](https://leimmingz.github.io/ohmnia/)** &nbsp;·&nbsp; 📥 **[Télécharger](https://github.com/Leimmingz/ohmnia/releases/latest)** &nbsp;·&nbsp; 📄 **[Conditions](https://leimmingz.github.io/ohmnia/conditions.html)** &nbsp;·&nbsp; ✉️ **[Contact](mailto:ohmnia@proton.me)**
 
 </div>
 
@@ -111,6 +111,14 @@ tests/           8 suites — npm run verifier
 Le code, les commentaires et les colonnes SQL sont **en français**, volontairement : ce projet doit rester relisable par son auteur, qui n'est pas développeur de métier. Pas d'ORM, pas de state manager, du SQL écrit à la main.
 
 📖 Historique des décisions, pièges connus et reste à faire : **[CONTEXTE.md](CONTEXTE.md)** · Publication et site : **[SITE-GITHUB.md](SITE-GITHUB.md)**
+
+---
+
+## Contact
+
+Une question, un bug, une idée ? **[ohmnia@proton.me](mailto:ohmnia@proton.me)** ou une [issue GitHub](https://github.com/Leimmingz/ohmnia/issues).
+
+Ce n'est pas un service d'assistance : une seule personne développe Ohmnia, sur son temps. Les réponses arrivent quand elles arrivent.
 
 ---
 
