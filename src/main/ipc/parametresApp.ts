@@ -1,4 +1,5 @@
-import { app, dialog, ipcMain, shell } from 'electron'
+import { app, ipcMain, shell } from 'electron'
+import { choisirFichier, choisirDestination } from '../dialogues'
 import { existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fermerBaseDeDonnees, getDb, ouvrirBaseDeDonnees } from '../db/database'
@@ -102,7 +103,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('parametresApp:choisirDossierDocuments', async () => {
-    const resultat = await dialog.showOpenDialog({
+    const resultat = await choisirFichier({
       title: 'Choisir le dossier où ranger les PDF',
       properties: ['openDirectory', 'createDirectory']
     })
@@ -162,7 +163,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('sauvegardeExterne:choisirDossier', async () => {
-    const resultat = await dialog.showOpenDialog({
+    const resultat = await choisirFichier({
       title: 'Choisir le dossier de sauvegarde externe (clé USB, disque…)',
       properties: ['openDirectory', 'createDirectory']
     })
@@ -191,7 +192,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('sauvegardeExterne:restaurer', async (_e, motDePasse: string) => {
-    const resultat = await dialog.showOpenDialog({
+    const resultat = await choisirFichier({
       title: 'Choisir une sauvegarde chiffrée Ohmnia',
       filters: [{ name: 'Sauvegarde Ohmnia', extensions: ['ohmnia'] }],
       properties: ['openFile']
@@ -212,7 +213,7 @@ export function enregistrerHandlersParametresApp(): void {
 
   ipcMain.handle('donnees:exporterTout', async () => {
     const defaut = `ohmnia-export-${new Date().toISOString().slice(0, 10)}.json`
-    const resultat = await dialog.showSaveDialog({
+    const resultat = await choisirDestination({
       title: 'Exporter toutes les données',
       defaultPath: join(app.getPath('documents'), defaut),
       filters: [{ name: 'JSON', extensions: ['json'] }]

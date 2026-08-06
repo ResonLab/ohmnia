@@ -1,4 +1,5 @@
-import { app, dialog, ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
+import { choisirFichier, choisirDestination } from '../dialogues'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
 import { dansUneTransaction, getDb } from '../db/database'
@@ -317,7 +318,7 @@ function rapprocher(mouvements: MouvementBancaire[]): MouvementBancaire[] {
 export function enregistrerHandlersComptabilite(): void {
   ipcMain.handle('comptabilite:exporterCsv', async (_e, annee: number | null) => {
     const suffixe = annee === null ? 'tout' : String(annee)
-    const resultat = await dialog.showSaveDialog({
+    const resultat = await choisirDestination({
       title: 'Export comptable',
       defaultPath: join(app.getPath('documents'), `ohmnia-comptabilite-${suffixe}.csv`),
       filters: [{ name: 'CSV', extensions: ['csv'] }]
@@ -330,7 +331,7 @@ export function enregistrerHandlersComptabilite(): void {
   })
 
   ipcMain.handle('comptabilite:choisirReleve', async () => {
-    const resultat = await dialog.showOpenDialog({
+    const resultat = await choisirFichier({
       title: 'Choisir un relevé bancaire',
       filters: [{ name: 'Relevés (CSV, CAMT.053)', extensions: ['csv', 'xml', 'tsv', 'txt'] }],
       properties: ['openFile']

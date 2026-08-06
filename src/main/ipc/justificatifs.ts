@@ -1,4 +1,5 @@
-import { app, dialog, ipcMain, shell } from 'electron'
+import { app, ipcMain, shell } from 'electron'
+import { choisirFichier } from '../dialogues'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { getDb } from '../db/database'
@@ -65,7 +66,7 @@ export function enregistrerHandlersJustificatifs(): void {
     const ecriture = getDb().prepare('SELECT id FROM journal WHERE id = ?').get(journalId)
     if (!ecriture) throw new Error("Cette écriture du Journal n'existe pas.")
 
-    const resultat = await dialog.showOpenDialog({
+    const resultat = await choisirFichier({
       title: 'Choisir un justificatif',
       filters: [{ name: 'Images et PDF', extensions: ['png', 'jpg', 'jpeg', 'webp', 'pdf'] }],
       properties: ['openFile', 'multiSelections']

@@ -1,4 +1,5 @@
-import { app, dialog, ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
+import { choisirFichier } from '../dialogues'
 import { getDb } from '../db/database'
 import type { Entreprise } from '../../shared/types'
 import { profilPays } from '../../shared/pays'
@@ -97,7 +98,7 @@ export function enregistrerHandlersEntreprise(): void {
   })
 
   ipcMain.handle('entreprise:choisirLogo', async () => {
-    const resultat = await dialog.showOpenDialog({
+    const resultat = await choisirFichier({
       title: 'Choisir un logo',
       filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg', 'webp'] }],
       properties: ['openFile']
