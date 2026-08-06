@@ -241,7 +241,10 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 ## 9. État actuel
 
 - `npm run verifier` : typecheck + 8 suites de tests, **tout passe**.
-- Version `0.1.1`. Construite par GitHub Actions pour Windows et Linux.
+- Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
+  Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
+  qui pouvaient passer derriere l'app en gardant le focus clavier, et la
+  verification de mise a jour qui restait figee sans message.
   L'ancienne release `0.1.0`, televersee a la main, a une auto-mise a jour
   cassee : son `latest.yml` annonce `Ohmnia-Setup-0.1.0.exe` alors que le
   fichier en ligne s'appelle `Ohmnia.Setup.0.1.0.exe` (404). A supprimer.
