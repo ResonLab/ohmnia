@@ -4,7 +4,7 @@
 // Le test démarre un vrai serveur HTTP sur une base temporaire, puis appelle
 // les opérations comme le ferait un poste distant. Il ne simule rien.
 import { DatabaseSync } from 'node:sqlite'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -35,6 +35,30 @@ verifier(
 verifier(
   'le serveur réutilise la logique métier extraite',
   serveurRegistre.includes("from '../main/domaines/clients'")
+)
+
+/* ── 1 bis. Le registre ne doit pas diverger des canaux réels ────────────── */
+
+console.log("\n=== Registre du serveur ===")
+// Chaque opération exposée par le serveur doit correspondre à un vrai canal
+// IPC de l'application. Sans ce contrôle, une faute de frappe ou un canal
+// renommé passerait inaperçu : le serveur et la fenêtre ne feraient plus la
+// même chose, et on ne s'en apercevrait qu'en production.
+const canauxRegistre = [...serveurRegistre.matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1])
+
+const dossierIpc = join(SRC, 'main/ipc')
+const canauxIpc = new Set()
+for (const nom of readdirSync(dossierIpc)) {
+  for (const m of lire(join(dossierIpc, nom)).matchAll(/ipcMain\.handle\('([^']+)'/g)) {
+    canauxIpc.add(m[1])
+  }
+}
+
+const orphelins = canauxRegistre.filter((c) => !canauxIpc.has(c))
+verifier(
+  `les ${canauxRegistre.length} opérations du serveur existent toutes comme canal IPC`,
+  orphelins.length === 0,
+  orphelins.join(', ')
 )
 
 /* ── 2. Il refuse d'écouter sur le réseau sans authentification ──────────── */
