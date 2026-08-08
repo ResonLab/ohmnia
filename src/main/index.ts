@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { ouvrirBaseDeDonnees, fermerBaseDeDonnees } from './db/database'
+import { definirContexte } from './contexte'
 import { sauvegarderBaseDeDonnees } from './db/backup'
 import { migrerAncienDossierDonnees } from './db/migration-dossier'
 import { enregistrerHandlersEntreprise } from './ipc/entreprise'
@@ -88,6 +89,15 @@ function creerFenetrePrincipale(): void {
 }
 
 app.whenReady().then(() => {
+  // Seul endroit où Electron dicte où vivent les données et quelle version
+  // tourne. Tout le reste du code lit ces valeurs depuis `contexte`, ce qui
+  // permettra au serveur multi-postes de réutiliser la même couche métier
+  // avec ses propres valeurs. À faire avant toute lecture de la base.
+  definirContexte({
+    dossierDonnees: app.getPath('userData'),
+    version: app.getVersion()
+  })
+
   migrerAncienDossierDonnees()
   ouvrirBaseDeDonnees()
   sauvegarderBaseDeDonnees()
