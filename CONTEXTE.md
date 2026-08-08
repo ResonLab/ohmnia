@@ -118,7 +118,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  8 suites — `npm run verifier`
+tests/                  9 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -240,7 +240,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 8 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 9 suites de tests, **tout passe**.
 - Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la

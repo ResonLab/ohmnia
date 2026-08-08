@@ -16,7 +16,8 @@ const SUITES = [
   ['Checkpoint WAL avant sauvegarde', 'sauvegarde-wal.cjs'],
   ['Contraintes inventaire non bloquantes', 'contraintes-inventaire.cjs'],
   ['Cohérence de la documentation', 'coherence-documentation.mjs'],
-  ['Cohérence du site vitrine', 'coherence-site.mjs']
+  ['Cohérence du site vitrine', 'coherence-site.mjs'],
+  ['Serveur multi-postes (étape 1)', 'serveur-multipostes.mjs']
 ]
 
 let echecs = 0
