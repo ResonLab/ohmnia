@@ -1,6 +1,5 @@
 import { DatabaseSync } from 'node:sqlite'
-import { join } from 'node:path'
-import { app } from 'electron'
+import { cheminBase } from '../contexte'
 import schema from './schema.sql?raw'
 import { appliquerMigrations } from './migrations'
 
@@ -13,8 +12,7 @@ let db: DatabaseSync | null = null
 export function ouvrirBaseDeDonnees(): DatabaseSync {
   if (db) return db
 
-  const cheminBase = join(app.getPath('userData'), 'gestion.sqlite')
-  db = new DatabaseSync(cheminBase)
+  db = new DatabaseSync(cheminBase())
 
   // WAL : écritures plus robustes face à un arrêt brutal de l'app.
   db.exec('PRAGMA journal_mode = WAL')

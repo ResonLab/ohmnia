@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { cheminBase } from './backup'
+import { cheminBase } from '../contexte'
 import { viderJournalWal } from './database'
 
 /**

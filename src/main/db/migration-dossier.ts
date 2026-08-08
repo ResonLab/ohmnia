@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { dossierDonnees } from '../contexte'
 import { cpSync, existsSync, renameSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
@@ -12,7 +12,7 @@ const ANCIEN_NOM_DOSSIER = 'gestion-electronicien'
  * À appeler une seule fois, AVANT toute lecture de la base.
  */
 export function migrerAncienDossierDonnees(): void {
-  const nouveauDossier = app.getPath('userData')
+  const nouveauDossier = dossierDonnees()
   const ancienDossier = join(dirname(nouveauDossier), ANCIEN_NOM_DOSSIER)
 
   if (ancienDossier === nouveauDossier) return

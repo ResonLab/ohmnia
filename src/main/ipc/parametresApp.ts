@@ -8,13 +8,12 @@ import {
   sauvegarderVersDossierExterne
 } from '../db/sauvegardeExterne'
 import {
-  cheminBase,
-  dossierSauvegardes,
   exporterToutesLesDonnees,
   listerSauvegardes,
   restaurerSauvegarde,
   sauvegarderBaseDeDonnees
 } from '../db/backup'
+import { cheminBase, dossierSauvegardes } from '../contexte'
 import type { InfosSysteme, ParametresApp, Theme } from '../../shared/types'
 
 interface LigneParametresApp {
