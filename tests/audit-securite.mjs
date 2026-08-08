@@ -1,5 +1,5 @@
 // Audit statique : sécurité Electron, injections SQL, divisions non protégées.
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 import { fileURLToPath } from 'node:url'
@@ -147,6 +147,25 @@ verifier(
   absentesDuSchema.length === 0,
   absentesDuSchema.join(', ')
 )
+
+console.log('\n=== Logique métier réutilisable par le serveur ===')
+// Le serveur multi-postes n'a ni fenêtre ni Electron. Tout ce qui vit dans
+// src/main/domaines/ doit donc rester utilisable sans lui : c'est précisément
+// ce qui permettra d'exposer les mêmes opérations par le réseau.
+// Un import d'Electron glissé là casserait cette réutilisation en silence.
+const dossierDomaines = join(SRC, 'main/domaines')
+if (existsSync(dossierDomaines)) {
+  const fautifs = fichiers(dossierDomaines).filter((f) =>
+    /from 'electron'|require\('electron'\)/.test(lire(f))
+  )
+  verifier(
+    "aucun import d'Electron dans src/main/domaines/",
+    fautifs.length === 0,
+    fautifs.map((f) => relative(SRC, f)).join(', ')
+  )
+} else {
+  console.log('  (dossier domaines/ absent, contrôle sans objet)')
+}
 
 console.log(`\n${problemes === 0 ? 'AUDIT STATIQUE : AUCUNE ALERTE' : `${problemes} ALERTE(S)`}`)
 process.exit(problemes === 0 ? 0 : 1)
