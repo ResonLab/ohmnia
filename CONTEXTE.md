@@ -291,6 +291,14 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 
 ## 12. Chantier en cours : le serveur multi-postes (branche `serveur-multipostes`)
 
+> **Le serveur s'appelle désormais Nexika** et vit dans `../Nexika/`, hors de ce
+> projet, parce qu'il sert aussi Scenika. Tout ce qui suit parle de lui.
+>
+> **La branche n'est pas fusionnée, et c'est délibéré** : un clone du seul dépôt
+> `ohmnia` ne compile plus le serveur, faute de `Nexika/`. Vérifié en clonant
+> vraiment. La fusion attend que Nexika soit un dépôt de l'organisation ResonLab
+> et une dépendance npm. Voir `../LISEZ-MOI.md`.
+
 **`main` est intact et publiable.** Tout ce chantier vit sur une branche.
 
 ### Ce qui est fait
