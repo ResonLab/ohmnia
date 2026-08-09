@@ -12,6 +12,7 @@ import type {
   EntreeAudit,
   Entreprise,
   EtatConditions,
+  EtatMultipostes,
   EtatMaj,
   EvolutionAnnuelle,
   ExerciceCloture,
@@ -37,6 +38,7 @@ import type {
   ResumeAnnuel,
   ResumeInventaire,
   SauvegardeFichier,
+  SessionMultipostes,
   StatutDevis,
   TableauDeBord,
   TarifDeplacement,
@@ -49,10 +51,11 @@ const api = {
     lire: (): Promise<Entreprise> => ipcRenderer.invoke('entreprise:lire'),
     enregistrer: (valeurs: Entreprise): Promise<Entreprise> =>
       ipcRenderer.invoke('entreprise:enregistrer', valeurs),
-    lireLogoDataUrl: (cheminAbsolu: string | null): Promise<string | null> =>
-      ipcRenderer.invoke('entreprise:lireLogoDataUrl', cheminAbsolu),
-    choisirLogo: (): Promise<{ logoPath: string; dataUrl: string | null } | null> =>
-      ipcRenderer.invoke('entreprise:choisirLogo')
+    /** Le logo est rangé dans la base : plus aucun chemin de fichier à passer. */
+    lireLogoDataUrl: (): Promise<string | null> => ipcRenderer.invoke('entreprise:lireLogoDataUrl'),
+    choisirLogo: (): Promise<{ dataUrl: string } | null> =>
+      ipcRenderer.invoke('entreprise:choisirLogo'),
+    retirerLogo: (): Promise<void> => ipcRenderer.invoke('entreprise:retirerLogoChoisi')
   },
 
   parametresMarge: {
@@ -339,6 +342,33 @@ const api = {
       ipcRenderer.invoke('pdf:generer', type, id, rappelId),
     signalerPret: (): void => {
       ipcRenderer.send('pdf:pret')
+    }
+  },
+
+  /**
+   * Mode multi-postes. Les canaux métier ne changent pas de nom selon le
+   * mode : l'interface n'a que ces réglages-ci à connaître.
+   */
+  multipostes: {
+    etat: (): Promise<EtatMultipostes> => ipcRenderer.invoke('multipostes:etat'),
+    tester: (adresse: string): Promise<{ installe: boolean }> =>
+      ipcRenderer.invoke('multipostes:tester', adresse),
+    definirMode: (mode: 'local' | 'serveur', adresse: string): Promise<EtatMultipostes> =>
+      ipcRenderer.invoke('multipostes:definirMode', mode, adresse),
+    connecter: (identifiant: string, motDePasse: string): Promise<SessionMultipostes> =>
+      ipcRenderer.invoke('multipostes:connecter', identifiant, motDePasse),
+    creerPremierAdministrateur: (
+      identifiant: string,
+      motDePasse: string,
+      nomAffiche: string
+    ): Promise<SessionMultipostes> =>
+      ipcRenderer.invoke('multipostes:creerPremierAdministrateur', identifiant, motDePasse, nomAffiche),
+    deconnecter: (): Promise<EtatMultipostes> => ipcRenderer.invoke('multipostes:deconnecter'),
+    /** Prévenu quand le serveur a refusé le jeton : il faut se reconnecter. */
+    surSessionPerdue: (rappel: () => void): (() => void) => {
+      const ecouteur = (): void => rappel()
+      ipcRenderer.on('multipostes:sessionPerdue', ecouteur)
+      return () => ipcRenderer.removeListener('multipostes:sessionPerdue', ecouteur)
     }
   }
 }

@@ -1,5 +1,5 @@
 // Audit statique : sécurité Electron, injections SQL, divisions non protégées.
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 import { fileURLToPath } from 'node:url'
@@ -104,12 +104,12 @@ console.log(`  info : ${divisionsSuspectes.length} division(s) à vérifier manu
 if (divisionsSuspectes.length <= 12) divisionsSuspectes.forEach((d) => console.log(`         ${d}`))
 
 console.log('\n=== Transactions ===')
-const facturesTs = lire(join(SRC, 'main/ipc/factures.ts'))
-verifier(
-  'enregistrement de facture en transaction',
-  facturesTs.includes('dansUneTransaction')
-)
-const devisTs = lire(join(SRC, 'main/ipc/devis.ts'))
+// La logique métier a quitté `ipc/` pour `domaines/`, que le serveur multi-postes
+// réutilise. C'est donc là qu'il faut contrôler la transaction : sinon le mode
+// réseau pourrait écrire sans, sans que rien ne le signale.
+const facturesTs = lire(join(SRC, 'main/domaines/factures.ts'))
+verifier('enregistrement de facture en transaction', facturesTs.includes('dansUneTransaction'))
+const devisTs = lire(join(SRC, 'main/domaines/devis.ts'))
 verifier('enregistrement de devis en transaction', devisTs.includes('dansUneTransaction'))
 
 console.log('\n=== Sauvegardes ===')
@@ -147,6 +147,25 @@ verifier(
   absentesDuSchema.length === 0,
   absentesDuSchema.join(', ')
 )
+
+console.log('\n=== Logique métier réutilisable par le serveur ===')
+// Le serveur multi-postes n'a ni fenêtre ni Electron. Tout ce qui vit dans
+// src/main/domaines/ doit donc rester utilisable sans lui : c'est précisément
+// ce qui permettra d'exposer les mêmes opérations par le réseau.
+// Un import d'Electron glissé là casserait cette réutilisation en silence.
+const dossierDomaines = join(SRC, 'main/domaines')
+if (existsSync(dossierDomaines)) {
+  const fautifs = fichiers(dossierDomaines).filter((f) =>
+    /from 'electron'|require\('electron'\)/.test(lire(f))
+  )
+  verifier(
+    "aucun import d'Electron dans src/main/domaines/",
+    fautifs.length === 0,
+    fautifs.map((f) => relative(SRC, f)).join(', ')
+  )
+} else {
+  console.log('  (dossier domaines/ absent, contrôle sans objet)')
+}
 
 console.log(`\n${problemes === 0 ? 'AUDIT STATIQUE : AUCUNE ALERTE' : `${problemes} ALERTE(S)`}`)
 process.exit(problemes === 0 ? 0 : 1)

@@ -104,13 +104,14 @@ src/
       sauvegardeExterne.ts  chiffrement AES-256-GCM (scrypt)
       audit.ts          traçage + verrou des exercices clôturés
       migration-dossier.ts  reprise de l'ancien dossier de données
-    ipc/                un fichier par domaine (20 fichiers)
+    ipc/                un fichier par domaine (21 fichiers)
   preload/index.ts      pont sécurisé — seule porte entre interface et système
   renderer/src/
     App.tsx             menu, navigation, thème, langue, Ctrl+K, écran de conditions
     pages/              17 écrans
-    components/         8 composants (Modale, Camembert, BarresAnnuelles,
-                        LogoOhmnia, ConditionsUtilisation, RechercheGlobale…)
+    components/         10 composants (Modale, Camembert, BarresAnnuelles,
+                        LogoOhmnia, ConditionsUtilisation, RechercheGlobale,
+                        ConnexionServeur, ReglageMultipostes…)
     lib/                theme.ts, devise.ts, suggestions.ts
   shared/               partagé entre les trois couches
     types.ts            tous les types
@@ -118,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  8 suites — `npm run verifier`
+tests/                  12 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -248,7 +249,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 8 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 12 suites de tests, **tout passe**.
 - Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la
@@ -295,3 +296,300 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 - qu'on **teste réellement** ce qu'on livre, pas qu'on affirme que ça marche ;
 - qu'on **signale honnêtement** ce qui n'a pas pu être vérifié ;
 - qu'on **corrige les bugs qu'il signale en cherchant la cause**, pas en contournant.
+
+## 12. Chantier en cours : le serveur multi-postes (branche `serveur-multipostes`)
+
+> **Le serveur s'appelle désormais Nexika** et vit dans `../Nexika/`, hors de ce
+> projet, parce qu'il sert aussi Scenika. Tout ce qui suit parle de lui.
+>
+> **La branche n'est pas fusionnée, et c'est délibéré** : un clone du seul dépôt
+> `ohmnia` ne compile plus le serveur, faute de `Nexika/`. Vérifié en clonant
+> vraiment. La fusion attend que Nexika soit un dépôt de l'organisation ResonLab
+> et une dépendance npm. Voir `../LISEZ-MOI.md`.
+
+**`main` est intact et publiable.** Tout ce chantier vit sur une branche.
+
+### Ce qui est fait
+
+- `src/main/contexte.ts` : où vivent les données et quelle version tourne. La
+  couche Electron le renseigne au démarrage. **La couche base de données
+  n'importe plus Electron du tout.**
+- `src/main/domaines/` : la logique métier, sans Electron. **Les 20 domaines
+  sont convertis** — la conversion module par module est terminée.
+- `src/main/ipc/` : ne fait plus que brancher les canaux sur la fenêtre.
+  Il n'y reste du SQL que dans les trois endroits listés plus bas, où la
+  requête ne fait qu'enregistrer le résultat d'une boîte de dialogue.
+- `src/serveur/` : squelette de serveur HTTP qui réutilise `domaines/`.
+  Protocole : `POST /api/<canal>` avec `{ "arguments": [...] }`.
+  **Les noms de canaux sont exactement ceux de l'IPC**, pour que les deux modes
+  ne puissent pas diverger. **99 opérations exposées.**
+- `tests/serveur-multipostes.mjs` : démarre un vrai serveur sur une base
+  temporaire et fait de vrais appels réseau.
+
+**Étape 2 faite : comptes, droits, authentification.**
+
+- `src/serveur/comptes.ts` : comptes, mots de passe, sessions, journal des
+  accès. **Base séparée `comptes.sqlite`**, pas dans `gestion.sqlite` — les
+  comptes seront communs à Ohmnia et Scenika, et le mode local ne doit pas
+  hériter d'un schéma dont il n'a pas l'usage.
+- `src/serveur/droits.ts` : **qui a le droit de quoi, dans un seul fichier**,
+  opération par opération. Trois rôles : `lecture` < `ecriture` <
+  `administration`.
+- `src/serveur/index.ts` : toute opération métier exige une session. Le jeton
+  voyage dans `Authorization: Bearer <jeton>`.
+- `tests/serveur-authentification.mjs` : **compile le vrai serveur avec esbuild
+  et l'attaque par le réseau.** Rien n'y est transcrit — une authentification
+  réécrite pour le test ne prouverait que la justesse de la réécriture.
+
+Protocole d'authentification :
+
+| Appel | Effet |
+|---|---|
+| `serveur:etat` | public — dit si un compte existe déjà |
+| `comptes:creerPremierAdministrateur` | public, mais **refusé dès qu'un compte existe** |
+| `session:ouvrir` | public — rend un jeton valable 12 h |
+| tout le reste | jeton obligatoire, rôle vérifié |
+
+Codes de réponse : `400` erreur métier · `401` pas de session · `403` droits
+insuffisants · `404` opération inconnue.
+
+### Les garde-fous, à ne pas retirer
+
+1. **Aucun import d'Electron** dans `domaines/` ni `serveur/`.
+2. **Pas de réseau sans administrateur.** Le serveur refuse d'écouter ailleurs
+   que sur `127.0.0.1` tant qu'aucun compte administrateur n'existe : sinon le
+   premier venu créerait le sien et prendrait la comptabilité.
+3. **Chaque opération du registre doit exister comme canal IPC.** Vérifié
+   automatiquement : une faute de frappe fait échouer la suite.
+4. **Chaque opération du registre doit avoir un droit déclaré.** Une opération
+   sans droit est refusée à l'exécution, et `npm test` la signale. Les droits
+   ne sont **jamais déduits du nom du canal** : une règle « `lister` = lecture »
+   se tromperait en silence sur `conditions:accepter` ou `recherche:globale`.
+5. **Le message d'échec de connexion est le même** que le compte existe ou non.
+   Sinon la page de connexion devient un moyen de savoir qui travaille ici.
+6. **Le dernier administrateur ne peut être ni rétrogradé ni désactivé.** Un
+   serveur sans administrateur ne se reprend plus en main.
+
+Tous ont été **vérifiés en les cassant volontairement**.
+
+### Ce qui manque encore, et qu'il ne faut pas oublier
+
+**Le transport n'est pas chiffré.** Mots de passe et jetons circulent en clair
+en HTTP. Sur le réseau local d'une petite entreprise, c'est un risque assumé ;
+dès que le serveur est joignable au-delà, il faut le mettre derrière un
+reverse-proxy HTTPS. C'est écrit en tête de `src/serveur/index.ts` pour que
+personne ne le découvre en production.
+
+### Ce qui reste volontairement dans `ipc/`
+
+Cinq modules gardent une part Electron : **comptabilite, conditions,
+entreprise, justificatifs, parametresApp**. Ils ouvrent des sélecteurs de
+fichiers ou l'explorateur, ce qui n'a aucun sens sur un serveur. Ce qui reste
+là-bas n'est jamais du métier :
+
+| Module | Ce qui reste côté fenêtre |
+|---|---|
+| comptabilite | choisir le fichier de relevé à lire, choisir où écrire l'export CSV |
+| conditions | ouvrir la page des conditions dans le navigateur du poste |
+| entreprise | choisir le logo, le copier, le lire en data URL |
+| justificatifs | ajouter, ouvrir, lire, supprimer les fichiers sur le disque |
+| parametresApp | dossiers, sauvegardes, infos système, export de toutes les données |
+
+**Les justificatifs sont le seul point vraiment en suspens** : leur lecture et
+leur suppression visent le disque du poste. En mode serveur, ces fichiers
+devront vivre à côté de la base du serveur. C'est une décision de l'étape 3,
+pas d'un simple déplacement de code.
+
+### Étape 3 faite : le poste sait parler au serveur
+
+**Le mode se choisit dans « Paramètres de l'app » → Mode multi-postes.** Le
+mode local reste le défaut : sans choix explicite, rien ne change.
+
+- `src/main/multipostes/configuration.ts` : `multipostes.json` dans le dossier
+  de données. **Jamais le mot de passe** — il est redemandé à chaque ouverture.
+- `src/main/multipostes/client.ts` : le poste vu comme client. **Le jeton ne
+  vit qu'en mémoire** : écrit sur le disque, il survivrait au vol du portable.
+- `src/main/multipostes/routeur.ts` : le seul endroit qui décide, base locale
+  ou serveur.
+- `src/main/multipostes/handlers.ts` : en mode serveur, les canaux métier sont
+  enregistrés **depuis `DROITS`** et renvoyés au serveur. Mêmes noms qu'en IPC,
+  donc **l'interface n'a rien à savoir du mode**.
+
+**Le mode est décidé au démarrage, une fois.** En mode serveur, la base locale
+n'est même pas ouverte — c'est ce qui garantit qu'aucun écran n'affiche par
+erreur des données locales. Changer de mode recharge l'application ; les
+données locales ne sont jamais effacées.
+
+Trois choses qui auraient sorti des écrans vides et qu'il a fallu redécouper :
+
+| Ce qui casse naïvement | Découpage retenu |
+|---|---|
+| Les PDF lisaient la base en direct | `documents:donnees` rend le document tout prêt, logo compris en data URL ; `pdf.ts` ne fait plus que l'imprimer |
+| L'export comptable construisait le CSV sur le poste | `comptabilite:construireCsv` le construit là où sont les données ; le poste choisit seulement où l'écrire |
+| L'import bancaire rapprochait les écritures localement | `comptabilite:analyserReleve` rapproche là où vit le Journal |
+
+Dans chaque module mixte, deux fonctions d'enregistrement au lieu d'une :
+`enregistrerHandlersX()` pour les données (mode local seulement) et
+`enregistrerHandlersXPoste()` pour ce qui concerne cette machine-ci (les deux
+modes). C'est ce qui rend `main/index.ts` lisible d'un coup d'œil.
+
+**Ce qui est refusé en multi-postes**, avec un message qui dit pourquoi :
+sauvegardes locales, export global, choix du logo, justificatifs. Ces
+opérations écriraient sur le poste alors que les données sont sur le serveur —
+un justificatif qu'on croit rangé et qui n'existe nulle part est pire que pas
+de justificatif.
+
+**Session expirée** : le poste prévient l'interface (`multipostes:sessionPerdue`),
+qui repasse par l'écran de connexion sans détruire l'écran en cours.
+
+**Rôle `lecture`** : les modules Audit et Mon entreprise disparaissent du menu,
+et un bandeau annonce la lecture seule.
+
+### Lancer le serveur
+
+**Le serveur est commun à la maison.** Tout ce qui ne dépend pas d'Ohmnia —
+transport, comptes, sessions, droits, certificat, ligne de commande — vit dans
+`../Nexika/serveur/`, parce que Scenika s'en servira aussi. Ne restent dans
+`src/serveur/` que les canaux d'Ohmnia (`registre.ts`), leurs droits
+(`droits.ts`) et le branchement (`ohmnia.ts`, quinze lignes).
+
+**L'application Electron, elle, ne dépend jamais de `Nexika/`** : elle ne parle
+au serveur que par le réseau. C'est ce qui permet au dépôt d'Ohmnia de se
+construire seul. Une vérification refuse tout import de `Nexika/` depuis
+`main/`, `renderer/` ou `preload/` — sans elle, on ne s'en apercevrait qu'au
+moment de publier.
+
+**`demarrerServeur` n'était appelé que par les tests** : la fonctionnalité
+passait toutes les vérifications sans que personne puisse s'en servir. D'où
+`src/serveur/principal.ts` et `scripts/construire-serveur.mjs`.
+
+```bash
+npm run serveur:build      # produit out/serveur/ohmnia-serveur.mjs
+node out/serveur/ohmnia-serveur.mjs --aide
+```
+
+Le serveur est compilé en **un seul fichier** : on le copie sur la machine qui
+héberge les données, sans `npm install` ni le reste du projet. Aucune
+dépendance native — `node:sqlite` est intégré à Node 24.
+
+```bash
+node ohmnia-serveur.mjs --donnees "D:\OhmniaServeur" --port 8787
+```
+
+Options : `--donnees` (obligatoire), `--port`, `--hote`, `--certificat`,
+`--cle`, `--aide`. Une option mal orthographiée est **signalée**, pas ignorée.
+
+`VERSION_SERVEUR` dans `src/serveur/version.ts` est écrite en dur — le fichier
+compilé n'a pas de `package.json` à côté. `npm test` vérifie qu'elle n'a pas
+dérivé de celle du projet.
+
+### Mise en service
+
+1. Démarrer le serveur sur `127.0.0.1` (le défaut).
+2. Depuis un poste : **Paramètres de l'app → Mode multi-postes**, renseigner
+   l'adresse, puis **créer le premier administrateur**.
+3. Arrêter le serveur, le rouvrir avec `--hote 0.0.0.0` **et un certificat**.
+4. Créer les comptes des collègues depuis un poste administrateur.
+
+Les deux garde-fous imposent cet ordre : pas de réseau sans administrateur, et
+pas de réseau sans chiffrement. Fabriquer un certificat auto-signé (OpenSSL est
+livré avec Git pour Windows) :
+
+```bash
+node ohmnia-serveur.mjs --creer-certificat --donnees "D:\OhmniaServeur"
+```
+
+**Le certificat est fabriqué par l'application, sans OpenSSL.** Exiger d'aller
+chercher un outil externe et d'y recopier une ligne ésotérique, c'est pousser
+à laisser le serveur en clair — soit faire échouer la mesure de sécurité par sa
+mise en œuvre. `src/serveur/certificat.ts` construit la structure X.509 en DER
+à la main (Node génère des clés, pas des certificats). Il couvre `localhost`,
+`127.0.0.1` **et les adresses IPv4 de la machine** : sans elles, un poste qui
+vise `https://192.168.1.20:8787` ne pourrait rien vérifier.
+
+Le serveur reprend `certificat.pem` et `cle.pem` du dossier de données sans
+qu'on ait à les désigner. Un certificat existant n'est **jamais écrasé** : les
+postes qui l'ont accepté redemanderaient tous confirmation.
+
+Chaque poste devra l'accepter une première fois : c'est normal pour un
+certificat auto-signé. Il chiffre parfaitement la liaison ; ce qu'il ne fait
+pas, c'est prouver à un inconnu qu'il parle au bon serveur.
+
+### Finitions faites après l'étape 3
+
+**Les justificatifs vivent avec la base.** Le fichier voyage en base64 par le
+protocole et se range à côté de `gestion.sqlite` — donc sur le serveur en
+multi-postes, et tous les postes le voient. Limite à 15 Mo par fichier, avec un
+message qui explique quoi faire. Le corps maximal du protocole est passé à
+25 Mo pour l'encodage base64. En local, le dossier ne change pas
+(`%APPDATA%\Ohmnia\Justificatifs`) : rien à migrer.
+
+**Le logo est rangé dans la base**, colonne `entreprise.logo_donnees`, en data
+URL. Avant, seul son chemin était mémorisé : il disparaissait des documents dès
+qu'on changeait de machine. Le chemin reste lu en secours pour les bases
+d'avant ce changement. Limite à 2 Mo — il voyage dans chaque PDF.
+
+**Thème, langue et couleur d'accent sont propres au poste** en multi-postes.
+Ils vivent dans `parametres_app` avec des réglages d'entreprise réservés à
+l'administration : les laisser côté serveur revenait à interdire à un employé
+de choisir son thème. `parametresApp:lire` et `:enregistrer` sont donc les
+**deux seuls canaux du registre qui ne sont pas renvoyés au serveur** — voir
+`CANAUX_NON_RENVOYES` dans `multipostes/handlers.ts`. Une vérification impose
+que toute exception y soit servie par le poste, sinon le canal n'existerait
+plus du tout en mode serveur.
+
+**Les actions d'écriture disparaissent pour le rôle `lecture`.** Chaque bouton
+concerné porte `action-ecriture` ou `action-administration` ; deux attributs
+sur `.app` et une règle CSS décident. Choix assumé : marquer soixante boutons
+d'une classe est plus court et plus sûr à relire que soixante enveloppes JSX.
+`display: none` plutôt qu'un bouton grisé — un bouton désactivé invite à
+chercher comment l'activer. **Le vrai garde-fou reste le serveur**, qui refuse
+l'opération de toute façon.
+
+**Le serveur sait parler HTTPS** : options `certificat` et `cleePrivee`. Et
+surtout, **il refuse d'écouter sur le réseau sans chiffrement** — les mots de
+passe et les jetons y circuleraient en clair. Sur `127.0.0.1`, HTTP reste
+accepté : le trafic ne quitte pas la machine. Les deux garde-fous du réseau
+(un administrateur, du chiffrement) sont vérifiés séparément.
+
+### Ce qui reste à faire
+
+- **Le serveur n'est pas installé comme service Windows.** Il faut le lancer à
+  la main ou par une tâche planifiée. Il s'arrête proprement sur Ctrl+C
+  (Windows envoie l'équivalent à l'arrêt d'une tâche), en refermant les bases.
+- **La traduction anglaise** des nouveaux écrans (connexion, mode multi-postes)
+  n'est pas faite — comme le reste des écrans, voir §8.
+
+### Pièges rencontrés, à ne pas réintroduire
+
+**Des vérifications visaient `ipc/`, où le code n'est plus.** Deux suites
+lisaient le fichier source de `ipc/` : `audit-securite.mjs` y cherchait
+`dansUneTransaction` dans les factures et les devis, et `parseurs-bancaires.mjs`
+y découpait les analyseurs de relevés pour les exécuter. Déplacer le code sans
+déplacer le contrôle aurait laissé passer une écriture hors transaction en mode
+réseau. Les deux pointent désormais sur `domaines/`. **En convertissant un
+module, chercher son nom dans `tests/` avant de conclure.**
+
+`parseurs-bancaires.mjs` découpe `domaines/comptabilite.ts` entre deux
+commentaires — « Découpe une ligne CSV » et « Marque les mouvements » — puis
+retire les types pour exécuter le bloc. Ce bloc ne doit donc toucher ni la base
+ni Electron, et ses fonctions doivent rester internes au module : le test
+ajoute ses propres `export`.
+
+**`src/serveur/` n'était pas typechecké.** `tsconfig.node.json` ne listait que
+`main`, `preload` et `shared` : une erreur de syntaxe dans le serveur passait
+`npm run typecheck` sans broncher et n'apparaissait qu'à la compilation. Le
+dossier est désormais inclus. **En ajoutant un dossier source, l'ajouter aussi
+au tsconfig.**
+
+**Le nom du canal doit tenir sur la même ligne qu'`ipcMain.handle(`.** Le
+garde-fou qui apparie le registre et l'IPC cherche `ipcMain.handle('<canal>'`
+d'un seul tenant. Une mise en forme sur plusieurs lignes rend le canal
+invisible et fait échouer la suite, alors que le code est correct.
+
+### Piège du premier jet
+
+`fetch` garde des connexions dans un pool : Node plantait sur une assertion
+interne en quittant, **alors que tous les tests passaient**. Le code de sortie
+était faux. Dans les tests, utiliser le module `node:http` et ne jamais appeler
+`process.exit()` pendant la fermeture des sockets.

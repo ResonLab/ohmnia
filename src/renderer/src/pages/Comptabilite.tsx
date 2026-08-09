@@ -204,7 +204,7 @@ export default function Comptabilite(): React.JSX.Element {
             </table>
 
             <div className="barre-boutons">
-              <button onClick={importer}>Importer la sélection ({selection.size})</button>
+              <button className="action-ecriture" onClick={importer}>Importer la sélection ({selection.size})</button>
               <button className="bouton-secondaire" onClick={() => setImportEnCours(null)}>
                 Abandonner
               </button>

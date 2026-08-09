@@ -186,7 +186,7 @@ export default function Journal(): React.JSX.Element {
             onChange={(e) => setNouvelleEcriture({ ...nouvelleEcriture, notes: e.target.value })}
           />
         </label>
-        <button onClick={ajouterEcriture}>Ajouter au journal</button>
+        <button className="action-ecriture" onClick={ajouterEcriture}>Ajouter au journal</button>
         {messageErreur && <p className="erreur">{messageErreur}</p>}
       </div>
 
@@ -277,7 +277,7 @@ export default function Journal(): React.JSX.Element {
                       </button>
                     </td>
                     <td>
-                      <button className="bouton-danger" onClick={() => supprimerEcriture(e.id)}>
+                      <button className="action-ecriture bouton-danger" onClick={() => supprimerEcriture(e.id)}>
                         Supprimer
                       </button>
                     </td>

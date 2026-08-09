@@ -1,9 +1,8 @@
-import { app } from 'electron'
 import { join } from 'node:path'
+import { cheminBase, dossierSauvegardes, versionApplication } from '../contexte'
 import {
   copyFileSync,
   existsSync,
-  mkdirSync,
   readdirSync,
   statSync,
   unlinkSync,
@@ -14,15 +13,6 @@ import type { SauvegardeFichier } from '../../shared/types'
 
 const NB_SAUVEGARDES_PAR_DEFAUT = 20
 
-export function dossierSauvegardes(): string {
-  const dossier = join(app.getPath('userData'), 'Backups')
-  if (!existsSync(dossier)) mkdirSync(dossier, { recursive: true })
-  return dossier
-}
-
-export function cheminBase(): string {
-  return join(app.getPath('userData'), 'gestion.sqlite')
-}
 
 /** Nombre de sauvegardes à conserver, lu dans les paramètres si la base est ouverte. */
 function nbSauvegardesAConserver(): number {
@@ -113,7 +103,7 @@ export function exporterToutesLesDonnees(cheminSortie: string): number {
   }
 
   const contenu = JSON.stringify(
-    { application: 'Ohmnia', version: app.getVersion(), exporteLe: new Date().toISOString(), donnees },
+    { application: 'Ohmnia', version: versionApplication(), exporteLe: new Date().toISOString(), donnees },
     null,
     2
   )

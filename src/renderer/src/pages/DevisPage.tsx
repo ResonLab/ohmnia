@@ -173,7 +173,7 @@ export default function DevisPage(): React.JSX.Element {
             <ClientSelecteur clientId={clientIdNouveau} onChange={setClientIdNouveau} />
           </label>
         </div>
-        <button onClick={creerBrouillon}>Créer un brouillon de devis</button>
+        <button className="action-ecriture" onClick={creerBrouillon}>Créer un brouillon de devis</button>
       </div>
 
       {brouillon && (
@@ -257,7 +257,7 @@ export default function DevisPage(): React.JSX.Element {
                   </td>
                   <td>{formaterMontant(ligne.quantite * ligne.prixUnitaire)}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimerLigne(index)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerLigne(index)}>
                       Retirer
                     </button>
                   </td>
@@ -266,11 +266,11 @@ export default function DevisPage(): React.JSX.Element {
             </tbody>
           </table>
           <div className="barre-boutons" style={{ marginTop: 0 }}>
-            <button onClick={() => setBrouillon({ ...brouillon, lignes: [...brouillon.lignes, ligneVide()] })}>
+            <button className="action-ecriture" onClick={() => setBrouillon({ ...brouillon, lignes: [...brouillon.lignes, ligneVide()] })}>
               + Ajouter une ligne
             </button>
             {modeles.length > 0 && (
-              <button className="bouton-secondaire" onClick={() => setModeleAInserer(true)}>
+              <button className="action-ecriture bouton-secondaire" onClick={() => setModeleAInserer(true)}>
                 Insérer un modèle
               </button>
             )}
@@ -322,7 +322,7 @@ export default function DevisPage(): React.JSX.Element {
           )}
 
           <div className="barre-boutons">
-            <button onClick={enregistrerBrouillon}>Enregistrer</button>
+            <button className="action-ecriture" onClick={enregistrerBrouillon}>Enregistrer</button>
             <button onClick={exporterPdf}>Exporter en PDF</button>
           </div>
         </div>
@@ -362,11 +362,11 @@ export default function DevisPage(): React.JSX.Element {
                 <td className="colonne-etroite">{devis.factureLiee ?? '—'}</td>
                 <td className="cellule-actions">
                   <button onClick={() => ouvrirBrouillon(devis.id)}>Ouvrir</button>
-                  <button onClick={() => dupliquerDevis(devis.id)}>Dupliquer</button>
+                  <button className="action-ecriture" onClick={() => dupliquerDevis(devis.id)}>Dupliquer</button>
                   {!devis.factureLiee && (
-                    <button onClick={() => convertirEnFacture(devis.id)}>→ Facture</button>
+                    <button className="action-ecriture" onClick={() => convertirEnFacture(devis.id)}>→ Facture</button>
                   )}
-                  <button className="bouton-danger" onClick={() => supprimerDevis(devis.id)}>
+                  <button className="action-ecriture bouton-danger" onClick={() => supprimerDevis(devis.id)}>
                     Supprimer
                   </button>
                 </td>
@@ -382,7 +382,7 @@ export default function DevisPage(): React.JSX.Element {
           <ul className="liste-modeles">
             {modeles.map((m) => (
               <li key={m.id}>
-                <button onClick={() => insererModele(m.id)}>
+                <button className="action-ecriture" onClick={() => insererModele(m.id)}>
                   <span className="liste-clients-nom">{m.nom}</span>
                   <span className="liste-clients-meta">{m.lignes.length} ligne(s)</span>
                 </button>

@@ -226,7 +226,7 @@ export default function Inventaire(): React.JSX.Element {
                   </td>
                   <td className="colonne-etroite">{article.derniereMaj.slice(0, 10)}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimerArticle(article.reference)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerArticle(article.reference)}>
                       Supprimer
                     </button>
                   </td>
@@ -322,14 +322,14 @@ export default function Inventaire(): React.JSX.Element {
               />
             </label>
             <div className="barre-boutons">
-              <button onClick={enregistrerNouvelArticle}>Enregistrer</button>
+              <button className="action-ecriture" onClick={enregistrerNouvelArticle}>Enregistrer</button>
               <button className="bouton-danger" onClick={() => setNouvelArticle(null)}>
                 Annuler
               </button>
             </div>
           </div>
         ) : (
-          <button onClick={preparerNouvelArticle}>+ Ajouter un article</button>
+          <button className="action-ecriture" onClick={preparerNouvelArticle}>+ Ajouter un article</button>
         )}
 
         {messageErreur && <p className="erreur">{messageErreur}</p>}

@@ -112,7 +112,7 @@ export default function Modeles(): React.JSX.Element {
             onChange={(e) => setNouveauNom(e.target.value)}
           />
         </label>
-        <button onClick={creerModele}>Créer</button>
+        <button className="action-ecriture" onClick={creerModele}>Créer</button>
       </aside>
 
       <section className="clients-detail">
@@ -176,7 +176,7 @@ export default function Modeles(): React.JSX.Element {
                     </td>
                     <td>{formaterMontant(ligne.quantite * ligne.prixUnitaire)}</td>
                     <td>
-                      <button className="bouton-danger" onClick={() => retirerLigne(index)}>
+                      <button className="action-ecriture bouton-danger" onClick={() => retirerLigne(index)}>
                         Retirer
                       </button>
                     </td>
@@ -199,8 +199,8 @@ export default function Modeles(): React.JSX.Element {
             </div>
 
             <div className="barre-boutons">
-              <button onClick={enregistrer}>Enregistrer</button>
-              <button className="bouton-danger" onClick={() => supprimer(selection.id)}>
+              <button className="action-ecriture" onClick={enregistrer}>Enregistrer</button>
+              <button className="action-ecriture bouton-danger" onClick={() => supprimer(selection.id)}>
                 Supprimer le modèle
               </button>
             </div>

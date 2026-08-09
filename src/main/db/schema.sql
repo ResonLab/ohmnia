@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS entreprise (
   titulaire_compte TEXT NOT NULL DEFAULT '',
   tva_defaut_pct REAL NOT NULL DEFAULT 0,
   logo_path TEXT,
+  -- L'image elle-meme, en data URL. Le chemin ci-dessus ne vaut que pour le
+  -- poste qui l'a choisie : en multi-postes, seul le contenu voyage.
+  logo_donnees TEXT,
   prefixe_facture TEXT NOT NULL DEFAULT 'F',
   prefixe_devis TEXT NOT NULL DEFAULT 'D',
   -- Assujettissement TVA : tant qu'il vaut 0, aucun montant de TVA n'est

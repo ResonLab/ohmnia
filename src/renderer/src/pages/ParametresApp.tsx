@@ -12,6 +12,7 @@ import type {
 import { appliquerTheme } from '../lib/theme'
 import { definirLangue, LANGUES, t, type Langue } from '../../../shared/i18n'
 import { CONDITIONS_UTILISATION } from '../../../shared/conditions'
+import ReglageMultipostes from '../components/ReglageMultipostes'
 import Modale from '../components/Modale'
 
 const COULEURS_PROPOSEES = ['#1be7b6', '#5b9cf8', '#c084fc', '#fbbf24', '#fb7185', '#34d399']
@@ -307,6 +308,8 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
 
   return (
     <div className="pile-cartes">
+      <ReglageMultipostes />
+
       <div className="carte">
         <h2>{t('param.apparence')}</h2>
         <label>

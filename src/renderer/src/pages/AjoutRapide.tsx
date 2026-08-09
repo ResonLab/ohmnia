@@ -388,7 +388,7 @@ export default function AjoutRapide(): React.JSX.Element {
           </label>
         )}
 
-        <button onClick={enregistrer}>
+        <button className="action-ecriture" onClick={enregistrer}>
           {destination === 'facture'
             ? 'Créer le brouillon de facture'
             : destination === 'devis'

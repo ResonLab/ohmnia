@@ -173,7 +173,7 @@ export default function SuiviTemps(): React.JSX.Element {
               <span className="chrono-detail">Démarrée à {formaterDateHeure(enCours.debut)}</span>
             </div>
             <div className="barre-boutons">
-              <button onClick={arreter}>Arrêter l'intervention</button>
+              <button className="action-ecriture" onClick={arreter}>Arrêter l'intervention</button>
             </div>
           </>
         ) : (
@@ -190,7 +190,7 @@ export default function SuiviTemps(): React.JSX.Element {
               Client (optionnel)
               <ClientSelecteur clientId={clientId} onChange={setClientId} />
             </label>
-            <button onClick={demarrer}>Démarrer le chronomètre</button>
+            <button className="action-ecriture" onClick={demarrer}>Démarrer le chronomètre</button>
           </>
         )}
       </div>
@@ -277,7 +277,7 @@ export default function SuiviTemps(): React.JSX.Element {
                   <td>{i.fin ? `${formaterMontant(heures * taux)}` : '—'}</td>
                   <td className="colonne-etroite">{i.factureId ? 'Oui' : 'Non'}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimer(i.id)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimer(i.id)}>
                       Supprimer
                     </button>
                   </td>
@@ -295,7 +295,7 @@ export default function SuiviTemps(): React.JSX.Element {
         </table>
 
         <div className="barre-boutons">
-          <button onClick={ouvrirModaleFacturation}>
+          <button className="action-ecriture" onClick={ouvrirModaleFacturation}>
             Facturer la sélection ({selection.size})
           </button>
         </div>

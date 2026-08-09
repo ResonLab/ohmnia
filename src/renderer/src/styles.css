@@ -1518,3 +1518,93 @@ input[type='color'] {
   color: #999;
   text-align: center;
 }
+
+/* ── Mode multi-postes ──────────────────────────────────────────────────── */
+
+.app-connexion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.carte-connexion {
+  width: min(30rem, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.connexion-entete {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.connexion-entete h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.connexion-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.encadre-info {
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 0.8rem;
+  background: rgba(127, 127, 127, 0.08);
+  border-radius: 0 6px 6px 0;
+}
+
+.ligne-boutons {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0.6rem 0;
+}
+
+/* Le bandeau doit se voir sans masquer le contenu : il reste discret mais
+   présent en haut de chaque écran tant que la session est en lecture seule. */
+.bandeau-lecture-seule {
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 1rem;
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.menu-session {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0 1rem;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.menu-session em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.pastille-serveur {
+  background: var(--accent);
+  color: #05202a;
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Actions retirées quand le rôle du serveur ne les permet pas.
+   `display: none` plutôt qu'un bouton grisé : un bouton désactivé invite à
+   chercher comment l'activer, alors qu'ici la réponse est « pas avec ce
+   compte ». Le bandeau en haut de l'écran l'explique déjà. */
+.app[data-peut-ecrire='non'] .action-ecriture,
+.app[data-peut-administrer='non'] .action-administration {
+  display: none;
+}

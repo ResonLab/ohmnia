@@ -36,6 +36,9 @@ const COLONNES_ATTENDUES: ColonneAttendue[] = [
   { table: 'parametres_app', colonne: 'cgu_acceptee_le', definition: "TEXT NOT NULL DEFAULT ''" },
   // Trace le devis dont une facture est issue (conversion Devis → Facture).
   { table: 'factures', colonne: 'devis_origine_id', definition: 'INTEGER' },
+  // Le logo rangé dans la base, et non plus seulement son chemin sur le disque :
+  // un chemin ne veut rien dire depuis un autre poste.
+  { table: 'entreprise', colonne: 'logo_donnees', definition: 'TEXT' },
   // Conformité suisse : assujettissement TVA, numéro IDE, mentions légales.
   { table: 'entreprise', colonne: 'assujetti_tva', definition: 'INTEGER NOT NULL DEFAULT 0' },
   { table: 'entreprise', colonne: 'numero_ide', definition: "TEXT NOT NULL DEFAULT ''" },

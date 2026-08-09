@@ -217,7 +217,7 @@ export default function ChargesMarge(): React.JSX.Element {
                   />
                 </td>
                 <td>
-                  <button className="bouton-danger" onClick={() => supprimerCharge(charge.id)}>
+                  <button className="action-administration bouton-danger" onClick={() => supprimerCharge(charge.id)}>
                     Supprimer
                   </button>
                 </td>
@@ -225,7 +225,7 @@ export default function ChargesMarge(): React.JSX.Element {
             ))}
           </tbody>
         </table>
-        <button onClick={ajouterCharge}>+ Ajouter une charge</button>
+        <button className="action-administration" onClick={ajouterCharge}>+ Ajouter une charge</button>
         <p className="valeur-calculee">
           Total charges fixes actives : <strong>{formaterMontant(chargesFixesTotalMensuel)}/mois</strong>
         </p>
@@ -253,7 +253,7 @@ export default function ChargesMarge(): React.JSX.Element {
             onChange={(e) => setMargeParams({ ...margeParams, caEstimeMensuel: Number(e.target.value) })}
           />
         </label>
-        <button onClick={enregistrerMarge}>Enregistrer</button>
+        <button className="action-administration" onClick={enregistrerMarge}>Enregistrer</button>
 
         <div className="resultats-calcules">
           <p>
@@ -315,7 +315,7 @@ export default function ChargesMarge(): React.JSX.Element {
             }
           />
         </label>
-        <button onClick={enregistrerDeplacement}>Enregistrer</button>
+        <button className="action-administration" onClick={enregistrerDeplacement}>Enregistrer</button>
 
         <div className="resultats-calcules">
           <p>
@@ -452,7 +452,7 @@ export default function ChargesMarge(): React.JSX.Element {
             }
           />
         </label>
-        <button onClick={enregistrerImpression}>Enregistrer</button>
+        <button className="action-administration" onClick={enregistrerImpression}>Enregistrer</button>
 
         <div className="resultats-calcules">
           <p>

@@ -71,7 +71,7 @@ export default function ResumeAnnuelPage(): React.JSX.Element {
             />
           </label>
         </div>
-        <button onClick={enregistrerObjectif}>Enregistrer l'objectif</button>
+        <button className="action-ecriture" onClick={enregistrerObjectif}>Enregistrer l'objectif</button>
 
         <div className="barre-progression-zone">
           <div className="barre-progression">

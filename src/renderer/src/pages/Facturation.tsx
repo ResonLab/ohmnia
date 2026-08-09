@@ -255,7 +255,7 @@ export default function Facturation(): React.JSX.Element {
             <ClientSelecteur clientId={clientIdNouveau} onChange={setClientIdNouveau} />
           </label>
         </div>
-        <button onClick={creerBrouillon}>Créer un brouillon de facture</button>
+        <button className="action-ecriture" onClick={creerBrouillon}>Créer un brouillon de facture</button>
       </div>
 
       {brouillon && (
@@ -351,7 +351,7 @@ export default function Facturation(): React.JSX.Element {
                   </td>
                   <td>{formaterMontant(ligne.quantite * ligne.prixUnitaire)}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimerLigne(index)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerLigne(index)}>
                       Retirer
                     </button>
                   </td>
@@ -360,15 +360,15 @@ export default function Facturation(): React.JSX.Element {
             </tbody>
           </table>
           <div className="barre-boutons" style={{ marginTop: 0 }}>
-            <button onClick={() => setBrouillon({ ...brouillon, lignes: [...brouillon.lignes, ligneVide()] })}>
+            <button className="action-ecriture" onClick={() => setBrouillon({ ...brouillon, lignes: [...brouillon.lignes, ligneVide()] })}>
               + Ajouter une ligne
             </button>
             {modeles.length > 0 && (
-              <button className="bouton-secondaire" onClick={() => setModeleAInserer(true)}>
+              <button className="action-ecriture bouton-secondaire" onClick={() => setModeleAInserer(true)}>
                 Insérer un modèle
               </button>
             )}
-            <button className="bouton-secondaire" onClick={() => setModeleAEnregistrer(true)}>
+            <button className="action-ecriture bouton-secondaire" onClick={() => setModeleAEnregistrer(true)}>
               Enregistrer comme modèle
             </button>
           </div>
@@ -438,7 +438,7 @@ export default function Facturation(): React.JSX.Element {
           )}
 
           <div className="barre-boutons">
-            <button onClick={enregistrerBrouillon}>Enregistrer</button>
+            <button className="action-ecriture" onClick={enregistrerBrouillon}>Enregistrer</button>
             <button onClick={exporterPdf}>Exporter en PDF</button>
           </div>
         </div>
@@ -481,11 +481,11 @@ export default function Facturation(): React.JSX.Element {
                   <td>{facture.montant === null ? '—' : `${formaterMontant(facture.montant)}`}</td>
                   <td className="cellule-actions">
                     <button onClick={() => ouvrirBrouillon(facture.id)}>Ouvrir</button>
-                    <button onClick={() => dupliquerFacture(facture.id)}>Dupliquer</button>
+                    <button className="action-ecriture" onClick={() => dupliquerFacture(facture.id)}>Dupliquer</button>
                     {facture.statut === 'En attente' && (
-                      <button onClick={() => ouvrirModaleRappel(facture.id)}>Rappel</button>
+                      <button className="action-ecriture" onClick={() => ouvrirModaleRappel(facture.id)}>Rappel</button>
                     )}
-                    <button className="bouton-danger" onClick={() => supprimerFacture(facture.id)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerFacture(facture.id)}>
                       Supprimer
                     </button>
                   </td>
@@ -502,7 +502,7 @@ export default function Facturation(): React.JSX.Element {
           <ul className="liste-modeles">
             {modeles.map((m) => (
               <li key={m.id}>
-                <button onClick={() => insererModele(m.id)}>
+                <button className="action-ecriture" onClick={() => insererModele(m.id)}>
                   <span className="liste-clients-nom">{m.nom}</span>
                   <span className="liste-clients-meta">{m.lignes.length} ligne(s)</span>
                 </button>

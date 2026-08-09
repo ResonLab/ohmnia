@@ -168,7 +168,7 @@ export default function Tarifs(): React.JSX.Element {
                   </td>
                   <td>{formaterMontant(prixVente)}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimerProduit(produit.id)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerProduit(produit.id)}>
                       Supprimer
                     </button>
                   </td>
@@ -177,7 +177,7 @@ export default function Tarifs(): React.JSX.Element {
             })}
           </tbody>
         </table>
-        <button onClick={ajouterProduit}>+ Ajouter un produit</button>
+        <button className="action-ecriture" onClick={ajouterProduit}>+ Ajouter un produit</button>
       </div>
 
       <div className="carte">
@@ -228,7 +228,7 @@ export default function Tarifs(): React.JSX.Element {
                   </td>
                   <td>{formaterMontant(total)}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimerMainOeuvre(ligne.id)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerMainOeuvre(ligne.id)}>
                       Supprimer
                     </button>
                   </td>
@@ -237,7 +237,7 @@ export default function Tarifs(): React.JSX.Element {
             })}
           </tbody>
         </table>
-        <button onClick={ajouterMainOeuvre}>+ Ajouter une ligne</button>
+        <button className="action-ecriture" onClick={ajouterMainOeuvre}>+ Ajouter une ligne</button>
       </div>
 
       <div className="carte">
@@ -288,7 +288,7 @@ export default function Tarifs(): React.JSX.Element {
                   </td>
                   <td>{formaterMontant(total)}</td>
                   <td>
-                    <button className="bouton-danger" onClick={() => supprimerDeplacement(ligne.id)}>
+                    <button className="action-ecriture bouton-danger" onClick={() => supprimerDeplacement(ligne.id)}>
                       Supprimer
                     </button>
                   </td>
@@ -297,7 +297,7 @@ export default function Tarifs(): React.JSX.Element {
             })}
           </tbody>
         </table>
-        <button onClick={ajouterDeplacement}>+ Ajouter un déplacement</button>
+        <button className="action-ecriture" onClick={ajouterDeplacement}>+ Ajouter un déplacement</button>
       </div>
 
       {messageErreur && <p className="erreur">{messageErreur}</p>}
