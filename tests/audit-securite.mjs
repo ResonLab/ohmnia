@@ -104,12 +104,12 @@ console.log(`  info : ${divisionsSuspectes.length} division(s) à vérifier manu
 if (divisionsSuspectes.length <= 12) divisionsSuspectes.forEach((d) => console.log(`         ${d}`))
 
 console.log('\n=== Transactions ===')
-const facturesTs = lire(join(SRC, 'main/ipc/factures.ts'))
-verifier(
-  'enregistrement de facture en transaction',
-  facturesTs.includes('dansUneTransaction')
-)
-const devisTs = lire(join(SRC, 'main/ipc/devis.ts'))
+// La logique métier a quitté `ipc/` pour `domaines/`, que le serveur multi-postes
+// réutilise. C'est donc là qu'il faut contrôler la transaction : sinon le mode
+// réseau pourrait écrire sans, sans que rien ne le signale.
+const facturesTs = lire(join(SRC, 'main/domaines/factures.ts'))
+verifier('enregistrement de facture en transaction', facturesTs.includes('dansUneTransaction'))
+const devisTs = lire(join(SRC, 'main/domaines/devis.ts'))
 verifier('enregistrement de devis en transaction', devisTs.includes('dansUneTransaction'))
 
 console.log('\n=== Sauvegardes ===')

@@ -25,6 +25,68 @@ import {
   obtenirDetailClient,
   supprimerClient
 } from '../main/domaines/clients'
+import {
+  creerModele,
+  creerModeleDepuisFacture,
+  enregistrerModele,
+  listerModeles,
+  supprimerModele
+} from '../main/domaines/modeles'
+import {
+  ajouterTarifDeplacement,
+  ajouterTarifMainOeuvre,
+  ajouterTarifProduit,
+  listerTarifsDeplacement,
+  listerTarifsMainOeuvre,
+  listerTarifsProduits,
+  modifierTarifDeplacement,
+  modifierTarifMainOeuvre,
+  modifierTarifProduit,
+  supprimerTarifDeplacement,
+  supprimerTarifMainOeuvre,
+  supprimerTarifProduit
+} from '../main/domaines/tarifs'
+import {
+  ajouterArticle,
+  listerInventaire,
+  modifierArticle,
+  referenceSuggeree,
+  resumeInventaire,
+  supprimerArticle
+} from '../main/domaines/inventaire'
+import { rechercheGlobale } from '../main/domaines/recherche'
+import { verifierConformite } from '../main/domaines/conformite'
+import {
+  changerStatutDevis,
+  chargerDetailDevis,
+  creerBrouillonDevis,
+  dupliquerDevis,
+  enregistrerDevis,
+  historiqueDevis,
+  prochainNumeroDevis,
+  supprimerDevis
+} from '../main/domaines/devis'
+import {
+  changerStatutFacture,
+  chargerDetailFacture,
+  confirmerEnregistrementHistorique,
+  creerBrouillonFacture,
+  creerFactureDepuisDevis,
+  dupliquerFacture,
+  enregistrerFacture,
+  historiqueFactures,
+  prochainNumeroFacture,
+  supprimerFacture
+} from '../main/domaines/factures'
+import {
+  arreterIntervention,
+  demarrerIntervention,
+  facturerInterventions,
+  interventionEnCours,
+  listerInterventions,
+  modifierIntervention,
+  supprimerIntervention
+} from '../main/domaines/suiviTemps'
 
 /**
  * Ce que le serveur sait faire, canal par canal.
@@ -64,5 +126,81 @@ export const REGISTRE: Record<string, Operation> = {
     enregistrerObjectifAnnuel(annee as number, objectif as number),
 
   'tableauDeBord:charger': () => chargerTableauDeBord(),
-  'parametresApp:lire': () => lireParametresApp()
+  'parametresApp:lire': () => lireParametresApp(),
+
+  'modeles:lister': () => listerModeles(),
+  'modeles:creer': (nom) => creerModele(nom as string),
+  'modeles:enregistrer': (modele) =>
+    enregistrerModele(modele as Parameters<typeof enregistrerModele>[0]),
+  'modeles:supprimer': (id) => supprimerModele(id as number),
+  'modeles:creerDepuisFacture': (factureId, nom) =>
+    creerModeleDepuisFacture(factureId as number, nom as string),
+
+  'tarifsProduits:lister': () => listerTarifsProduits(),
+  'tarifsProduits:ajouter': (tarif) =>
+    ajouterTarifProduit(tarif as Parameters<typeof ajouterTarifProduit>[0]),
+  'tarifsProduits:modifier': (tarif) =>
+    modifierTarifProduit(tarif as Parameters<typeof modifierTarifProduit>[0]),
+  'tarifsProduits:supprimer': (id) => supprimerTarifProduit(id as number),
+
+  'tarifsMainOeuvre:lister': () => listerTarifsMainOeuvre(),
+  'tarifsMainOeuvre:ajouter': (tarif) =>
+    ajouterTarifMainOeuvre(tarif as Parameters<typeof ajouterTarifMainOeuvre>[0]),
+  'tarifsMainOeuvre:modifier': (tarif) =>
+    modifierTarifMainOeuvre(tarif as Parameters<typeof modifierTarifMainOeuvre>[0]),
+  'tarifsMainOeuvre:supprimer': (id) => supprimerTarifMainOeuvre(id as number),
+
+  'tarifsDeplacement:lister': () => listerTarifsDeplacement(),
+  'tarifsDeplacement:ajouter': (tarif) =>
+    ajouterTarifDeplacement(tarif as Parameters<typeof ajouterTarifDeplacement>[0]),
+  'tarifsDeplacement:modifier': (tarif) =>
+    modifierTarifDeplacement(tarif as Parameters<typeof modifierTarifDeplacement>[0]),
+  'tarifsDeplacement:supprimer': (id) => supprimerTarifDeplacement(id as number),
+
+  'inventaire:lister': () => listerInventaire(),
+  'inventaire:referenceSuggeree': () => referenceSuggeree(),
+  'inventaire:ajouter': (article) =>
+    ajouterArticle(article as Parameters<typeof ajouterArticle>[0]),
+  'inventaire:modifier': (referenceOrigine, article) =>
+    modifierArticle(referenceOrigine as string, article as Parameters<typeof modifierArticle>[1]),
+  'inventaire:supprimer': (reference) => supprimerArticle(reference as string),
+  'inventaire:resume': () => resumeInventaire(),
+
+  'recherche:globale': (terme) => rechercheGlobale(terme as string),
+
+  'conformite:verifier': () => verifierConformite(),
+
+  'suiviTemps:lister': () => listerInterventions(),
+  'suiviTemps:enCours': () => interventionEnCours(),
+  'suiviTemps:demarrer': (description, clientId) =>
+    demarrerIntervention(description as string, clientId as number | null),
+  'suiviTemps:arreter': (id) => arreterIntervention(id as number),
+  'suiviTemps:modifier': (intervention) =>
+    modifierIntervention(intervention as Parameters<typeof modifierIntervention>[0]),
+  'suiviTemps:supprimer': (id) => supprimerIntervention(id as number),
+  'suiviTemps:facturer': (ids, factureId, tauxHoraireParDefaut) =>
+    facturerInterventions(ids as number[], factureId as number, tauxHoraireParDefaut as number),
+
+  'devis:prochainNumero': () => prochainNumeroDevis(),
+  'devis:creerBrouillon': (clientId) => creerBrouillonDevis(clientId as number),
+  'devis:obtenirDetail': (id) => chargerDetailDevis(id as number),
+  'devis:dupliquer': (id) => dupliquerDevis(id as number),
+  'devis:enregistrer': (detail) => enregistrerDevis(detail as Parameters<typeof enregistrerDevis>[0]),
+  'devis:supprimer': (id) => supprimerDevis(id as number),
+  'devis:changerStatut': (id, statut) =>
+    changerStatutDevis(id as number, statut as Parameters<typeof changerStatutDevis>[1]),
+  'devis:historique': () => historiqueDevis(),
+
+  'factures:prochainNumero': () => prochainNumeroFacture(),
+  'factures:creerBrouillon': (clientId) => creerBrouillonFacture(clientId as number),
+  'factures:obtenirDetail': (id) => chargerDetailFacture(id as number),
+  'factures:dupliquer': (id) => dupliquerFacture(id as number),
+  'factures:creerDepuisDevis': (devisId) => creerFactureDepuisDevis(devisId as number),
+  'factures:enregistrer': (detail) =>
+    enregistrerFacture(detail as Parameters<typeof enregistrerFacture>[0]),
+  'factures:supprimer': (id) => supprimerFacture(id as number),
+  'factures:changerStatut': (id, statut) =>
+    changerStatutFacture(id as number, statut as Parameters<typeof changerStatutFacture>[1]),
+  'factures:historique': () => historiqueFactures(),
+  'factures:confirmerEnregistrementHistorique': (id) => confirmerEnregistrementHistorique(id as number)
 }
