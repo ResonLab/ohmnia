@@ -4,6 +4,10 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'n
 import { extname, join } from 'node:path'
 import { getDb } from '../db/database'
 import { tracerAudit } from '../db/audit'
+import {
+  compterJustificatifsParEcriture,
+  listerJustificatifs
+} from '../domaines/justificatifs'
 import type { Justificatif } from '../../shared/types'
 
 const EXTENSIONS_ACCEPTEES = ['.png', '.jpg', '.jpeg', '.webp', '.pdf']
@@ -48,19 +52,9 @@ function cheminSecurise(nomFichier: string): string {
 }
 
 export function enregistrerHandlersJustificatifs(): void {
-  ipcMain.handle('justificatifs:lister', (_e, journalId: number) => {
-    const lignes = getDb()
-      .prepare('SELECT * FROM justificatifs WHERE journal_id = ? ORDER BY id')
-      .all(journalId) as unknown as LigneJustificatif[]
-    return lignes.map(versJustificatif)
-  })
+  ipcMain.handle('justificatifs:lister', (_e, journalId: number) => listerJustificatifs(journalId))
 
-  ipcMain.handle('justificatifs:compterParEcriture', () => {
-    const lignes = getDb()
-      .prepare('SELECT journal_id, COUNT(*) AS n FROM justificatifs GROUP BY journal_id')
-      .all() as unknown as { journal_id: number; n: number }[]
-    return Object.fromEntries(lignes.map((l) => [l.journal_id, l.n])) as Record<number, number>
-  })
+  ipcMain.handle('justificatifs:compterParEcriture', () => compterJustificatifsParEcriture())
 
   ipcMain.handle('justificatifs:ajouter', async (_e, journalId: number) => {
     const ecriture = getDb().prepare('SELECT id FROM journal WHERE id = ?').get(journalId)

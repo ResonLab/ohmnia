@@ -10,7 +10,9 @@ const PROJET = joindre(DOSSIER_TESTS, '..')
 
 
 
-const source = readFileSync(joindre(PROJET, 'src/main/ipc/comptabilite.ts'), 'utf-8')
+// Les analyseurs ont quitté ipc/ pour domaines/, que le serveur multi-postes
+// réutilise : c'est désormais là qu'il faut aller les chercher.
+const source = readFileSync(joindre(PROJET, 'src/main/domaines/comptabilite.ts'), 'utf-8')
 
 // On isole les fonctions pures (aucune dépendance Electron/SQLite) et on retire
 // les annotations de types pour pouvoir les exécuter directement en JS.

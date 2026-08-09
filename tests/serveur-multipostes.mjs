@@ -96,6 +96,31 @@ const operations = {
       .prepare('INSERT INTO clients (nom, adresse, email, telephone) VALUES (?, ?, ?, ?)')
       .run(c.nom, c.adresse, c.email, c.telephone)
     return { id: Number(r.lastInsertRowid), ...c }
+  },
+
+  // Un second domaine, choisi pour ce qu'il éprouve en plus des clients : une
+  // clé qui est du texte, un refus de doublon, et surtout une opération à
+  // deux arguments — c'est le seul endroit où le transport du tableau
+  // `arguments` est réellement mis à l'épreuve.
+  'inventaire:lister': () => base.prepare('SELECT * FROM inventaire ORDER BY reference').all(),
+  'inventaire:ajouter': (a) => {
+    if (!a.reference.trim()) throw new Error('La référence est obligatoire.')
+    const existe = base.prepare('SELECT 1 FROM inventaire WHERE reference = ?').get(a.reference)
+    if (existe) throw new Error(`La référence "${a.reference}" existe déjà dans l'inventaire.`)
+    base
+      .prepare(
+        `INSERT INTO inventaire (reference, designation, categorie, quantite_stock, seuil_alerte,
+          prix_achat_unitaire, prix_vente_unitaire, fournisseur, emplacement, derniere_maj)
+         VALUES (?, ?, '', ?, 0, 0, 0, '', '', datetime('now'))`
+      )
+      .run(a.reference, a.designation, a.quantiteStock)
+    return a
+  },
+  'inventaire:modifier': (referenceOrigine, a) => {
+    base
+      .prepare('UPDATE inventaire SET reference = ?, designation = ? WHERE reference = ?')
+      .run(a.reference, a.designation, referenceOrigine)
+    return a
   }
 }
 
@@ -173,6 +198,31 @@ const refus = await appeler('clients:ajouter', { nom: '   ', adresse: '', email:
 verifier(
   'un nom vide est refusé, avec un message en français',
   refus.code === 400 && refus.corps.erreur === 'Le nom du client est obligatoire.'
+)
+
+const article = { reference: 'ART-0001', designation: 'Disjoncteur 16A', quantiteStock: 4 }
+const ajoutArticle = await appeler('inventaire:ajouter', article)
+verifier('article ajouté par le réseau', ajoutArticle.code === 200)
+
+const doublon = await appeler('inventaire:ajouter', article)
+verifier(
+  'une référence en double est refusée, avec un message en français',
+  doublon.code === 400 &&
+    doublon.corps.erreur === 'La référence "ART-0001" existe déjà dans l\'inventaire.'
+)
+
+// Deux arguments d'un coup : c'est le transport du tableau `arguments` qui est
+// vérifié ici, pas la requête SQL.
+await appeler('inventaire:modifier', 'ART-0001', {
+  reference: 'ART-0009',
+  designation: 'Disjoncteur 20A'
+})
+const apresRenommage = await appeler('inventaire:lister')
+verifier(
+  'une opération à deux arguments arrive complète',
+  apresRenommage.corps.resultat.length === 1 &&
+    apresRenommage.corps.resultat[0].reference === 'ART-0009' &&
+    apresRenommage.corps.resultat[0].designation === 'Disjoncteur 20A'
 )
 
 const inconnue = await appeler('clients:inexistant')

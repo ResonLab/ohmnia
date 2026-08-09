@@ -297,13 +297,15 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 - `src/main/contexte.ts` : où vivent les données et quelle version tourne. La
   couche Electron le renseigne au démarrage. **La couche base de données
   n'importe plus Electron du tout.**
-- `src/main/domaines/` : la logique métier, sans Electron. Convertis :
-  **clients, audit, rappels, resume, parametresApp (partie pure), tableauDeBord**.
+- `src/main/domaines/` : la logique métier, sans Electron. **Les 20 domaines
+  sont convertis** — la conversion module par module est terminée.
 - `src/main/ipc/` : ne fait plus que brancher les canaux sur la fenêtre.
+  Il n'y reste du SQL que dans les trois endroits listés plus bas, où la
+  requête ne fait qu'enregistrer le résultat d'une boîte de dialogue.
 - `src/serveur/` : squelette de serveur HTTP qui réutilise `domaines/`.
   Protocole : `POST /api/<canal>` avec `{ "arguments": [...] }`.
   **Les noms de canaux sont exactement ceux de l'IPC**, pour que les deux modes
-  ne puissent pas diverger.
+  ne puissent pas diverger. **99 opérations exposées.**
 - `tests/serveur-multipostes.mjs` : démarre un vrai serveur sur une base
   temporaire et fait de vrais appels réseau.
 
@@ -318,16 +320,27 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 
 Les trois ont été **vérifiés en les cassant volontairement**.
 
-### Ce qui reste
+### Ce qui reste volontairement dans `ipc/`
 
-**15 modules à convertir**, même motif, travail mécanique : comptabilite,
-conditions, conformite, devis, entreprise, factures, inventaire, journal,
-justificatifs, modeles, parametres, recherche, suiviTemps, tarifs, et le reste
-de parametresApp.
+Cinq modules gardent une part Electron : **comptabilite, conditions,
+entreprise, justificatifs, parametresApp**. Ils ouvrent des sélecteurs de
+fichiers ou l'explorateur, ce qui n'a aucun sens sur un serveur. Ce qui reste
+là-bas n'est jamais du métier :
 
-**Cinq d'entre eux gardent une part Electron dans `ipc/`** — comptabilite,
-conditions, entreprise, justificatifs, parametresApp : ils ouvrent des
-sélecteurs de fichiers ou l'explorateur, ce qui n'a aucun sens sur un serveur.
+| Module | Ce qui reste côté fenêtre |
+|---|---|
+| comptabilite | choisir le fichier de relevé à lire, choisir où écrire l'export CSV |
+| conditions | ouvrir la page des conditions dans le navigateur du poste |
+| entreprise | choisir le logo, le copier, le lire en data URL |
+| justificatifs | ajouter, ouvrir, lire, supprimer les fichiers sur le disque |
+| parametresApp | dossiers, sauvegardes, infos système, export de toutes les données |
+
+**Les justificatifs sont le seul point vraiment en suspens** : leur lecture et
+leur suppression visent le disque du poste. En mode serveur, ces fichiers
+devront vivre à côté de la base du serveur. C'est une décision de l'étape 3,
+pas d'un simple déplacement de code.
+
+### Ce qui reste à faire
 
 **Étape 2** : comptes, droits, authentification. Tant qu'elle n'est pas faite,
 le serveur ne doit pas quitter `127.0.0.1`.
@@ -335,7 +348,28 @@ le serveur ne doit pas quitter `127.0.0.1`.
 **Étape 3** : l'application sait se connecter à un serveur au lieu de sa base
 locale. C'est là que ça devient visible pour l'utilisateur.
 
-### Piège rencontré, à ne pas réintroduire
+### Pièges rencontrés, à ne pas réintroduire
+
+**Des vérifications visaient `ipc/`, où le code n'est plus.** Deux suites
+lisaient le fichier source de `ipc/` : `audit-securite.mjs` y cherchait
+`dansUneTransaction` dans les factures et les devis, et `parseurs-bancaires.mjs`
+y découpait les analyseurs de relevés pour les exécuter. Déplacer le code sans
+déplacer le contrôle aurait laissé passer une écriture hors transaction en mode
+réseau. Les deux pointent désormais sur `domaines/`. **En convertissant un
+module, chercher son nom dans `tests/` avant de conclure.**
+
+`parseurs-bancaires.mjs` découpe `domaines/comptabilite.ts` entre deux
+commentaires — « Découpe une ligne CSV » et « Marque les mouvements » — puis
+retire les types pour exécuter le bloc. Ce bloc ne doit donc toucher ni la base
+ni Electron, et ses fonctions doivent rester internes au module : le test
+ajoute ses propres `export`.
+
+**Le nom du canal doit tenir sur la même ligne qu'`ipcMain.handle(`.** Le
+garde-fou qui apparie le registre et l'IPC cherche `ipcMain.handle('<canal>'`
+d'un seul tenant. Une mise en forme sur plusieurs lignes rend le canal
+invisible et fait échouer la suite, alors que le code est correct.
+
+### Piège du premier jet
 
 `fetch` garde des connexions dans un pool : Node plantait sur une assertion
 interne en quittant, **alors que tous les tests passaient**. Le code de sortie

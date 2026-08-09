@@ -40,6 +40,36 @@ export function lireParametresApp(): ParametresApp {
   return versParametresApp(ligne)
 }
 
+export function enregistrerParametresApp(valeurs: ParametresApp): ParametresApp {
+  const erreur = validerParametresApp(valeurs)
+  if (erreur) throw new Error(erreur)
+
+  getDb()
+    .prepare(
+      `UPDATE parametres_app SET
+        dossier_documents = ?, nb_sauvegardes = ?, theme = ?, langue = ?, couleur_accent = ?,
+        delai_paiement_defaut = ?, validite_devis_defaut = ?, seuil_alerte_facture_jours = ?
+       WHERE id = 1`
+    )
+    .run(
+      valeurs.dossierDocuments,
+      valeurs.nbSauvegardes,
+      valeurs.theme,
+      valeurs.langue,
+      valeurs.couleurAccent,
+      valeurs.delaiPaiementDefaut,
+      valeurs.validiteDevisDefaut,
+      valeurs.seuilAlerteFactureJours
+    )
+  return lireParametresApp()
+}
+
+/** Contrôle d'intégrité de la base : renvoie `ok` ou la description du problème. */
+export function verifierIntegrite(): string {
+  const resultat = getDb().prepare('PRAGMA integrity_check').get() as { integrity_check: string }
+  return resultat.integrity_check
+}
+
 export function validerParametresApp(valeurs: ParametresApp): string | null {
   if (valeurs.nbSauvegardes < 1 || valeurs.nbSauvegardes > 500) {
     return 'Le nombre de sauvegardes conservées doit être compris entre 1 et 500.'

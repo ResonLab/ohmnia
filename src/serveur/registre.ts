@@ -17,7 +17,35 @@ import {
   resumeParAnnee
 } from '../main/domaines/resume'
 import { chargerTableauDeBord } from '../main/domaines/tableauDeBord'
-import { lireParametresApp } from '../main/domaines/parametresApp'
+import {
+  enregistrerParametresApp,
+  lireParametresApp,
+  verifierIntegrite
+} from '../main/domaines/parametresApp'
+import {
+  ajouterCategorieJournal,
+  ajouterEcritureJournal,
+  evolutionAnnuelle,
+  listerCategoriesJournal,
+  listerJournal,
+  modifierEcritureJournal,
+  renommerCategorieJournal,
+  repartitionParCategorie,
+  supprimerCategorieJournal,
+  supprimerEcritureJournal
+} from '../main/domaines/journal'
+import {
+  ajouterChargeFixe,
+  enregistrerParametresDeplacement,
+  enregistrerParametresImpression,
+  enregistrerParametresMarge,
+  lireParametresDeplacement,
+  lireParametresImpression,
+  lireParametresMarge,
+  listerChargesFixes,
+  modifierChargeFixe,
+  supprimerChargeFixe
+} from '../main/domaines/parametres'
 import {
   ajouterClient,
   listerClients,
@@ -56,6 +84,13 @@ import {
 } from '../main/domaines/inventaire'
 import { rechercheGlobale } from '../main/domaines/recherche'
 import { verifierConformite } from '../main/domaines/conformite'
+import { accepterConditions, etatConditions, urlConditions } from '../main/domaines/conditions'
+import { enregistrerEntreprise, lireEntreprise } from '../main/domaines/entreprise'
+import {
+  compterJustificatifsParEcriture,
+  listerJustificatifs
+} from '../main/domaines/justificatifs'
+import { importerMouvements } from '../main/domaines/comptabilite'
 import {
   changerStatutDevis,
   chargerDetailDevis,
@@ -202,5 +237,64 @@ export const REGISTRE: Record<string, Operation> = {
   'factures:changerStatut': (id, statut) =>
     changerStatutFacture(id as number, statut as Parameters<typeof changerStatutFacture>[1]),
   'factures:historique': () => historiqueFactures(),
-  'factures:confirmerEnregistrementHistorique': (id) => confirmerEnregistrementHistorique(id as number)
+  'factures:confirmerEnregistrementHistorique': (id) => confirmerEnregistrementHistorique(id as number),
+
+  'categoriesJournal:lister': () => listerCategoriesJournal(),
+  'categoriesJournal:ajouter': (libelle) => ajouterCategorieJournal(libelle as string),
+  'categoriesJournal:renommer': (id, libelle) =>
+    renommerCategorieJournal(id as number, libelle as string),
+  'categoriesJournal:supprimer': (id) => supprimerCategorieJournal(id as number),
+
+  'journal:lister': (filtres) => listerJournal((filtres as Parameters<typeof listerJournal>[0]) ?? {}),
+  'journal:ajouter': (valeurs) =>
+    ajouterEcritureJournal(valeurs as Parameters<typeof ajouterEcritureJournal>[0]),
+  'journal:modifier': (valeurs) =>
+    modifierEcritureJournal(valeurs as Parameters<typeof modifierEcritureJournal>[0]),
+  'journal:supprimer': (id) => supprimerEcritureJournal(id as number),
+  'journal:repartitionParCategorie': (filtres) =>
+    repartitionParCategorie((filtres as Parameters<typeof repartitionParCategorie>[0]) ?? {}),
+  'journal:evolutionAnnuelle': () => evolutionAnnuelle(),
+
+  'parametresMarge:lire': () => lireParametresMarge(),
+  'parametresMarge:enregistrer': (valeurs) =>
+    enregistrerParametresMarge(valeurs as Parameters<typeof enregistrerParametresMarge>[0]),
+  'parametresDeplacement:lire': () => lireParametresDeplacement(),
+  'parametresDeplacement:enregistrer': (valeurs) =>
+    enregistrerParametresDeplacement(
+      valeurs as Parameters<typeof enregistrerParametresDeplacement>[0]
+    ),
+  'parametresImpression:lire': () => lireParametresImpression(),
+  'parametresImpression:enregistrer': (valeurs) =>
+    enregistrerParametresImpression(valeurs as Parameters<typeof enregistrerParametresImpression>[0]),
+
+  'chargesFixes:lister': () => listerChargesFixes(),
+  'chargesFixes:ajouter': (charge) =>
+    ajouterChargeFixe(charge as Parameters<typeof ajouterChargeFixe>[0]),
+  'chargesFixes:modifier': (charge) =>
+    modifierChargeFixe(charge as Parameters<typeof modifierChargeFixe>[0]),
+  'chargesFixes:supprimer': (id) => supprimerChargeFixe(id as number),
+
+  'parametresApp:enregistrer': (valeurs) =>
+    enregistrerParametresApp(valeurs as Parameters<typeof enregistrerParametresApp>[0]),
+  'parametresApp:verifierIntegrite': () => verifierIntegrite(),
+
+  'conditions:etat': () => etatConditions(),
+  'conditions:accepter': () => accepterConditions(),
+  'conditions:url': () => urlConditions(),
+
+  'entreprise:lire': () => lireEntreprise(),
+  'entreprise:enregistrer': (valeurs) =>
+    enregistrerEntreprise(valeurs as Parameters<typeof enregistrerEntreprise>[0]),
+
+  'justificatifs:lister': (journalId) => listerJustificatifs(journalId as number),
+  'justificatifs:compterParEcriture': () => compterJustificatifsParEcriture(),
+
+  // L'export CSV et la lecture d'un relevé passent par des boîtes de dialogue :
+  // ils restent côté fenêtre. L'import, lui, est une écriture en base.
+  'comptabilite:importerMouvements': (mouvements, entreeId, depenseId) =>
+    importerMouvements(
+      mouvements as Parameters<typeof importerMouvements>[0],
+      entreeId as number | null,
+      depenseId as number | null
+    )
 }

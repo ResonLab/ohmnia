@@ -15,7 +15,11 @@ import {
 } from '../db/backup'
 import { cheminBase, dossierSauvegardes } from '../contexte'
 // La partie qui ne depend pas d'Electron vit dans domaines/ et sert aussi au serveur.
-import { lireParametresApp, validerParametresApp } from '../domaines/parametresApp'
+import {
+  enregistrerParametresApp,
+  lireParametresApp,
+  verifierIntegrite
+} from '../domaines/parametresApp'
 import type { InfosSysteme, ParametresApp } from '../../shared/types'
 
 export { lireParametresApp }
@@ -29,29 +33,9 @@ export function dossierDocumentsEffectif(): string {
 export function enregistrerHandlersParametresApp(): void {
   ipcMain.handle('parametresApp:lire', () => lireParametresApp())
 
-  ipcMain.handle('parametresApp:enregistrer', (_e, valeurs: ParametresApp) => {
-    const erreur = validerParametresApp(valeurs)
-    if (erreur) throw new Error(erreur)
-
-    getDb()
-      .prepare(
-        `UPDATE parametres_app SET
-          dossier_documents = ?, nb_sauvegardes = ?, theme = ?, langue = ?, couleur_accent = ?,
-          delai_paiement_defaut = ?, validite_devis_defaut = ?, seuil_alerte_facture_jours = ?
-         WHERE id = 1`
-      )
-      .run(
-        valeurs.dossierDocuments,
-        valeurs.nbSauvegardes,
-        valeurs.theme,
-        valeurs.langue,
-        valeurs.couleurAccent,
-        valeurs.delaiPaiementDefaut,
-        valeurs.validiteDevisDefaut,
-        valeurs.seuilAlerteFactureJours
-      )
-    return lireParametresApp()
-  })
+  ipcMain.handle('parametresApp:enregistrer', (_e, valeurs: ParametresApp) =>
+    enregistrerParametresApp(valeurs)
+  )
 
   ipcMain.handle('parametresApp:choisirDossierDocuments', async () => {
     const resultat = await choisirFichier({
@@ -96,10 +80,7 @@ export function enregistrerHandlersParametresApp(): void {
     } satisfies InfosSysteme
   })
 
-  ipcMain.handle('parametresApp:verifierIntegrite', () => {
-    const resultat = getDb().prepare('PRAGMA integrity_check').get() as { integrity_check: string }
-    return resultat.integrity_check
-  })
+  ipcMain.handle('parametresApp:verifierIntegrite', () => verifierIntegrite())
 
   ipcMain.handle('sauvegardes:lister', () => listerSauvegardes())
 
