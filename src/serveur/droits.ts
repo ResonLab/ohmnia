@@ -1,4 +1,4 @@
-import type { Role } from '../../../Nexika/serveur/index'
+import type { Role } from 'nexika'
 
 /**
  * Qui a le droit de quoi — **la politique de droits tient dans ce seul fichier**.

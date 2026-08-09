@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
+    "nexika": "github:ResonLab/nexika",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

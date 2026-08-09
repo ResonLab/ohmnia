@@ -4,11 +4,12 @@
 // tout le projet ni un `npm install`. On y copie un fichier, et Node le lance.
 // Aucune dépendance native — `node:sqlite` est intégré à Node 24.
 //
-// Le bundle réunit deux choses : le serveur commun de la maison
-// (`../../Nexika/serveur/`, partagé avec Scenika) et les opérations propres à
-// Ohmnia. L'application Electron, elle, ne dépend pas de `Nexika/` : elle ne
-// parle au serveur que par le réseau. C'est ce qui permet au dépôt d'Ohmnia de
-// se construire seul.
+// Le bundle réunit deux choses : le serveur commun de la maison (le paquet
+// `nexika`, partagé avec Scenika) et les opérations propres à Ohmnia.
+// L'application Electron, elle, ne dépend pas de `nexika` : elle ne parle au
+// serveur que par le réseau. C'est ce qui permet à l'installateur d'Ohmnia de
+// ne pas embarquer le code du serveur, et le garde-fou est dans
+// `tests/serveur-multipostes.mjs`.
 import { readFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'

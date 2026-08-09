@@ -16,7 +16,6 @@
     "src/preload/**/*",
     "src/shared/**/*",
     "src/serveur/**/*",
-    "../Nexika/serveur/**/*",
     "electron.vite.config.ts"
   ]
 }

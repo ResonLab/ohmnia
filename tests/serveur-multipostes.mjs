@@ -36,7 +36,7 @@ function fichiersTs(dossier) {
 /* ── 1. Le serveur ne doit dépendre ni d'Electron ni d'une bibliothèque ──── */
 
 console.log('=== Indépendance du serveur ===')
-const serveurIndex = lire(join(SRC, '../../Nexika/serveur/transport.ts'))
+const serveurIndex = lire(join(PROJET, 'node_modules/nexika/serveur/transport.ts'))
 const serveurRegistre = lire(join(SRC, 'serveur/registre.ts'))
 
 verifier(
@@ -79,21 +79,30 @@ verifier(
 
 console.log('\n=== Frontière avec le code commun ===')
 
-// Le serveur commun de la maison vit dans `Nexika/serveur/`, hors du projet
-// Ohmnia, parce que Scenika s'en servira aussi. L'application Electron, elle,
-// ne doit **jamais** en dépendre : elle ne parle au serveur que par le réseau.
-// Sinon le dépôt d'Ohmnia ne se construirait plus seul — et on ne s'en
-// apercevrait qu'au moment de publier.
+// Le serveur commun de la maison est le paquet `nexika`, hors du projet Ohmnia,
+// parce que Scenika s'en servira aussi. L'application Electron, elle, ne doit
+// **jamais** en dépendre : elle ne parle au serveur que par le réseau. Sinon
+// l'application embarquerait le code du serveur dans son installateur — et on
+// ne s'en apercevrait qu'au moment de publier.
+//
+// **On cherche la provenance de l'import, pas une chaîne de caractères.**
+// Le garde-fou visait autrefois le chemin relatif `../../../Nexika/serveur/`.
+// Le jour où Nexika est devenu un paquet npm, `from 'nexika'` serait passé
+// dessous sans rien déclencher : le contrôle aurait continué de dire oui en
+// ne regardant plus rien. Une vérification qui ne peut plus échouer est pire
+// qu'une vérification absente, parce qu'on lui fait confiance.
 const dossiersApplication = ['main', 'renderer', 'preload']
 const importsInterdits = []
 for (const dossier of dossiersApplication) {
   for (const fichier of fichiersTs(join(SRC, dossier))) {
     for (const ligne of lire(fichier).split('\n')) {
-      if (!ligne.includes('Nexika/serveur')) continue
+      const provenance = ligne.match(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/)?.[1]
+      if (!provenance) continue
+      if (provenance !== 'nexika' && !provenance.startsWith('nexika/') &&
+          !provenance.includes('Nexika/serveur')) continue
       // Un import de type disparaît à la compilation : il ne crée pas de
       // dépendance réelle et reste donc acceptable.
       if (ligne.trimStart().startsWith('import type')) continue
-      if (ligne.trimStart().startsWith('//') || ligne.trimStart().startsWith('*')) continue
       importsInterdits.push(`${fichier.replace(SRC, 'src')} : ${ligne.trim()}`)
     }
   }

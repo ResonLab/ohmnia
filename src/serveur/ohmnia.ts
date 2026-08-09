@@ -2,7 +2,7 @@ import {
   demarrerServeur,
   type ApplicationServie,
   type OptionsServeur
-} from '../../../Nexika/serveur/index'
+} from 'nexika'
 import { definirContexte } from '../main/contexte'
 import { fermerBaseDeDonnees, ouvrirBaseDeDonnees } from '../main/db/database'
 import { REGISTRE } from './registre'
