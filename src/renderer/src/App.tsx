@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import LogoOhmnia from './components/LogoOhmnia'
 import RechercheGlobale from './components/RechercheGlobale'
 import ConditionsUtilisation from './components/ConditionsUtilisation'
+import ConnexionServeur from './components/ConnexionServeur'
 import ParametresAppPage from './pages/ParametresApp'
 import { appliquerTheme } from './lib/theme'
 import { definirPaysCourant } from './lib/devise'
 import { definirLangue, t, type Langue } from '../../shared/i18n'
-import type { Theme } from '../../shared/types'
+import type { EtatMultipostes, RoleMultipostes, Theme } from '../../shared/types'
 import Accueil from './pages/Accueil'
 import AjoutRapide from './pages/AjoutRapide'
 import Parametres from './pages/Parametres'
@@ -53,9 +54,41 @@ export default function App(): React.JSX.Element {
   const [conditionsAAccepter, setConditionsAAccepter] = useState<boolean | null>(null)
   // Sert uniquement à forcer un nouveau rendu quand la langue change.
   const [, setLangueActive] = useState<Langue>('fr')
+  // null tant que le mode n'est pas connu : sans cela, l'application
+  // s'afficherait une fraction de seconde avant l'écran de connexion.
+  const [multipostes, setMultipostes] = useState<EtatMultipostes | null>(null)
+
+  // Le mode est lu avant tout le reste : en multi-postes non connecté, aucun
+  // autre appel ne peut aboutir, ils échoueraient tous sur « session absente ».
+  useEffect(() => {
+    window.api.multipostes
+      .etat()
+      .then(setMultipostes)
+      .catch(() => setMultipostes({
+        mode: 'local',
+        adresse: '',
+        dernierIdentifiant: '',
+        connecte: false,
+        session: null
+      }))
+  }, [])
+
+  // Session expirée en cours de travail : on repasse par l'écran de connexion.
+  // L'écran en cours n'est pas détruit — se reconnecter y ramène directement.
+  useEffect(() => {
+    return window.api.multipostes.surSessionPerdue(() => {
+      setMultipostes((precedent) =>
+        precedent ? { ...precedent, connecte: false, session: null } : precedent
+      )
+    })
+  }, [])
+
+  const enAttenteDeConnexion =
+    multipostes !== null && multipostes.mode === 'serveur' && !multipostes.connecte
 
   // Applique l'apparence et la langue enregistrées au démarrage.
   useEffect(() => {
+    if (enAttenteDeConnexion || multipostes === null) return
     window.api.parametresApp.lire().then((p) => {
       setTheme(p.theme)
       setCouleurAccent(p.couleurAccent)
@@ -68,8 +101,9 @@ export default function App(): React.JSX.Element {
   // La devise de l'interface suit le pays de l'entreprise. Elle est relue à
   // chaque changement de module pour refléter un changement de pays immédiatement.
   useEffect(() => {
+    if (enAttenteDeConnexion || multipostes === null) return
     window.api.entreprise.lire().then((e) => definirPaysCourant(e.pays))
-  }, [moduleActif])
+  }, [moduleActif, enAttenteDeConnexion, multipostes])
 
   // En mode automatique, suit les changements de thème de Windows.
   useEffect(() => {
@@ -82,12 +116,13 @@ export default function App(): React.JSX.Element {
 
   // Les conditions d'utilisation sont vérifiées avant tout affichage de l'application.
   useEffect(() => {
+    if (enAttenteDeConnexion || multipostes === null) return
     window.api.conditions
       .etat()
       .then((etat) => setConditionsAAccepter(etat.doitAccepter))
       // En cas d'échec de lecture, on n'empêche pas l'utilisateur de travailler.
       .catch(() => setConditionsAAccepter(false))
-  }, [])
+  }, [enAttenteDeConnexion, multipostes])
 
   // Ctrl+K (ou Cmd+K) ouvre la recherche globale depuis n'importe quel module.
   useEffect(() => {
@@ -107,12 +142,39 @@ export default function App(): React.JSX.Element {
     appliquerTheme(nouveauTheme, nouvelleCouleur)
   }, [])
 
-  // Écran neutre le temps de savoir si les conditions ont déjà été acceptées.
+  // Écran neutre le temps de connaître le mode, puis l'état des conditions.
+  if (multipostes === null) return <div className="app" />
+
+  if (enAttenteDeConnexion) {
+    return (
+      <ConnexionServeur
+        etat={multipostes}
+        onConnecte={(session) => setMultipostes({ ...multipostes, connecte: true, session })}
+        onRetourLocal={async () => {
+          await window.api.multipostes.definirMode('local', '')
+          // Le mode est choisi au démarrage : sans redémarrage, les canaux
+          // métier continueraient de pointer vers le serveur injoignable.
+          window.location.reload()
+        }}
+      />
+    )
+  }
+
   if (conditionsAAccepter === null) return <div className="app" />
 
   if (conditionsAAccepter) {
     return <ConditionsUtilisation onAccepter={() => setConditionsAAccepter(false)} />
   }
+
+  const role: RoleMultipostes | null = multipostes.session?.role ?? null
+  const lectureSeule = role === 'lecture'
+
+  // Un menu qui mène à un écran dont chaque bouton sera refusé n'aide personne :
+  // les modules réservés à l'administration disparaissent pour les autres rôles.
+  const modulesVisibles = MODULES.filter((module) => {
+    if (role === null || role === 'administration') return true
+    return module.id !== 'audit' && module.id !== 'parametres'
+  })
 
   return (
     <div className="app">
@@ -126,7 +188,7 @@ export default function App(): React.JSX.Element {
         </div>
 
         <nav>
-          {MODULES.map((module) => (
+          {modulesVisibles.map((module) => (
             <button
               key={module.id}
               className={module.id === moduleActif ? 'actif' : ''}
@@ -138,12 +200,26 @@ export default function App(): React.JSX.Element {
           ))}
         </nav>
 
+        {multipostes.session && (
+          <p className="menu-session">
+            <span className="pastille-serveur">Serveur</span>
+            {multipostes.session.nomAffiche || multipostes.session.identifiant}
+            <em>{multipostes.session.role}</em>
+          </p>
+        )}
+
         <p className="menu-raccourci">
           <kbd>Ctrl</kbd> + <kbd>K</kbd> {t('menu.rechercher')}
         </p>
       </aside>
 
       <main className="contenu">
+        {lectureSeule && (
+          <p className="bandeau-lecture-seule">
+            Vous êtes connecté en <strong>lecture seule</strong> : la consultation est libre, mais
+            toute modification sera refusée par le serveur.
+          </p>
+        )}
         {moduleActif === 'accueil' && (
           <Accueil onNaviguer={(module) => setModuleActif(module as ModuleId)} />
         )}

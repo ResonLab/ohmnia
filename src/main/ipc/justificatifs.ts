@@ -4,6 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'n
 import { extname, join } from 'node:path'
 import { getDb } from '../db/database'
 import { tracerAudit } from '../db/audit'
+import { exigerModeLocal } from '../multipostes/routeur'
 import {
   compterJustificatifsParEcriture,
   listerJustificatifs
@@ -51,12 +52,27 @@ function cheminSecurise(nomFichier: string): string {
   return join(dossierJustificatifs(), nomFichier)
 }
 
+/** Justificatifs, côté données. Enregistré en mode local seulement. */
 export function enregistrerHandlersJustificatifs(): void {
   ipcMain.handle('justificatifs:lister', (_e, journalId: number) => listerJustificatifs(journalId))
 
   ipcMain.handle('justificatifs:compterParEcriture', () => compterJustificatifsParEcriture())
+}
 
+/**
+ * Les fichiers eux-mêmes, côté poste. Enregistré dans les deux modes.
+ *
+ * **Refusés en multi-postes, volontairement.** Les fichiers vivent à côté de
+ * la base : sur le serveur. Les copier depuis un poste écrirait dans le
+ * dossier du poste, et le collègue d'à côté ne verrait rien — un justificatif
+ * qu'on croit rangé et qui n'existe nulle part est pire que pas de
+ * justificatif. Les rendre accessibles suppose de les faire transiter par le
+ * protocole ; c'est écrit dans CONTEXTE.md comme le prochain chantier.
+ */
+export function enregistrerHandlersJustificatifsPoste(): void {
   ipcMain.handle('justificatifs:ajouter', async (_e, journalId: number) => {
+    exigerModeLocal('Joindre un justificatif')
+
     const ecriture = getDb().prepare('SELECT id FROM journal WHERE id = ?').get(journalId)
     if (!ecriture) throw new Error("Cette écriture du Journal n'existe pas.")
 
@@ -104,11 +120,13 @@ export function enregistrerHandlersJustificatifs(): void {
   })
 
   ipcMain.handle('justificatifs:ouvrir', async (_e, nomFichier: string) => {
+    exigerModeLocal('Ouvrir un justificatif')
     const erreur = await shell.openPath(cheminSecurise(nomFichier))
     if (erreur) throw new Error(`Impossible d'ouvrir le fichier : ${erreur}`)
   })
 
   ipcMain.handle('justificatifs:supprimer', (_e, id: number) => {
+    exigerModeLocal('Supprimer un justificatif')
     const ligne = getDb().prepare('SELECT nom_fichier FROM justificatifs WHERE id = ?').get(id) as
       | { nom_fichier: string }
       | undefined

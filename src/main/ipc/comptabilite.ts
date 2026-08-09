@@ -2,7 +2,7 @@ import { app, ipcMain } from 'electron'
 import { choisirFichier, choisirDestination } from '../dialogues'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
-import { tracerAudit } from '../db/audit'
+import { executer } from '../multipostes/routeur'
 import {
   analyserReleve,
   construireCsvComptable,
@@ -11,11 +11,37 @@ import {
 import type { MouvementBancaire, ResultatImport } from '../../shared/types'
 
 /**
- * Branchement de la comptabilité sur la fenêtre.
- * Logique : `../domaines/comptabilite.ts`. Ne reste ici que le choix du fichier
- * à lire et de l'endroit où écrire l'export — deux boîtes de dialogue.
+ * Comptabilité, côté données. **Enregistré en mode local seulement** : en
+ * multi-postes, ces mêmes canaux sont servis par le serveur.
+ * Logique : `../domaines/comptabilite.ts`.
  */
 export function enregistrerHandlersComptabilite(): void {
+  /**
+   * Le CSV lui-même, sans boîte de dialogue. Séparé de `exporterCsv` pour que
+   * le contenu puisse venir du serveur en mode multi-postes, l'écriture du
+   * fichier restant sur le poste qui exporte.
+   */
+  ipcMain.handle('comptabilite:construireCsv', (_e, annee: number | null) =>
+    construireCsvComptable(annee)
+  )
+
+  /** Même découpage : le fichier est lu sur le poste, analysé là où est la base. */
+  ipcMain.handle('comptabilite:analyserReleve', (_e, contenu: string, estXml: boolean) =>
+    analyserReleve(contenu, estXml)
+  )
+
+  ipcMain.handle('comptabilite:importerMouvements', (_e, mouvements: MouvementBancaire[], entreeId: number | null, depenseId: number | null) =>
+    importerMouvements(mouvements, entreeId, depenseId)
+  )
+}
+
+/**
+ * Comptabilité, côté poste : choisir un fichier, en écrire un.
+ * **Enregistré dans les deux modes** — c'est ce poste-ci qui ouvre la boîte de
+ * dialogue, même quand les données sont sur le serveur. Le contenu, lui, passe
+ * par `executer()`, qui va le chercher là où il est.
+ */
+export function enregistrerHandlersComptabilitePoste(): void {
   ipcMain.handle('comptabilite:exporterCsv', async (_e, annee: number | null) => {
     const suffixe = annee === null ? 'tout' : String(annee)
     const resultat = await choisirDestination({
@@ -25,8 +51,8 @@ export function enregistrerHandlersComptabilite(): void {
     })
     if (resultat.canceled || !resultat.filePath) return null
 
-    writeFileSync(resultat.filePath, construireCsvComptable(annee), 'utf-8')
-    tracerAudit('export', 'comptabilite', suffixe, resultat.filePath)
+    const csv = (await executer('comptabilite:construireCsv', annee)) as string
+    writeFileSync(resultat.filePath, csv, 'utf-8')
     return resultat.filePath
   })
 
@@ -42,14 +68,18 @@ export function enregistrerHandlersComptabilite(): void {
     const contenu = readFileSync(chemin, 'utf-8')
     const estXml = extname(chemin).toLowerCase() === '.xml' || contenu.includes('<Document')
 
+    // Le rapprochement compare le relevé aux écritures déjà enregistrées :
+    // il doit donc se faire là où vit le Journal, pas ici.
+    const mouvements = (await executer(
+      'comptabilite:analyserReleve',
+      contenu,
+      estXml
+    )) as ResultatImport['mouvements']
+
     return {
       fichier: basename(chemin),
-      mouvements: analyserReleve(contenu, estXml),
+      mouvements,
       format: estXml ? 'CAMT.053' : 'CSV'
     } satisfies ResultatImport
   })
-
-  ipcMain.handle('comptabilite:importerMouvements', (_e, mouvements: MouvementBancaire[], entreeId: number | null, depenseId: number | null) =>
-    importerMouvements(mouvements, entreeId, depenseId)
-  )
 }

@@ -104,13 +104,14 @@ src/
       sauvegardeExterne.ts  chiffrement AES-256-GCM (scrypt)
       audit.ts          traçage + verrou des exercices clôturés
       migration-dossier.ts  reprise de l'ancien dossier de données
-    ipc/                un fichier par domaine (20 fichiers)
+    ipc/                un fichier par domaine (21 fichiers)
   preload/index.ts      pont sécurisé — seule porte entre interface et système
   renderer/src/
     App.tsx             menu, navigation, thème, langue, Ctrl+K, écran de conditions
     pages/              17 écrans
-    components/         8 composants (Modale, Camembert, BarresAnnuelles,
-                        LogoOhmnia, ConditionsUtilisation, RechercheGlobale…)
+    components/         10 composants (Modale, Camembert, BarresAnnuelles,
+                        LogoOhmnia, ConditionsUtilisation, RechercheGlobale,
+                        ConnexionServeur, ReglageMultipostes…)
     lib/                theme.ts, devise.ts, suggestions.ts
   shared/               partagé entre les trois couches
     types.ts            tous les types
@@ -118,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  10 suites — `npm run verifier`
+tests/                  11 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -240,7 +241,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 10 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 11 suites de tests, **tout passe**.
 - Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la
@@ -383,24 +384,73 @@ leur suppression visent le disque du poste. En mode serveur, ces fichiers
 devront vivre à côté de la base du serveur. C'est une décision de l'étape 3,
 pas d'un simple déplacement de code.
 
+### Étape 3 faite : le poste sait parler au serveur
+
+**Le mode se choisit dans « Paramètres de l'app » → Mode multi-postes.** Le
+mode local reste le défaut : sans choix explicite, rien ne change.
+
+- `src/main/multipostes/configuration.ts` : `multipostes.json` dans le dossier
+  de données. **Jamais le mot de passe** — il est redemandé à chaque ouverture.
+- `src/main/multipostes/client.ts` : le poste vu comme client. **Le jeton ne
+  vit qu'en mémoire** : écrit sur le disque, il survivrait au vol du portable.
+- `src/main/multipostes/routeur.ts` : le seul endroit qui décide, base locale
+  ou serveur.
+- `src/main/multipostes/handlers.ts` : en mode serveur, les canaux métier sont
+  enregistrés **depuis `DROITS`** et renvoyés au serveur. Mêmes noms qu'en IPC,
+  donc **l'interface n'a rien à savoir du mode**.
+
+**Le mode est décidé au démarrage, une fois.** En mode serveur, la base locale
+n'est même pas ouverte — c'est ce qui garantit qu'aucun écran n'affiche par
+erreur des données locales. Changer de mode recharge l'application ; les
+données locales ne sont jamais effacées.
+
+Trois choses qui auraient sorti des écrans vides et qu'il a fallu redécouper :
+
+| Ce qui casse naïvement | Découpage retenu |
+|---|---|
+| Les PDF lisaient la base en direct | `documents:donnees` rend le document tout prêt, logo compris en data URL ; `pdf.ts` ne fait plus que l'imprimer |
+| L'export comptable construisait le CSV sur le poste | `comptabilite:construireCsv` le construit là où sont les données ; le poste choisit seulement où l'écrire |
+| L'import bancaire rapprochait les écritures localement | `comptabilite:analyserReleve` rapproche là où vit le Journal |
+
+Dans chaque module mixte, deux fonctions d'enregistrement au lieu d'une :
+`enregistrerHandlersX()` pour les données (mode local seulement) et
+`enregistrerHandlersXPoste()` pour ce qui concerne cette machine-ci (les deux
+modes). C'est ce qui rend `main/index.ts` lisible d'un coup d'œil.
+
+**Ce qui est refusé en multi-postes**, avec un message qui dit pourquoi :
+sauvegardes locales, export global, choix du logo, justificatifs. Ces
+opérations écriraient sur le poste alors que les données sont sur le serveur —
+un justificatif qu'on croit rangé et qui n'existe nulle part est pire que pas
+de justificatif.
+
+**Session expirée** : le poste prévient l'interface (`multipostes:sessionPerdue`),
+qui repasse par l'écran de connexion sans détruire l'écran en cours.
+
+**Rôle `lecture`** : les modules Audit et Mon entreprise disparaissent du menu,
+et un bandeau annonce la lecture seule.
+
+### Mise en service
+
+1. Démarrer le serveur sur `127.0.0.1`.
+2. Depuis un poste, renseigner l'adresse et **créer le premier administrateur**.
+3. Arrêter le serveur, le rouvrir sur l'adresse du réseau.
+4. Créer les comptes des collègues.
+
+Le garde-fou de l'étape 2 impose cet ordre : pas de réseau sans administrateur.
+
 ### Ce qui reste à faire
 
-**Étape 3** : l'application sait se connecter à un serveur au lieu de sa base
-locale. C'est là que ça devient visible pour l'utilisateur. Il faudra y
-trancher trois points laissés ouverts :
-
-- **Où vivent les justificatifs** en mode serveur (voir juste au-dessus).
-- **Ce que l'interface fait d'un `401`** : une session de 12 h expire en pleine
-  saisie. Reconnexion transparente ou écran de connexion qui préserve le
-  travail en cours — mais jamais une perte silencieuse.
-- **Ce qu'un rôle `lecture` voit à l'écran.** Aujourd'hui le serveur refuse
-  l'écriture ; l'interface, elle, afficherait toujours ses boutons. Un bouton
-  qui échoue systématiquement est une mauvaise interface : il faut les masquer
-  selon le rôle rendu par `session:ouvrir`.
-
-**Mise en service, quand l'étape 3 sera là** : démarrer le serveur sur
-`127.0.0.1`, créer le premier administrateur, l'arrêter, le rouvrir sur
-l'adresse du réseau. Le garde-fou impose cet ordre.
+- **Les justificatifs en multi-postes.** Ils doivent transiter par le protocole
+  pour vivre à côté de la base du serveur. C'est le prochain chantier.
+- **Le logo est un chemin de fichier dans la base.** Un chemin du serveur ne
+  veut rien dire sur un poste. Les PDF sortent avec le logo (le serveur le
+  renvoie en data URL) mais on ne peut pas le changer depuis un poste. La
+  correction est de ranger l'image dans la base — changement de schéma.
+- **Masquer les boutons d'écriture pour le rôle `lecture`.** Le menu et le
+  bandeau sont faits ; bouton par bouton, dans les 17 écrans, ne l'est pas.
+  Aujourd'hui le clic échoue avec un message clair du serveur — correct, mais
+  pas agréable.
+- **Le transport n'est toujours pas chiffré** (voir plus haut).
 
 ### Pièges rencontrés, à ne pas réintroduire
 

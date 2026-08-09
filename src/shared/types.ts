@@ -463,3 +463,29 @@ export interface DocumentImpression {
   total: number
   codeVerification: string
 }
+
+/* ── Mode multi-postes ────────────────────────────────────────────────────── */
+
+/**
+ * Rôles du serveur multi-postes, du moins au plus étendu.
+ * La liste fait foi dans `src/serveur/comptes.ts` ; elle est reprise ici parce
+ * que l'interface doit savoir ce qu'elle a le droit d'afficher.
+ */
+export type RoleMultipostes = 'lecture' | 'ecriture' | 'administration'
+
+export interface SessionMultipostes {
+  identifiant: string
+  nomAffiche: string
+  role: RoleMultipostes
+  /** Fin de validité de la session, en UTC. */
+  expireLe: string
+}
+
+export interface EtatMultipostes {
+  mode: 'local' | 'serveur'
+  adresse: string
+  /** Dernier identifiant utilisé, pour ne pas le retaper. Jamais le mot de passe. */
+  dernierIdentifiant: string
+  connecte: boolean
+  session: SessionMultipostes | null
+}

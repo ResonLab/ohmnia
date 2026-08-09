@@ -12,6 +12,11 @@ export function enregistrerHandlersConditions(): void {
 
   ipcMain.handle('conditions:accepter', () => accepterConditions())
 
+  ipcMain.handle('conditions:url', () => urlConditions())
+}
+
+/** Ouvrir la page dans le navigateur : c'est le poste qui le fait, dans les deux modes. */
+export function enregistrerHandlersConditionsPoste(): void {
   ipcMain.handle('conditions:ouvrirPage', async () => {
     // Ouverture dans le navigateur système : jamais dans une fenêtre de l'app.
     try {
@@ -20,6 +25,4 @@ export function enregistrerHandlersConditions(): void {
       throw new Error(`Impossible d'ouvrir la page des conditions. Adresse : ${URL_CONDITIONS}`)
     }
   })
-
-  ipcMain.handle('conditions:url', () => urlConditions())
 }

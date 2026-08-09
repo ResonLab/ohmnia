@@ -155,7 +155,12 @@ export const DROITS: Record<string, Role> = {
   'justificatifs:compterParEcriture': 'lecture',
 
   /* Comptabilité — un import crée des écritures dans le Journal. */
-  'comptabilite:importerMouvements': 'ecriture'
+  'comptabilite:construireCsv': 'lecture',
+  'comptabilite:analyserReleve': 'lecture',
+  'comptabilite:importerMouvements': 'ecriture',
+
+  /* Documents à imprimer : c'est une lecture, même si elle produit un PDF. */
+  'documents:donnees': 'lecture'
 }
 
 /**

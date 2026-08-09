@@ -90,7 +90,12 @@ import {
   compterJustificatifsParEcriture,
   listerJustificatifs
 } from '../main/domaines/justificatifs'
-import { importerMouvements } from '../main/domaines/comptabilite'
+import {
+  analyserReleve,
+  construireCsvComptable,
+  importerMouvements
+} from '../main/domaines/comptabilite'
+import { donneesDocument, type TypeDocument } from '../main/domaines/documents'
 import {
   changerStatutDevis,
   chargerDetailDevis,
@@ -289,12 +294,20 @@ export const REGISTRE: Record<string, Operation> = {
   'justificatifs:lister': (journalId) => listerJustificatifs(journalId as number),
   'justificatifs:compterParEcriture': () => compterJustificatifsParEcriture(),
 
-  // L'export CSV et la lecture d'un relevé passent par des boîtes de dialogue :
-  // ils restent côté fenêtre. L'import, lui, est une écriture en base.
+  // Choisir un fichier reste côté fenêtre ; produire le CSV et analyser un
+  // relevé demandent la base, donc passent par ici.
+  'comptabilite:construireCsv': (annee) => construireCsvComptable(annee as number | null),
+  'comptabilite:analyserReleve': (contenu, estXml) =>
+    analyserReleve(contenu as string, estXml as boolean),
   'comptabilite:importerMouvements': (mouvements, entreeId, depenseId) =>
     importerMouvements(
       mouvements as Parameters<typeof importerMouvements>[0],
       entreeId as number | null,
       depenseId as number | null
-    )
+    ),
+
+  // Sans ce canal, les PDF sortiraient vides en mode multi-postes : la
+  // fabrication du document est locale, mais ses données sont dans la base.
+  'documents:donnees': (type, id, rappelId) =>
+    donneesDocument(type as TypeDocument, id as number, rappelId as number | undefined)
 }

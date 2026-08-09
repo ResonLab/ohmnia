@@ -20,16 +20,27 @@ import {
   lireParametresApp,
   verifierIntegrite
 } from '../domaines/parametresApp'
+import { estModeServeur, exigerModeLocal } from '../multipostes/routeur'
 import type { InfosSysteme, ParametresApp } from '../../shared/types'
 
 export { lireParametresApp }
 
-/** Dossier où sont rangés les PDF : celui choisi par l'utilisateur, sinon Documents/Ohmnia. */
+/**
+ * Dossier où sont rangés les PDF : celui choisi par l'utilisateur, sinon
+ * Documents/Ohmnia.
+ *
+ * **En multi-postes, le réglage partagé est ignoré.** C'est un chemin de
+ * fichier : celui du serveur ne veut rien dire ici, et écrire les PDF d'un
+ * collègue dans son arborescence à lui échouerait sans qu'on comprenne
+ * pourquoi. Chaque poste range donc ses PDF chez lui.
+ */
 export function dossierDocumentsEffectif(): string {
-  const params = lireParametresApp()
-  return params.dossierDocuments ?? join(app.getPath('documents'), 'Ohmnia')
+  const defaut = join(app.getPath('documents'), 'Ohmnia')
+  if (estModeServeur()) return defaut
+  return lireParametresApp().dossierDocuments ?? defaut
 }
 
+/** Réglages de l'application, côté données. Enregistré en mode local seulement. */
 export function enregistrerHandlersParametresApp(): void {
   ipcMain.handle('parametresApp:lire', () => lireParametresApp())
 
@@ -37,7 +48,20 @@ export function enregistrerHandlersParametresApp(): void {
     enregistrerParametresApp(valeurs)
   )
 
+  ipcMain.handle('parametresApp:verifierIntegrite', () => verifierIntegrite())
+}
+
+/**
+ * Ce qui concerne cette machine-ci : dossiers, sauvegardes locales, infos
+ * système. Enregistré dans les deux modes.
+ *
+ * **Les sauvegardes sont refusées en multi-postes.** Sauvegarder depuis un
+ * poste ne copierait que sa base locale — vide. Les données sont sur le
+ * serveur, donc les sauvegardes aussi.
+ */
+export function enregistrerHandlersParametresAppPoste(): void {
   ipcMain.handle('parametresApp:choisirDossierDocuments', async () => {
+    exigerModeLocal('Choisir le dossier des PDF')
     const resultat = await choisirFichier({
       title: 'Choisir le dossier où ranger les PDF',
       properties: ['openDirectory', 'createDirectory']
@@ -50,6 +74,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('parametresApp:reinitialiserDossierDocuments', () => {
+    exigerModeLocal('Réinitialiser le dossier des PDF')
     getDb().prepare('UPDATE parametres_app SET dossier_documents = NULL WHERE id = 1').run()
     return dossierDocumentsEffectif()
   })
@@ -67,34 +92,38 @@ export function enregistrerHandlersParametresApp(): void {
 
   ipcMain.handle('parametresApp:infosSysteme', () => {
     const chemin = cheminBase()
+    // En multi-postes, la base locale n'est pas ouverte : annoncer sa taille et
+    // un nombre de sauvegardes ferait croire que les données sont ici.
+    const surServeur = estModeServeur()
     return {
       version: app.getVersion(),
       versionElectron: process.versions.electron,
       versionNode: process.versions.node,
       dossierDonnees: app.getPath('userData'),
-      cheminBase: chemin,
-      tailleBaseOctets: existsSync(chemin) ? statSync(chemin).size : 0,
+      cheminBase: surServeur ? 'Sur le serveur multi-postes' : chemin,
+      tailleBaseOctets: surServeur || !existsSync(chemin) ? 0 : statSync(chemin).size,
       dossierDocumentsEffectif: dossierDocumentsEffectif(),
-      nbSauvegardes: listerSauvegardes().length,
-      dossierSauvegardes: dossierSauvegardes()
+      nbSauvegardes: surServeur ? 0 : listerSauvegardes().length,
+      dossierSauvegardes: surServeur ? 'Sur le serveur multi-postes' : dossierSauvegardes()
     } satisfies InfosSysteme
   })
 
-  ipcMain.handle('parametresApp:verifierIntegrite', () => verifierIntegrite())
-
-  ipcMain.handle('sauvegardes:lister', () => listerSauvegardes())
+  ipcMain.handle('sauvegardes:lister', () => (estModeServeur() ? [] : listerSauvegardes()))
 
   ipcMain.handle('sauvegardes:creer', () => {
+    exigerModeLocal('Créer une sauvegarde')
     const chemin = sauvegarderBaseDeDonnees()
     if (!chemin) throw new Error("Aucune base de données à sauvegarder pour l'instant.")
     return chemin
   })
 
   ipcMain.handle('sauvegardes:restaurer', (_e, nomFichier: string) => {
+    exigerModeLocal('Restaurer une sauvegarde')
     restaurerSauvegarde(nomFichier)
   })
 
   ipcMain.handle('sauvegardeExterne:choisirDossier', async () => {
+    exigerModeLocal('Choisir un dossier de sauvegarde externe')
     const resultat = await choisirFichier({
       title: 'Choisir le dossier de sauvegarde externe (clé USB, disque…)',
       properties: ['openDirectory', 'createDirectory']
@@ -107,6 +136,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('sauvegardeExterne:lireDossier', () => {
+    if (estModeServeur()) return null
     const ligne = getDb()
       .prepare('SELECT dossier_sauvegarde_externe FROM parametres_app WHERE id = 1')
       .get() as { dossier_sauvegarde_externe: string | null }
@@ -114,6 +144,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('sauvegardeExterne:sauvegarder', (_e, motDePasse: string) => {
+    exigerModeLocal('Sauvegarder vers un support externe')
     const ligne = getDb()
       .prepare('SELECT dossier_sauvegarde_externe FROM parametres_app WHERE id = 1')
       .get() as { dossier_sauvegarde_externe: string | null }
@@ -124,6 +155,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('sauvegardeExterne:restaurer', async (_e, motDePasse: string) => {
+    exigerModeLocal('Restaurer une sauvegarde chiffrée')
     const resultat = await choisirFichier({
       title: 'Choisir une sauvegarde chiffrée Ohmnia',
       filters: [{ name: 'Sauvegarde Ohmnia', extensions: ['ohmnia'] }],
@@ -144,6 +176,7 @@ export function enregistrerHandlersParametresApp(): void {
   })
 
   ipcMain.handle('donnees:exporterTout', async () => {
+    exigerModeLocal('Exporter toutes les données')
     const defaut = `ohmnia-export-${new Date().toISOString().slice(0, 10)}.json`
     const resultat = await choisirDestination({
       title: 'Exporter toutes les données',

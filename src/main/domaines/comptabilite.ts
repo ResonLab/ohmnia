@@ -30,6 +30,11 @@ function champCsv(valeur: string | number): string {
  * de fiduciaire). Encodé en UTF-8 avec BOM pour que les accents s'affichent.
  */
 export function construireCsvComptable(annee: number | null): string {
+  // La trace est prise ici, pas dans la couche fenêtre : en multi-postes,
+  // l'export part d'un poste mais doit apparaître dans l'audit du serveur,
+  // là où vivent les données exportées.
+  tracerAudit('export', 'comptabilite', annee === null ? 'tout' : String(annee))
+
   const conditions = annee === null ? '' : "WHERE CAST(strftime('%Y', j.date) AS INTEGER) = ?"
   const params = annee === null ? [] : [annee]
 

@@ -2,6 +2,7 @@ import { app, ipcMain } from 'electron'
 import { choisirFichier } from '../dialogues'
 import { getDb } from '../db/database'
 import { enregistrerEntreprise, lireEntreprise } from '../domaines/entreprise'
+import { exigerModeLocal } from '../multipostes/routeur'
 import type { Entreprise } from '../../shared/types'
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
@@ -28,15 +29,35 @@ function versDataUrl(cheminAbsolu: string): string | null {
   return `data:${mime};base64,${contenu}`
 }
 
+/** Fiche entreprise, côté données. Enregistré en mode local seulement. */
 export function enregistrerHandlersEntreprise(): void {
   ipcMain.handle('entreprise:lire', () => lireEntreprise())
 
+  ipcMain.handle('entreprise:enregistrer', (_evenement, valeurs: Entreprise) =>
+    enregistrerEntreprise(valeurs)
+  )
+}
+
+/**
+ * Le logo, côté poste. Enregistré dans les deux modes.
+ *
+ * **Limite connue en multi-postes** : le logo est un *chemin de fichier* dans
+ * la base. Un chemin du serveur ne veut rien dire sur un poste, et l'inverse
+ * non plus. Le choisir depuis un poste est donc refusé, et l'aperçu reste
+ * vide ; les PDF, eux, sortent avec le logo, parce que `documents:donnees` le
+ * renvoie en data URL depuis le serveur. La vraie correction serait de ranger
+ * l'image dans la base plutôt que son chemin — c'est un changement de schéma,
+ * noté dans CONTEXTE.md.
+ */
+export function enregistrerHandlersEntreprisePoste(): void {
   ipcMain.handle('entreprise:lireLogoDataUrl', (_evenement, cheminAbsolu: string | null) => {
     if (!cheminAbsolu) return null
     return versDataUrl(cheminAbsolu)
   })
 
   ipcMain.handle('entreprise:choisirLogo', async () => {
+    exigerModeLocal('Choisir le logo de l’entreprise')
+
     const resultat = await choisirFichier({
       title: 'Choisir un logo',
       filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg', 'webp'] }],
@@ -59,8 +80,4 @@ export function enregistrerHandlersEntreprise(): void {
 
     return { logoPath: cheminDestination, dataUrl: versDataUrl(cheminDestination) }
   })
-
-  ipcMain.handle('entreprise:enregistrer', (_evenement, valeurs: Entreprise) =>
-    enregistrerEntreprise(valeurs)
-  )
 }

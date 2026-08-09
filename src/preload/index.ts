@@ -12,6 +12,7 @@ import type {
   EntreeAudit,
   Entreprise,
   EtatConditions,
+  EtatMultipostes,
   EtatMaj,
   EvolutionAnnuelle,
   ExerciceCloture,
@@ -37,6 +38,7 @@ import type {
   ResumeAnnuel,
   ResumeInventaire,
   SauvegardeFichier,
+  SessionMultipostes,
   StatutDevis,
   TableauDeBord,
   TarifDeplacement,
@@ -339,6 +341,33 @@ const api = {
       ipcRenderer.invoke('pdf:generer', type, id, rappelId),
     signalerPret: (): void => {
       ipcRenderer.send('pdf:pret')
+    }
+  },
+
+  /**
+   * Mode multi-postes. Les canaux métier ne changent pas de nom selon le
+   * mode : l'interface n'a que ces réglages-ci à connaître.
+   */
+  multipostes: {
+    etat: (): Promise<EtatMultipostes> => ipcRenderer.invoke('multipostes:etat'),
+    tester: (adresse: string): Promise<{ installe: boolean }> =>
+      ipcRenderer.invoke('multipostes:tester', adresse),
+    definirMode: (mode: 'local' | 'serveur', adresse: string): Promise<EtatMultipostes> =>
+      ipcRenderer.invoke('multipostes:definirMode', mode, adresse),
+    connecter: (identifiant: string, motDePasse: string): Promise<SessionMultipostes> =>
+      ipcRenderer.invoke('multipostes:connecter', identifiant, motDePasse),
+    creerPremierAdministrateur: (
+      identifiant: string,
+      motDePasse: string,
+      nomAffiche: string
+    ): Promise<SessionMultipostes> =>
+      ipcRenderer.invoke('multipostes:creerPremierAdministrateur', identifiant, motDePasse, nomAffiche),
+    deconnecter: (): Promise<EtatMultipostes> => ipcRenderer.invoke('multipostes:deconnecter'),
+    /** Prévenu quand le serveur a refusé le jeton : il faut se reconnecter. */
+    surSessionPerdue: (rappel: () => void): (() => void) => {
+      const ecouteur = (): void => rappel()
+      ipcRenderer.on('multipostes:sessionPerdue', ecouteur)
+      return () => ipcRenderer.removeListener('multipostes:sessionPerdue', ecouteur)
     }
   }
 }

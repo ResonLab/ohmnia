@@ -27,6 +27,17 @@ import { enregistrerHandlersConditions } from './ipc/conditions'
 import { enregistrerHandlersInventaire } from './ipc/inventaire'
 import { enregistrerHandlersResume } from './ipc/resume'
 import { enregistrerHandlersPdf } from './pdf'
+import { enregistrerHandlersDocuments } from './ipc/documents'
+import {
+  enregistrerHandlersDistants,
+  enregistrerHandlersMultipostes
+} from './multipostes/handlers'
+import { enregistrerHandlersComptabilitePoste } from './ipc/comptabilite'
+import { enregistrerHandlersEntreprisePoste } from './ipc/entreprise'
+import { enregistrerHandlersJustificatifsPoste } from './ipc/justificatifs'
+import { enregistrerHandlersParametresAppPoste } from './ipc/parametresApp'
+import { enregistrerHandlersConditionsPoste } from './ipc/conditions'
+import { lireConfigurationMultipostes } from './multipostes/configuration'
 
 // Nom fixé explicitement : garantit que le dossier de données (et donc la base
 // SQLite) reste le même quel que soit le mode de lancement de l'application.
@@ -98,31 +109,51 @@ app.whenReady().then(() => {
     version: app.getVersion()
   })
 
-  migrerAncienDossierDonnees()
-  ouvrirBaseDeDonnees()
-  sauvegarderBaseDeDonnees()
+  // Le mode est lu avant tout : en multi-postes, la base locale n'est même pas
+  // ouverte. C'est ce qui garantit qu'aucun écran n'affichera par erreur des
+  // données locales alors que l'utilisateur croit travailler sur le serveur.
+  const { mode } = lireConfigurationMultipostes()
 
-  enregistrerHandlersEntreprise()
-  enregistrerHandlersParametres()
-  enregistrerHandlersTarifs()
-  enregistrerHandlersJournal()
-  enregistrerHandlersClients()
-  enregistrerHandlersFactures()
-  enregistrerHandlersDevis()
-  enregistrerHandlersParametresApp()
-  enregistrerHandlersRappels()
-  enregistrerHandlersModeles()
-  enregistrerHandlersTableauDeBord()
-  enregistrerHandlersSuiviTemps()
-  enregistrerHandlersJustificatifs()
-  enregistrerHandlersComptabilite()
-  enregistrerHandlersAudit()
-  enregistrerHandlersRecherche()
+  if (mode === 'local') {
+    migrerAncienDossierDonnees()
+    ouvrirBaseDeDonnees()
+    sauvegarderBaseDeDonnees()
+
+    enregistrerHandlersEntreprise()
+    enregistrerHandlersParametres()
+    enregistrerHandlersTarifs()
+    enregistrerHandlersJournal()
+    enregistrerHandlersClients()
+    enregistrerHandlersFactures()
+    enregistrerHandlersDevis()
+    enregistrerHandlersParametresApp()
+    enregistrerHandlersRappels()
+    enregistrerHandlersModeles()
+    enregistrerHandlersTableauDeBord()
+    enregistrerHandlersSuiviTemps()
+    enregistrerHandlersJustificatifs()
+    enregistrerHandlersComptabilite()
+    enregistrerHandlersAudit()
+    enregistrerHandlersRecherche()
+    enregistrerHandlersConformite()
+    enregistrerHandlersConditions()
+    enregistrerHandlersInventaire()
+    enregistrerHandlersResume()
+    enregistrerHandlersDocuments()
+  } else {
+    // Mêmes noms de canaux, servis par le serveur. L'interface ne voit rien.
+    enregistrerHandlersDistants()
+  }
+
+  // Ce qui concerne cette machine-ci existe dans les deux modes : boîtes de
+  // dialogue, fichiers, impression, mises à jour.
+  enregistrerHandlersMultipostes()
+  enregistrerHandlersComptabilitePoste()
+  enregistrerHandlersEntreprisePoste()
+  enregistrerHandlersJustificatifsPoste()
+  enregistrerHandlersParametresAppPoste()
+  enregistrerHandlersConditionsPoste()
   enregistrerHandlersMaj()
-  enregistrerHandlersConformite()
-  enregistrerHandlersConditions()
-  enregistrerHandlersInventaire()
-  enregistrerHandlersResume()
   enregistrerHandlersPdf()
 
   creerFenetrePrincipale()
@@ -134,6 +165,8 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  // fermerBaseDeDonnees() ne fait rien si aucune base n'a été ouverte —
+  // c'est le cas en mode multi-postes.
   fermerBaseDeDonnees()
   if (process.platform !== 'darwin') app.quit()
 })
