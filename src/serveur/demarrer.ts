@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { demarrerServeur } from './index'
 import { fermerBaseDeDonnees } from '../main/db/database'
 import { fermerBaseComptes } from './comptes'
+import { fabriquerCertificatAutoSigne } from './certificat'
 
 /**
  * Lancement du serveur multi-postes en ligne de commande.
@@ -33,7 +34,12 @@ Options
                           pour l'ouvrir au réseau local.
   --certificat <fichier>  Certificat au format PEM.
   --cle <fichier>         Clé privée au format PEM.
+  --creer-certificat      Fabrique un certificat auto-signé dans le dossier des
+                          données, puis s'arrête. Rien n'est écrasé.
   --aide                  Affiche ce message.
+
+Si le dossier des données contient déjà « certificat.pem » et « cle.pem », le
+serveur les utilise sans qu'on ait à les indiquer.
 
 Première mise en service
   1. Démarrer sur 127.0.0.1 (le défaut).
@@ -61,7 +67,12 @@ export interface Arguments {
   hote: string
   certificat?: string
   cleePrivee?: string
+  creerCertificat: boolean
 }
+
+/** Noms de fichiers repris automatiquement dans le dossier des données. */
+export const NOM_CERTIFICAT = 'certificat.pem'
+export const NOM_CLE = 'cle.pem'
 
 /**
  * Lecture des arguments, séparée du démarrage pour être vérifiable :
@@ -84,7 +95,7 @@ export function lireArguments(argv: string[]): Arguments {
     }
   }
 
-  const connus = ['donnees', 'port', 'hote', 'certificat', 'cle', 'aide']
+  const connus = ['donnees', 'port', 'hote', 'certificat', 'cle', 'creer-certificat', 'aide']
   for (const nom of valeurs.keys()) {
     if (!connus.includes(nom)) {
       throw new Error(`Option inconnue : « --${nom} ». Lancez avec --aide pour la liste.`)
@@ -113,13 +124,61 @@ export function lireArguments(argv: string[]): Arguments {
     )
   }
 
+  const dossier = resolve(donnees)
+
+  // Repris tout seuls s'ils sont là : sans cela, on relance le serveur sur le
+  // réseau, il refuse faute de chiffrement, et on est tenté de chercher
+  // comment contourner le refus plutôt que de retaper deux chemins.
+  const certificatParDefaut = join(dossier, NOM_CERTIFICAT)
+  const cleParDefaut = join(dossier, NOM_CLE)
+  const trouves =
+    !certificat && !cleePrivee && existsSync(certificatParDefaut) && existsSync(cleParDefaut)
+
   return {
-    donnees: resolve(donnees),
+    donnees: dossier,
     port,
     hote: valeurs.get('hote') || '127.0.0.1',
-    certificat: certificat ? resolve(certificat) : undefined,
-    cleePrivee: cleePrivee ? resolve(cleePrivee) : undefined
+    certificat: certificat ? resolve(certificat) : trouves ? certificatParDefaut : undefined,
+    cleePrivee: cleePrivee ? resolve(cleePrivee) : trouves ? cleParDefaut : undefined,
+    creerCertificat: valeurs.has('creer-certificat')
   }
+}
+
+/**
+ * Écrit un certificat auto-signé dans le dossier des données.
+ * Refuse d'écraser : un certificat déjà accepté sur les postes serait remplacé
+ * par un inconnu, et chaque poste redemanderait confirmation sans qu'on
+ * comprenne pourquoi.
+ */
+function creerCertificat(dossier: string): boolean {
+  const cheminCertificat = join(dossier, NOM_CERTIFICAT)
+  const cheminCle = join(dossier, NOM_CLE)
+
+  if (existsSync(cheminCertificat) || existsSync(cheminCle)) {
+    console.error(
+      `\nUn certificat existe déjà dans ${dossier}.\n` +
+        'Supprimez « certificat.pem » et « cle.pem » si vous voulez vraiment en ' +
+        'fabriquer un autre — les postes devront alors tous le réaccepter.\n'
+    )
+    return false
+  }
+
+  const certificat = fabriquerCertificatAutoSigne()
+  writeFileSync(cheminCertificat, certificat.certificatPem, 'utf-8')
+  writeFileSync(cheminCle, certificat.clePem, { encoding: 'utf-8', mode: 0o600 })
+
+  console.log('\nCertificat auto-signé créé.')
+  console.log(`  Certificat  ${cheminCertificat}`)
+  console.log(`  Clé privée  ${cheminCle}`)
+  console.log(`  Valable     jusqu'au ${certificat.expireLe.toISOString().slice(0, 10)}`)
+  console.log(`  Couvre      ${certificat.couvre.join(', ')}`)
+  console.log(
+    '\nLe serveur le reprendra tout seul au prochain démarrage.\n' +
+      "Chaque poste devra l'accepter une première fois : c'est normal pour un\n" +
+      'certificat auto-signé, il chiffre la liaison mais aucune autorité ne le\n' +
+      'garantit. Gardez la clé privée pour vous.\n'
+  )
+  return true
 }
 
 export function demarrerDepuisLaLigneDeCommande(argv: string[], version: string): void {
@@ -140,6 +199,11 @@ export function demarrerDepuisLaLigneDeCommande(argv: string[], version: string)
   }
 
   if (!existsSync(options.donnees)) mkdirSync(options.donnees, { recursive: true })
+
+  if (options.creerCertificat) {
+    if (!creerCertificat(options.donnees)) process.exitCode = 1
+    return
+  }
 
   let serveur: ReturnType<typeof demarrerServeur>
   try {
@@ -164,7 +228,9 @@ export function demarrerDepuisLaLigneDeCommande(argv: string[], version: string)
     console.log(`\nOhmnia serveur ${version}`)
     console.log(`  Écoute      ${protocole}://${affichage}:${options.port}`)
     console.log(`  Données     ${options.donnees}`)
-    if (!options.certificat) {
+    if (options.certificat) {
+      console.log(`  Chiffrement ${options.certificat}`)
+    } else {
       console.log('  Chiffrement aucun (accepté seulement en local)')
     }
     console.log('\nCtrl+C pour arrêter.\n')

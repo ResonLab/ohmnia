@@ -468,10 +468,24 @@ pas de réseau sans chiffrement. Fabriquer un certificat auto-signé (OpenSSL es
 livré avec Git pour Windows) :
 
 ```bash
-openssl req -x509 -newkey rsa:2048 -nodes -days 1825 -keyout cle.pem -out certificat.pem -subj "/CN=ohmnia"
+node ohmnia-serveur.mjs --creer-certificat --donnees "D:\OhmniaServeur"
 ```
 
-Chaque poste devra l'accepter une première fois.
+**Le certificat est fabriqué par l'application, sans OpenSSL.** Exiger d'aller
+chercher un outil externe et d'y recopier une ligne ésotérique, c'est pousser
+à laisser le serveur en clair — soit faire échouer la mesure de sécurité par sa
+mise en œuvre. `src/serveur/certificat.ts` construit la structure X.509 en DER
+à la main (Node génère des clés, pas des certificats). Il couvre `localhost`,
+`127.0.0.1` **et les adresses IPv4 de la machine** : sans elles, un poste qui
+vise `https://192.168.1.20:8787` ne pourrait rien vérifier.
+
+Le serveur reprend `certificat.pem` et `cle.pem` du dossier de données sans
+qu'on ait à les désigner. Un certificat existant n'est **jamais écrasé** : les
+postes qui l'ont accepté redemanderaient tous confirmation.
+
+Chaque poste devra l'accepter une première fois : c'est normal pour un
+certificat auto-signé. Il chiffre parfaitement la liaison ; ce qu'il ne fait
+pas, c'est prouver à un inconnu qu'il parle au bon serveur.
 
 ### Finitions faites après l'étape 3
 
@@ -512,9 +526,6 @@ accepté : le trafic ne quitte pas la machine. Les deux garde-fous du réseau
 
 ### Ce qui reste à faire
 
-- **Le certificat n'est pas fabriqué par l'application.** La commande OpenSSL
-  est donnée ci-dessus et dans `--aide` ; l'automatiser demanderait d'écrire de
-  l'ASN.1 à la main, ce qui n'en vaut pas la peine.
 - **Le serveur n'est pas installé comme service Windows.** Il faut le lancer à
   la main ou par une tâche planifiée. Il s'arrête proprement sur Ctrl+C
   (Windows envoie l'équivalent à l'arrêt d'une tâche), en refermant les bases.
@@ -536,6 +547,12 @@ commentaires — « Découpe une ligne CSV » et « Marque les mouvements » —
 retire les types pour exécuter le bloc. Ce bloc ne doit donc toucher ni la base
 ni Electron, et ses fonctions doivent rester internes au module : le test
 ajoute ses propres `export`.
+
+**`src/serveur/` n'était pas typechecké.** `tsconfig.node.json` ne listait que
+`main`, `preload` et `shared` : une erreur de syntaxe dans le serveur passait
+`npm run typecheck` sans broncher et n'apparaissait qu'à la compilation. Le
+dossier est désormais inclus. **En ajoutant un dossier source, l'ajouter aussi
+au tsconfig.**
 
 **Le nom du canal doit tenir sur la même ligne qu'`ipcMain.handle(`.** Le
 garde-fou qui apparie le registre et l'IPC cherche `ipcMain.handle('<canal>'`
