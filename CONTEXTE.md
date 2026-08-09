@@ -287,3 +287,57 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 - qu'on **teste réellement** ce qu'on livre, pas qu'on affirme que ça marche ;
 - qu'on **signale honnêtement** ce qui n'a pas pu être vérifié ;
 - qu'on **corrige les bugs qu'il signale en cherchant la cause**, pas en contournant.
+
+## 12. Chantier en cours : le serveur multi-postes (branche `serveur-multipostes`)
+
+**`main` est intact et publiable.** Tout ce chantier vit sur une branche.
+
+### Ce qui est fait
+
+- `src/main/contexte.ts` : où vivent les données et quelle version tourne. La
+  couche Electron le renseigne au démarrage. **La couche base de données
+  n'importe plus Electron du tout.**
+- `src/main/domaines/` : la logique métier, sans Electron. Convertis :
+  **clients, audit, rappels, resume, parametresApp (partie pure), tableauDeBord**.
+- `src/main/ipc/` : ne fait plus que brancher les canaux sur la fenêtre.
+- `src/serveur/` : squelette de serveur HTTP qui réutilise `domaines/`.
+  Protocole : `POST /api/<canal>` avec `{ "arguments": [...] }`.
+  **Les noms de canaux sont exactement ceux de l'IPC**, pour que les deux modes
+  ne puissent pas diverger.
+- `tests/serveur-multipostes.mjs` : démarre un vrai serveur sur une base
+  temporaire et fait de vrais appels réseau.
+
+### Les trois garde-fous, à ne pas retirer
+
+1. **Aucun import d'Electron** dans `domaines/` ni `serveur/`.
+2. **Le serveur refuse d'écouter ailleurs que sur `127.0.0.1`** tant qu'il n'y a
+   pas d'authentification. Un serveur de comptabilité ouvert sans mot de passe
+   serait pire que pas de serveur du tout.
+3. **Chaque opération du registre doit exister comme canal IPC.** Vérifié
+   automatiquement : une faute de frappe fait échouer la suite.
+
+Les trois ont été **vérifiés en les cassant volontairement**.
+
+### Ce qui reste
+
+**15 modules à convertir**, même motif, travail mécanique : comptabilite,
+conditions, conformite, devis, entreprise, factures, inventaire, journal,
+justificatifs, modeles, parametres, recherche, suiviTemps, tarifs, et le reste
+de parametresApp.
+
+**Cinq d'entre eux gardent une part Electron dans `ipc/`** — comptabilite,
+conditions, entreprise, justificatifs, parametresApp : ils ouvrent des
+sélecteurs de fichiers ou l'explorateur, ce qui n'a aucun sens sur un serveur.
+
+**Étape 2** : comptes, droits, authentification. Tant qu'elle n'est pas faite,
+le serveur ne doit pas quitter `127.0.0.1`.
+
+**Étape 3** : l'application sait se connecter à un serveur au lieu de sa base
+locale. C'est là que ça devient visible pour l'utilisateur.
+
+### Piège rencontré, à ne pas réintroduire
+
+`fetch` garde des connexions dans un pool : Node plantait sur une assertion
+interne en quittant, **alors que tous les tests passaient**. Le code de sortie
+était faux. Dans les tests, utiliser le module `node:http` et ne jamais appeler
+`process.exit()` pendant la fermeture des sockets.

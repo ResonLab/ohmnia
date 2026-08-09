@@ -16,6 +16,8 @@ import {
   lireObjectifAnnuel,
   resumeParAnnee
 } from '../main/domaines/resume'
+import { chargerTableauDeBord } from '../main/domaines/tableauDeBord'
+import { lireParametresApp } from '../main/domaines/parametresApp'
 import {
   ajouterClient,
   listerClients,
@@ -59,5 +61,8 @@ export const REGISTRE: Record<string, Operation> = {
   'resume:parAnnee': () => resumeParAnnee(),
   'objectifAnnuel:lire': (annee) => lireObjectifAnnuel(annee as number),
   'objectifAnnuel:enregistrer': (annee, objectif) =>
-    enregistrerObjectifAnnuel(annee as number, objectif as number)
+    enregistrerObjectifAnnuel(annee as number, objectif as number),
+
+  'tableauDeBord:charger': () => chargerTableauDeBord(),
+  'parametresApp:lire': () => lireParametresApp()
 }
