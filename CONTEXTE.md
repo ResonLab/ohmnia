@@ -183,7 +183,7 @@ graphiques) · Inventaire (alertes de seuil, décrément auto) · Modèles de pr
 L'écran d'acceptation bloque l'application tant qu'il n'est pas validé. La case ne
 s'active qu'après défilement complet du texte. **Incrémenter `VERSION_CONDITIONS`
 à chaque modification du texte** : l'écran réapparaît alors pour relecture.
-`URL_CONDITIONS` pointe vers https://leimmingz.github.io/ohmnia/conditions.html.
+`URL_CONDITIONS` pointe vers https://resonlab.github.io/ohmnia/conditions.html.
 La suite `tests/coherence-site.mjs` compare le texte de la page publique à ce fichier :
 modifier l'un sans l'autre fait échouer `npm run verifier`.
 
@@ -217,14 +217,22 @@ ils devront recevoir le même traitement, ou être renvoyés sous forme de clé.
 
 ### Publication — partiellement faite
 
-**Fait** : dépôt public [github.com/Leimmingz/ohmnia](https://github.com/Leimmingz/ohmnia)
-créé, branche `main` poussée. `gh` (GitHub CLI) installé mais **pas authentifié**
-(`gh auth login` demande une interaction).
+**Fait** : dépôt public [github.com/ResonLab/ohmnia](https://github.com/ResonLab/ohmnia),
+branche `main` poussée. Le dépôt s'appelait `Leimmingz/ohmnia` ; il a été
+**transféré dans l'organisation ResonLab le 10 août 2026**, avec les quatre
+autres dépôts de la maison. GitHub redirige l'ancienne adresse du dépôt, mais
+**pas celle du site** : GitHub Pages sert désormais `resonlab.github.io/ohmnia`.
+Toutes les adresses du code, des pages et de la documentation ont été réécrites,
+`URL_CONDITIONS` comprise, ainsi que la liste blanche de `tests/coherence-site.mjs`
+qui nommait l'ancien compte.
+
+`gh` (GitHub CLI) est installé **et authentifié** sur le compte `Leimmingz`,
+administrateur de l'organisation.
 
 **En attente** : une branche `securite-et-documentation` est poussée et non fusionnée.
 À intégrer avec `git checkout main && git merge securite-et-documentation && git push`.
 
-**Fait** : le site est en ligne sur https://leimmingz.github.io/ohmnia/ (GitHub Pages,
+**Fait** : le site est en ligne sur https://resonlab.github.io/ohmnia/ (GitHub Pages,
 branche `main`, dossier `/docs`). Douze pages, six en français et six en anglais
 dans `docs/en/`. Licence MIT ajoutée.
 
@@ -262,10 +270,10 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 | Fichier | Valeur | État |
 |---|---|---|
-| `electron-builder.yml` | `owner` | ✔ renseigné : `Leimmingz` |
+| `electron-builder.yml` | `owner` | ✔ renseigné : `ResonLab` |
 | `src/shared/conditions.ts` | `URL_CONDITIONS` | ✔ bascule sur l'adresse GitHub Pages faite |
 
-Compte GitHub du projet : **Leimmingz**, dépôt prévu `ohmnia`.
+Organisation GitHub du projet : **ResonLab**, dépôt `ohmnia`.
 `npm test` rappelle ce qui reste à remplacer sans faire échouer la vérification.
 
 ## 10. Sécurité — incident à connaître

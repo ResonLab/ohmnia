@@ -35,7 +35,7 @@ pour que l'auto-updater fonctionne sans authentification), sans README ni .gitig
 Puis :
 
 ```bash
-git remote add origin https://github.com/Leimmingz/ohmnia.git
+git remote add origin https://github.com/ResonLab/ohmnia.git
 ```
 
 ```bash
@@ -53,7 +53,7 @@ Dans `electron-builder.yml`, le compte est déjà renseigné :
 ```yaml
 publish:
   - provider: github
-    owner: Leimmingz
+    owner: ResonLab
     repo: ohmnia
 ```
 
@@ -207,7 +207,7 @@ Elle est créée en **brouillon** : va sur la page Releases du dépôt et clique
 ### Côté utilisateurs
 
 Dans **Paramètres de l'app → Mises à jour** : source « Dépôt GitHub », dépôt
-`Leimmingz/ohmnia`, et coche la vérification automatique. À chaque nouvelle release
+`ResonLab/ohmnia`, et coche la vérification automatique. À chaque nouvelle release
 publiée, l'app propose la mise à jour.
 
 `npm run package:win` construit **sans rien envoyer** — utile pour tester en local.
@@ -221,7 +221,7 @@ publiée, l'app propose la mise à jour.
 1. Crée un dossier `docs/` à la racine du projet et places-y ton `index.html`.
 2. Sur GitHub : **Settings → Pages → Source : Deploy from a branch**, branche `main`,
    dossier `/docs`.
-3. Le site est publié sur `https://Leimmingz.github.io/ohmnia/` (compte quelques
+3. Le site est publié sur `https://resonlab.github.io/ohmnia/` (compte quelques
    minutes la première fois).
 
 ### Faire concevoir la page
@@ -265,7 +265,7 @@ L'application affiche au premier lancement un écran de conditions, avec un bout
 2. Dans `src/shared/conditions.ts`, remplace `URL_CONDITIONS` par l'adresse réelle :
 
    ```ts
-   export const URL_CONDITIONS = 'https://Leimmingz.github.io/ohmnia/conditions.html'
+   export const URL_CONDITIONS = 'https://resonlab.github.io/ohmnia/conditions.html'
    ```
 
 3. Si tu modifies le texte des conditions, **incrémente aussi `VERSION_CONDITIONS`** :
@@ -275,7 +275,7 @@ Garde les deux versions synchronisées : le texte dans l'app fait foi pour l'uti
 la page web sert de référence consultable.
 
 **Le lien de téléchargement toujours à jour** :
-`https://github.com/Leimmingz/ohmnia/releases/latest`
+`https://github.com/ResonLab/ohmnia/releases/latest`
 
 ---
 

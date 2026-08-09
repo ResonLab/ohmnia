@@ -118,7 +118,7 @@ for (const [dossier, fichier] of pages) {
   if (/<script[^>]+src=/.test(html)) echec(`${etiquette} charge un script externe`)
   if (/<link[^>]*rel="stylesheet"/.test(html)) echec(`${etiquette} charge une feuille de style externe`)
   for (const [, url] of html.matchAll(/(?:src|href)="(https?:[^"]+)"/g)) {
-    if (!url.startsWith('https://github.com/Leimmingz')) {
+    if (!url.startsWith('https://github.com/ResonLab')) {
       echec(`${etiquette} référence une ressource externe : ${url}`)
     }
   }

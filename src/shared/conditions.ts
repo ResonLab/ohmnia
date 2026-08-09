@@ -19,7 +19,7 @@ export const VERSION_CONDITIONS = '1.0'
  * `tests/coherence-site.mjs` : si l'un des deux change sans l'autre,
  * `npm run verifier` échoue.
  */
-export const URL_CONDITIONS = 'https://leimmingz.github.io/ohmnia/conditions.html'
+export const URL_CONDITIONS = 'https://resonlab.github.io/ohmnia/conditions.html'
 
 export interface SectionConditions {
   titre: string

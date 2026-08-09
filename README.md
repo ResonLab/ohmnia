@@ -6,15 +6,15 @@
 
 **Gestion pour indépendants — facturation, devis, compta · 100 % local**
 
-[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Leimmingz/ohmnia/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square&logo=windows&logoColor=white)](https://github.com/ResonLab/ohmnia/releases/latest)
 [![Electron](https://img.shields.io/badge/Electron-43-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
 [![SQLite](https://img.shields.io/badge/SQLite-local-003b57?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org)
-[![Site](https://img.shields.io/badge/Site-leimmingz.github.io-16b981?style=flat-square)](https://leimmingz.github.io/ohmnia/)
+[![Site](https://img.shields.io/badge/Site-resonlab.github.io-16b981?style=flat-square)](https://resonlab.github.io/ohmnia/)
 [![Licence](https://img.shields.io/badge/Licence-MIT-9f5cf7?style=flat-square)](LICENSE)
 
 *Aucun compte · aucun serveur · aucune télémétrie*
 
-🌐 **[Site web](https://leimmingz.github.io/ohmnia/)** &nbsp;·&nbsp; 📥 **[Télécharger](https://github.com/Leimmingz/ohmnia/releases/latest)** &nbsp;·&nbsp; 📄 **[Conditions](https://leimmingz.github.io/ohmnia/conditions.html)** &nbsp;·&nbsp; ✉️ **[Contact](mailto:ohmnia@proton.me)**
+🌐 **[Site web](https://resonlab.github.io/ohmnia/)** &nbsp;·&nbsp; 📥 **[Télécharger](https://github.com/ResonLab/ohmnia/releases/latest)** &nbsp;·&nbsp; 📄 **[Conditions](https://resonlab.github.io/ohmnia/conditions.html)** &nbsp;·&nbsp; ✉️ **[Contact](mailto:ohmnia@proton.me)**
 
 </div>
 
@@ -32,7 +32,7 @@ Le revers est assumé : personne ne peut récupérer tes données à ta place. F
 
 ## Installation
 
-👉 **[Télécharger la dernière version](https://github.com/Leimmingz/ohmnia/releases/latest)**
+👉 **[Télécharger la dernière version](https://github.com/ResonLab/ohmnia/releases/latest)**
 
 Lance `Ohmnia Setup X.Y.Z.exe`. Windows affichera un avertissement SmartScreen au premier lancement : l'exe n'est pas signé par un certificat commercial. **Informations complémentaires** → **Exécuter quand même**.
 
@@ -52,7 +52,7 @@ Lance `Ohmnia Setup X.Y.Z.exe`. Windows affichera un avertissement SmartScreen a
 | **Multi-pays** | CH · FR · BE · LU · DE — taux, formats et mentions légales |
 | **Audit** | Clôture d'exercice, verrou, contrôle de la numérotation |
 
-> ⚠️ **Ohmnia ne te rend pas conforme.** Les taux et seuils proposés sont des points de départ, pas une certification. Voir les [conditions d'utilisation](https://leimmingz.github.io/ohmnia/conditions.html).
+> ⚠️ **Ohmnia ne te rend pas conforme.** Les taux et seuils proposés sont des points de départ, pas une certification. Voir les [conditions d'utilisation](https://resonlab.github.io/ohmnia/conditions.html).
 
 ---
 
@@ -116,7 +116,7 @@ Le code, les commentaires et les colonnes SQL sont **en français**, volontairem
 
 ## Contact
 
-Une question, un bug, une idée ? **[ohmnia@proton.me](mailto:ohmnia@proton.me)** ou une [issue GitHub](https://github.com/Leimmingz/ohmnia/issues).
+Une question, un bug, une idée ? **[ohmnia@proton.me](mailto:ohmnia@proton.me)** ou une [issue GitHub](https://github.com/ResonLab/ohmnia/issues).
 
 Ce n'est pas un service d'assistance : une seule personne développe Ohmnia, sur son temps. Les réponses arrivent quand elles arrivent.
 

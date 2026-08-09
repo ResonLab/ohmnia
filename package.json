@@ -3,7 +3,8 @@
   "version": "0.1.2",
   "description": "Ohmnia - gestion locale pour technicien electronicien independant",
   "main": "./out/main/index.js",
-  "author": "Colin",
+  "author": "Colin Meng",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
