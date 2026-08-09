@@ -67,7 +67,7 @@ export default function Parametres(): React.JSX.Element {
       .lire()
       .then(async (entreprise) => {
         setValeurs(entreprise)
-        setLogoDataUrl(await window.api.entreprise.lireLogoDataUrl(entreprise.logoPath))
+        setLogoDataUrl(await window.api.entreprise.lireLogoDataUrl())
       })
       .finally(() => setChargement(false))
   }, [])
@@ -77,8 +77,17 @@ export default function Parametres(): React.JSX.Element {
     try {
       const resultat = await window.api.entreprise.choisirLogo()
       if (!resultat) return
-      setValeurs((precedent) => ({ ...precedent, logoPath: resultat.logoPath }))
       setLogoDataUrl(resultat.dataUrl)
+    } catch (erreur) {
+      setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+    }
+  }
+
+  async function retirerLogo(): Promise<void> {
+    setMessageErreur(null)
+    try {
+      await window.api.entreprise.retirerLogo()
+      setLogoDataUrl(null)
     } catch (erreur) {
       setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
     }
@@ -215,6 +224,11 @@ export default function Parametres(): React.JSX.Element {
           <button type="button" onClick={choisirLogo}>
             Choisir un logo…
           </button>
+          {logoDataUrl && (
+            <button type="button" onClick={retirerLogo}>
+              Retirer
+            </button>
+          )}
         </div>
       </label>
 

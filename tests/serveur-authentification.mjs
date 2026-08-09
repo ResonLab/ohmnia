@@ -90,13 +90,22 @@ console.log("\n=== Refus d'exposition sans administrateur ===")
 
 let refusReseau = null
 try {
-  demarrerServeur({ dossierDonnees: DOSSIER, version: '0.0.0-test', port: 0, hote: '0.0.0.0' })
+  // Si le garde-fou saute, `demarrerServeur` rend un serveur qui écoute : sans
+  // cette fermeture, le test resterait suspendu au lieu d'échouer. Un test qui
+  // se bloque ne dit rien à personne.
+  const inattendu = demarrerServeur({
+    dossierDonnees: DOSSIER,
+    version: '0.0.0-test',
+    port: 0,
+    hote: '0.0.0.0'
+  })
+  await new Promise((resoudre) => inattendu.close(resoudre))
 } catch (erreur) {
   refusReseau = erreur.message
 }
 verifier(
   'le serveur refuse le réseau tant qu’aucun administrateur n’existe',
-  refusReseau !== null && refusReseau.includes('0.0.0.0'),
+  refusReseau !== null && refusReseau.includes('administrateur'),
   refusReseau ?? 'aucune erreur levée'
 )
 
@@ -311,6 +320,69 @@ verifier(
 await appeler('comptes:reactiver', ['stagiaire'], jetonAdmin)
 const apresDeblocage = await appeler('session:ouvrir', ['stagiaire', 'motdepasse2'])
 verifier('un administrateur peut débloquer le compte', apresDeblocage.code === 200)
+
+
+/* ── 10. Le réseau en clair reste refusé, même avec un administrateur ────── */
+
+console.log('\n=== Refus du réseau sans chiffrement ===')
+
+// Dossier à part : ce contrôle a besoin d'un serveur qui a déjà un
+// administrateur, pour que le refus porte bien sur le chiffrement et non sur
+// l'absence de compte. Les deux garde-fous doivent tenir séparément.
+const DOSSIER_TLS = join(tmpdir(), 'ohmnia-test-tls')
+rmSync(DOSSIER_TLS, { recursive: true, force: true })
+mkdirSync(DOSSIER_TLS, { recursive: true })
+
+const serveurAmorce = demarrerServeur({
+  dossierDonnees: DOSSIER_TLS,
+  version: '0.0.0-test',
+  port: 0,
+  hote: '127.0.0.1'
+})
+await new Promise((resoudre) => serveurAmorce.on('listening', resoudre))
+const portAmorce = serveurAmorce.address().port
+
+await new Promise((resoudre, rejeter) => {
+  const corps = JSON.stringify({ arguments: ['amorce', 'motdepasse0'] })
+  const requete = request(
+    {
+      host: '127.0.0.1',
+      port: portAmorce,
+      path: '/api/' + encodeURIComponent('comptes:creerPremierAdministrateur'),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(corps),
+        Connection: 'close'
+      }
+    },
+    (reponse) => {
+      reponse.on('data', () => {})
+      reponse.on('end', resoudre)
+    }
+  )
+  requete.on('error', rejeter)
+  requete.end(corps)
+})
+await new Promise((resoudre) => serveurAmorce.close(resoudre))
+
+let refusClair = null
+try {
+  const inattendu = demarrerServeur({
+    dossierDonnees: DOSSIER_TLS,
+    version: '0.0.0-test',
+    port: 0,
+    hote: '0.0.0.0'
+  })
+  await new Promise((resoudre) => inattendu.close(resoudre))
+} catch (erreur) {
+  refusClair = erreur.message
+}
+verifier(
+  'un administrateur ne suffit pas : le réseau en clair reste refusé',
+  refusClair !== null && refusClair.includes('sans chiffrement'),
+  refusClair ?? 'aucune erreur levée'
+)
 
 // Fermer le serveur AVANT de sortir : sans attendre sa fermeture effective,
 // Node plante sur une assertion interne au moment de quitter.

@@ -69,6 +69,7 @@ function chargerEntreprise(): EntrepriseImpression {
     iban: string
     titulaire_compte: string
     logo_path: string | null
+    logo_donnees: string | null
     pays: string
     numero_ide: string
     assujetti_tva: number
@@ -82,7 +83,9 @@ function chargerEntreprise(): EntrepriseImpression {
     telephone: e.telephone,
     iban: e.iban,
     titulaireCompte: e.titulaire_compte,
-    logoDataUrl: lireLogoDataUrl(e.logo_path),
+    // Le logo rangé en base d'abord : c'est le seul qui suive les données.
+    // Le chemin ne sert plus que pour une base d'avant ce changement.
+    logoDataUrl: e.logo_donnees ?? lireLogoDataUrl(e.logo_path),
     pays: e.pays,
     numeroIde: e.numero_ide,
     assujettiTva: e.assujetti_tva === 1,

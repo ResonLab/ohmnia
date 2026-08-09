@@ -5,6 +5,7 @@ import ConditionsUtilisation from './components/ConditionsUtilisation'
 import ConnexionServeur from './components/ConnexionServeur'
 import ParametresAppPage from './pages/ParametresApp'
 import { appliquerTheme } from './lib/theme'
+import { FournisseurRole } from './lib/role'
 import { definirPaysCourant } from './lib/devise'
 import { definirLangue, t, type Langue } from '../../shared/i18n'
 import type { EtatMultipostes, RoleMultipostes, Theme } from '../../shared/types'
@@ -177,7 +178,18 @@ export default function App(): React.JSX.Element {
   })
 
   return (
-    <div className="app">
+    <FournisseurRole value={role}>
+    {/*
+      Les actions d'écriture portent une classe ; ces deux attributs décident
+      si elles s'affichent. Le vrai garde-fou reste le serveur, qui refuse
+      l'opération de toute façon : ici on évite seulement d'offrir un bouton
+      qui ne peut qu'échouer.
+    */}
+    <div
+      className="app"
+      data-peut-ecrire={role === null || role !== 'lecture' ? 'oui' : 'non'}
+      data-peut-administrer={role === null || role === 'administration' ? 'oui' : 'non'}
+    >
       <aside className="menu">
         <div className="menu-entete">
           <LogoOhmnia taille={36} />
@@ -252,5 +264,6 @@ export default function App(): React.JSX.Element {
         />
       )}
     </div>
+    </FournisseurRole>
   )
 }

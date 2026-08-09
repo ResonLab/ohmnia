@@ -16,7 +16,8 @@ import {
   validerAdresse,
   type ModeFonctionnement
 } from './configuration'
-import type { EtatMultipostes } from '../../shared/types'
+import { estModeServeur, executer } from './routeur'
+import type { EtatMultipostes, ParametresApp } from '../../shared/types'
 
 /**
  * Le mode multi-postes vu par l'interface.
@@ -115,6 +116,66 @@ export function enregistrerHandlersMultipostes(): void {
  */
 export function enregistrerHandlersDistants(): void {
   for (const canal of Object.keys(DROITS)) {
+    if (CANAUX_NON_RENVOYES.includes(canal)) continue
     ipcMain.handle(canal, (_e, ...arguments_: unknown[]) => appelerServeur(canal, arguments_))
   }
+}
+
+/**
+ * Les deux seuls canaux du registre qui ne sont **pas** renvoyés tels quels.
+ *
+ * `enregistrerHandlersApparence()` s'en charge dans les deux modes, parce qu'il
+ * doit garder le thème et la langue sur le poste. Toute autre exception serait
+ * suspecte : c'est le genre de détour qui fait diverger les deux modes.
+ */
+export const CANAUX_NON_RENVOYES = ['parametresApp:lire', 'parametresApp:enregistrer']
+
+/**
+ * Réglages de l'application, avec l'apparence gardée sur le poste.
+ * Enregistré dans les deux modes.
+ *
+ * En local, rien ne change : tout va dans la base. En multi-postes, le thème,
+ * la langue et la couleur d'accent restent ici — ce sont des préférences
+ * personnelles, pas des réglages d'entreprise, et les laisser côté serveur
+ * revenait à interdire à un employé de choisir son thème (le reste de
+ * `parametres_app` est réservé à l'administration).
+ */
+export function enregistrerHandlersApparence(): void {
+  ipcMain.handle('parametresApp:lire', async () => {
+    const distants = (await executer('parametresApp:lire')) as ParametresApp
+    if (!estModeServeur()) return distants
+
+    const { apparence } = lireConfigurationMultipostes()
+    return apparence ? { ...distants, ...apparence } : distants
+  })
+
+  ipcMain.handle('parametresApp:enregistrer', async (_e, valeurs: ParametresApp) => {
+    if (!estModeServeur()) return executer('parametresApp:enregistrer', valeurs)
+
+    const config = lireConfigurationMultipostes()
+    ecrireConfigurationMultipostes({
+      ...config,
+      apparence: {
+        theme: valeurs.theme,
+        langue: valeurs.langue,
+        couleurAccent: valeurs.couleurAccent
+      }
+    })
+
+    // Le reste engage l'entreprise : seul un administrateur peut l'écrire.
+    // L'écran masque ces champs aux autres rôles, donc rien n'est perdu en
+    // silence — ils ne peuvent tout simplement pas les modifier.
+    const session = sessionCourante()
+    if (session?.role === 'administration') {
+      await executer('parametresApp:enregistrer', valeurs)
+    }
+
+    const distants = (await executer('parametresApp:lire')) as ParametresApp
+    return {
+      ...distants,
+      theme: valeurs.theme,
+      langue: valeurs.langue,
+      couleurAccent: valeurs.couleurAccent
+    }
+  })
 }

@@ -29,6 +29,7 @@ import { enregistrerHandlersResume } from './ipc/resume'
 import { enregistrerHandlersPdf } from './pdf'
 import { enregistrerHandlersDocuments } from './ipc/documents'
 import {
+  enregistrerHandlersApparence,
   enregistrerHandlersDistants,
   enregistrerHandlersMultipostes
 } from './multipostes/handlers'
@@ -148,6 +149,7 @@ app.whenReady().then(() => {
   // Ce qui concerne cette machine-ci existe dans les deux modes : boîtes de
   // dialogue, fichiers, impression, mises à jour.
   enregistrerHandlersMultipostes()
+  enregistrerHandlersApparence()
   enregistrerHandlersComptabilitePoste()
   enregistrerHandlersEntreprisePoste()
   enregistrerHandlersJustificatifsPoste()

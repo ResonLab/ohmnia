@@ -46,10 +46,23 @@ console.log("\n=== Registre du serveur ===")
 // même chose, et on ne s'en apercevrait qu'en production.
 const canauxRegistre = [...serveurRegistre.matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1])
 
-const dossierIpc = join(SRC, 'main/ipc')
+// On balaie tout `main/`, pas seulement `main/ipc/` : deux canaux du registre
+// (l'apparence) sont servis depuis `main/multipostes/`, parce qu'ils doivent
+// être interceptés dans les deux modes. Ce qui compte n'est pas le dossier,
+// c'est qu'un canal du serveur existe bien aussi côté fenêtre.
+function fichiersTs(dossier) {
+  const resultats = []
+  for (const entree of readdirSync(dossier, { withFileTypes: true })) {
+    const chemin = join(dossier, entree.name)
+    if (entree.isDirectory()) resultats.push(...fichiersTs(chemin))
+    else if (chemin.endsWith('.ts')) resultats.push(chemin)
+  }
+  return resultats
+}
+
 const canauxIpc = new Set()
-for (const nom of readdirSync(dossierIpc)) {
-  for (const m of lire(join(dossierIpc, nom)).matchAll(/ipcMain\.handle\('([^']+)'/g)) {
+for (const fichier of fichiersTs(join(SRC, 'main'))) {
+  for (const m of lire(fichier).matchAll(/ipcMain\.handle\(\s*'([^']+)'/g)) {
     canauxIpc.add(m[1])
   }
 }

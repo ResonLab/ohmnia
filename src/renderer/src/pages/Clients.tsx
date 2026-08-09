@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Client, ClientDetail } from '../../../shared/types'
 import { formaterMontant } from '../lib/devise'
+import { SiAutorise } from '../lib/role'
 
 const CLIENT_VIDE: Omit<Client, 'id'> = { nom: '', adresse: '', email: '', telephone: '' }
 
@@ -115,15 +116,17 @@ export default function Clients(): React.JSX.Element {
           ))}
           {clientsFiltres.length === 0 && <li className="liste-vide">Aucun client trouvé.</li>}
         </ul>
-        <button
-          onClick={() => {
-            setNouveau({ ...CLIENT_VIDE })
-            setDetail(null)
-            setBrouillon(null)
-          }}
-        >
-          + Nouveau client
-        </button>
+        <SiAutorise>
+          <button
+            onClick={() => {
+              setNouveau({ ...CLIENT_VIDE })
+              setDetail(null)
+              setBrouillon(null)
+            }}
+          >
+            + Nouveau client
+          </button>
+        </SiAutorise>
       </aside>
 
       <section className="clients-detail">
@@ -202,12 +205,14 @@ export default function Clients(): React.JSX.Element {
                   />
                 </label>
               </div>
-              <div className="barre-boutons">
-                <button onClick={enregistrerModification}>Enregistrer</button>
-                <button className="bouton-danger" onClick={() => supprimerClient(brouillon.id)}>
-                  Supprimer
-                </button>
-              </div>
+              <SiAutorise>
+                <div className="barre-boutons">
+                  <button onClick={enregistrerModification}>Enregistrer</button>
+                  <button className="bouton-danger" onClick={() => supprimerClient(brouillon.id)}>
+                    Supprimer
+                  </button>
+                </div>
+              </SiAutorise>
             </div>
 
             <div className="carte">

@@ -85,10 +85,19 @@ import {
 import { rechercheGlobale } from '../main/domaines/recherche'
 import { verifierConformite } from '../main/domaines/conformite'
 import { accepterConditions, etatConditions, urlConditions } from '../main/domaines/conditions'
-import { enregistrerEntreprise, lireEntreprise } from '../main/domaines/entreprise'
 import {
+  definirLogo,
+  enregistrerEntreprise,
+  lireEntreprise,
+  lireLogo,
+  retirerLogo
+} from '../main/domaines/entreprise'
+import {
+  ajouterJustificatif,
   compterJustificatifsParEcriture,
-  listerJustificatifs
+  contenuJustificatif,
+  listerJustificatifs,
+  supprimerJustificatif
 } from '../main/domaines/justificatifs'
 import {
   analyserReleve,
@@ -291,8 +300,19 @@ export const REGISTRE: Record<string, Operation> = {
   'entreprise:enregistrer': (valeurs) =>
     enregistrerEntreprise(valeurs as Parameters<typeof enregistrerEntreprise>[0]),
 
+  'entreprise:logo': () => lireLogo(),
+  'entreprise:definirLogo': (nomFichier, contenu) =>
+    definirLogo(nomFichier as string, contenu as string),
+  'entreprise:retirerLogo': () => retirerLogo(),
+
+  // Les fichiers joints voyagent en base64 : ils vivent avec la base, donc sur
+  // le serveur en multi-postes, et tous les postes les voient.
   'justificatifs:lister': (journalId) => listerJustificatifs(journalId as number),
   'justificatifs:compterParEcriture': () => compterJustificatifsParEcriture(),
+  'justificatifs:ajouterFichier': (journalId, nom, contenu) =>
+    ajouterJustificatif(journalId as number, nom as string, contenu as string),
+  'justificatifs:contenu': (nomFichier) => contenuJustificatif(nomFichier as string),
+  'justificatifs:supprimer': (id) => supprimerJustificatif(id as number),
 
   // Choisir un fichier reste côté fenêtre ; produire le CSV et analyser un
   // relevé demandent la base, donc passent par ici.

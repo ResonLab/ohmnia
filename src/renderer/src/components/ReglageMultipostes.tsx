@@ -120,8 +120,19 @@ export default function ReglageMultipostes(): React.JSX.Element {
       </p>
 
       <p className="discret">
-        En multi-postes, les sauvegardes, les justificatifs et le logo sont l’affaire du serveur :
-        ces actions sont désactivées sur ce poste.
+        En multi-postes, les sauvegardes et l’export global sont l’affaire du serveur : ces
+        actions sont désactivées sur ce poste. Les justificatifs et le logo, eux, sont rangés
+        avec les données et restent accessibles depuis tous les postes.
+      </p>
+
+      <p className="discret">
+        Le thème, la langue et la couleur d’accent restent propres à ce poste : deux collègues
+        qui partagent la même base n’ont pas à partager leur affichage.
+      </p>
+
+      <p className="discret">
+        <strong>Le serveur refuse d’écouter sur le réseau sans chiffrement.</strong> Fournissez-lui
+        un certificat et une clé privée, ou placez-le derrière un proxy HTTPS.
       </p>
     </div>
   )

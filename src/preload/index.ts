@@ -51,10 +51,11 @@ const api = {
     lire: (): Promise<Entreprise> => ipcRenderer.invoke('entreprise:lire'),
     enregistrer: (valeurs: Entreprise): Promise<Entreprise> =>
       ipcRenderer.invoke('entreprise:enregistrer', valeurs),
-    lireLogoDataUrl: (cheminAbsolu: string | null): Promise<string | null> =>
-      ipcRenderer.invoke('entreprise:lireLogoDataUrl', cheminAbsolu),
-    choisirLogo: (): Promise<{ logoPath: string; dataUrl: string | null } | null> =>
-      ipcRenderer.invoke('entreprise:choisirLogo')
+    /** Le logo est rangé dans la base : plus aucun chemin de fichier à passer. */
+    lireLogoDataUrl: (): Promise<string | null> => ipcRenderer.invoke('entreprise:lireLogoDataUrl'),
+    choisirLogo: (): Promise<{ dataUrl: string } | null> =>
+      ipcRenderer.invoke('entreprise:choisirLogo'),
+    retirerLogo: (): Promise<void> => ipcRenderer.invoke('entreprise:retirerLogoChoisi')
   },
 
   parametresMarge: {

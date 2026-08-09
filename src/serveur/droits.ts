@@ -149,10 +149,16 @@ export const DROITS: Record<string, Role> = {
   /* Entreprise — son identité figure sur chaque facture. */
   'entreprise:lire': 'lecture',
   'entreprise:enregistrer': 'administration',
+  'entreprise:logo': 'lecture',
+  'entreprise:definirLogo': 'administration',
+  'entreprise:retirerLogo': 'administration',
 
-  /* Justificatifs */
+  /* Justificatifs — les joindre fait partie du travail courant. */
   'justificatifs:lister': 'lecture',
   'justificatifs:compterParEcriture': 'lecture',
+  'justificatifs:contenu': 'lecture',
+  'justificatifs:ajouterFichier': 'ecriture',
+  'justificatifs:supprimer': 'ecriture',
 
   /* Comptabilité — un import crée des écritures dans le Journal. */
   'comptabilite:construireCsv': 'lecture',

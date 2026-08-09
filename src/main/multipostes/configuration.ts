@@ -24,12 +24,24 @@ export interface ConfigurationMultipostes {
   adresse: string
   /** Dernier identifiant utilisé, pour ne pas le retaper. Jamais le mot de passe. */
   dernierIdentifiant: string
+  /**
+   * Thème, langue et couleur d'accent **de ce poste**, utilisés seulement en
+   * multi-postes.
+   *
+   * Ces trois réglages sont personnels : deux collègues qui partagent la même
+   * base n'ont pas à partager leur thème sombre ni leur langue. Or ils vivent
+   * dans `parametres_app`, avec des réglages d'entreprise réservés à
+   * l'administration. Les garder côté serveur revenait à interdire à un
+   * employé de passer son interface en clair.
+   */
+  apparence: { theme: string; langue: string; couleurAccent: string } | null
 }
 
 const PAR_DEFAUT: ConfigurationMultipostes = {
   mode: 'local',
   adresse: '',
-  dernierIdentifiant: ''
+  dernierIdentifiant: '',
+  apparence: null
 }
 
 function cheminConfiguration(): string {
@@ -46,7 +58,9 @@ export function lireConfigurationMultipostes(): ConfigurationMultipostes {
       mode: brut.mode === 'serveur' ? 'serveur' : 'local',
       adresse: typeof brut.adresse === 'string' ? brut.adresse : '',
       dernierIdentifiant:
-        typeof brut.dernierIdentifiant === 'string' ? brut.dernierIdentifiant : ''
+        typeof brut.dernierIdentifiant === 'string' ? brut.dernierIdentifiant : '',
+      apparence:
+        brut.apparence && typeof brut.apparence === 'object' ? brut.apparence : null
     }
   } catch {
     // Un fichier illisible ne doit pas empêcher l'application de démarrer :

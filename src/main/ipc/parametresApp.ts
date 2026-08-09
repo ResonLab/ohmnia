@@ -15,13 +15,9 @@ import {
 } from '../db/backup'
 import { cheminBase, dossierSauvegardes } from '../contexte'
 // La partie qui ne depend pas d'Electron vit dans domaines/ et sert aussi au serveur.
-import {
-  enregistrerParametresApp,
-  lireParametresApp,
-  verifierIntegrite
-} from '../domaines/parametresApp'
+import { lireParametresApp, verifierIntegrite } from '../domaines/parametresApp'
 import { estModeServeur, exigerModeLocal } from '../multipostes/routeur'
-import type { InfosSysteme, ParametresApp } from '../../shared/types'
+import type { InfosSysteme } from '../../shared/types'
 
 export { lireParametresApp }
 
@@ -40,14 +36,14 @@ export function dossierDocumentsEffectif(): string {
   return lireParametresApp().dossierDocuments ?? defaut
 }
 
-/** Réglages de l'application, côté données. Enregistré en mode local seulement. */
+/**
+ * Réglages de l'application, côté données. Enregistré en mode local seulement.
+ *
+ * `parametresApp:lire` et `:enregistrer` n'y sont pas : ils passent par
+ * `enregistrerHandlersApparence()`, qui doit intercepter les deux modes pour
+ * garder le thème et la langue sur le poste. Voir `multipostes/handlers.ts`.
+ */
 export function enregistrerHandlersParametresApp(): void {
-  ipcMain.handle('parametresApp:lire', () => lireParametresApp())
-
-  ipcMain.handle('parametresApp:enregistrer', (_e, valeurs: ParametresApp) =>
-    enregistrerParametresApp(valeurs)
-  )
-
   ipcMain.handle('parametresApp:verifierIntegrite', () => verifierIntegrite())
 }
 

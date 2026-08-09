@@ -78,6 +78,8 @@ function canauxDuFichier(fichier) {
 }
 
 const canauxPoste = [
+  // `multipostes/handlers.ts` est lu en entier plus bas : il porte à la fois
+  // les canaux `multipostes:*` et ceux de l'apparence.
   ...canauxDeLaFonction('main/ipc/comptabilite.ts', 'enregistrerHandlersComptabilitePoste'),
   ...canauxDeLaFonction('main/ipc/entreprise.ts', 'enregistrerHandlersEntreprisePoste'),
   ...canauxDeLaFonction('main/ipc/justificatifs.ts', 'enregistrerHandlersJustificatifsPoste'),
@@ -91,11 +93,28 @@ const canauxPoste = [
 const droitsSourcePoste = readFileSync(join(SRC, 'serveur/droits.ts'), 'utf-8')
 const canauxDistants = [...droitsSourcePoste.matchAll(/^\s*'([^']+)':\s*'\w+'/gm)].map((m) => m[1])
 
-const collisions = canauxPoste.filter((c) => canauxDistants.includes(c))
+// Deux canaux échappent au renvoi générique : le poste les sert lui-même pour
+// garder le thème et la langue en local. Ils sont donc attendus des deux côtés.
+const handlersSource = readFileSync(join(SRC, 'main/multipostes/handlers.ts'), 'utf-8')
+const exceptions = [
+  ...(handlersSource.match(/CANAUX_NON_RENVOYES = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g)
+].map((m) => m[1])
+
+const renvoyes = canauxDistants.filter((c) => !exceptions.includes(c))
+const collisions = canauxPoste.filter((c) => renvoyes.includes(c))
 verifier(
-  `les ${canauxPoste.length} canaux du poste ne recoupent aucun des ${canauxDistants.length} canaux distants`,
+  `les ${canauxPoste.length} canaux du poste ne recoupent aucun des ${renvoyes.length} canaux renvoyés`,
   collisions.length === 0,
   collisions.join(', ')
+)
+
+// L'exception doit rester une exception assumée : un canal retiré du renvoi
+// sans être servi par le poste n'existerait plus du tout en mode serveur.
+const exceptionsOrphelines = exceptions.filter((c) => !canauxPoste.includes(c))
+verifier(
+  `les ${exceptions.length} canaux non renvoyés sont bien servis par le poste`,
+  exceptionsOrphelines.length === 0,
+  exceptionsOrphelines.join(', ')
 )
 
 const doublonsPoste = canauxPoste.filter((c, i) => canauxPoste.indexOf(c) !== i)
@@ -237,6 +256,75 @@ verifier(
     donnees.total === 180,
   JSON.stringify({ numero: donnees.numero, lignes: donnees.lignes.length, total: donnees.total })
 )
+
+/* ── 4 bis. Justificatifs et logo vivent avec la base ────────────────────── */
+
+console.log('\n=== Fichiers joints et logo ===')
+
+// Un PNG minuscule mais valide, suffisant pour éprouver l'aller-retour.
+const PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+
+const categories = await clientModule.appelerServeur('categoriesJournal:lister', [])
+const ecriture = await clientModule.appelerServeur('journal:ajouter', [
+  {
+    date: '2026-08-09',
+    type: 'Dépense',
+    categorieId: categories[0]?.id ?? null,
+    description: 'Achat de matériel',
+    montant: 42,
+    numeroFacture: null,
+    notes: '',
+    tvaPct: null
+  }
+])
+
+const joint = await clientModule.appelerServeur('justificatifs:ajouterFichier', [
+  ecriture.id,
+  'ticket.png',
+  PNG_BASE64
+])
+verifier('un justificatif est accepté par le serveur', joint.id > 0)
+
+verifier(
+  'le fichier est rangé chez le serveur, pas sur le poste',
+  existsSync(join(DOSSIER_SERVEUR, 'Justificatifs', joint.nomFichier)) &&
+    !existsSync(join(DOSSIER_POSTE, 'Justificatifs', joint.nomFichier))
+)
+
+const contenu = await clientModule.appelerServeur('justificatifs:contenu', [joint.nomFichier])
+verifier(
+  'le poste peut relire le justificatif par le réseau',
+  typeof contenu === 'string' && contenu.startsWith('data:image/png;base64,')
+)
+
+let refusFormat = null
+try {
+  await clientModule.appelerServeur('justificatifs:ajouterFichier', [
+    ecriture.id,
+    'virus.exe',
+    PNG_BASE64
+  ])
+} catch (e) {
+  refusFormat = e.message
+}
+verifier(
+  'un format non prévu est refusé, en français',
+  refusFormat !== null && refusFormat.includes('Format non pris en charge'),
+  refusFormat ?? 'aucune erreur'
+)
+
+// Le logo : c'est le contenu qui est rangé, pas un chemin — sinon il
+// disparaîtrait des documents dès qu'on change de poste.
+await clientModule.appelerServeur('entreprise:definirLogo', ['logo.png', PNG_BASE64])
+const logo = await clientModule.appelerServeur('entreprise:logo', [])
+verifier('le logo est rangé dans la base et relu par le réseau', logo === `data:image/png;base64,${PNG_BASE64}`)
+
+const documentAvecLogo = await clientModule.appelerServeur('documents:donnees', [
+  'facture',
+  facture.id
+])
+verifier('le logo arrive sur le document imprimé', documentAvecLogo.logoDataUrl === logo)
 
 /* ── 5. La session perdue est signalée, pas subie ────────────────────────── */
 

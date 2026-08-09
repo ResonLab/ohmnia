@@ -1599,3 +1599,12 @@ input[type='color'] {
   font-size: 0.7rem;
   font-weight: 600;
 }
+
+/* Actions retirées quand le rôle du serveur ne les permet pas.
+   `display: none` plutôt qu'un bouton grisé : un bouton désactivé invite à
+   chercher comment l'activer, alors qu'ici la réponse est « pas avec ce
+   compte ». Le bandeau en haut de l'écran l'explique déjà. */
+.app[data-peut-ecrire='non'] .action-ecriture,
+.app[data-peut-administrer='non'] .action-administration {
+  display: none;
+}

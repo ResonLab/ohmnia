@@ -438,19 +438,50 @@ et un bandeau annonce la lecture seule.
 
 Le garde-fou de l'étape 2 impose cet ordre : pas de réseau sans administrateur.
 
+### Finitions faites après l'étape 3
+
+**Les justificatifs vivent avec la base.** Le fichier voyage en base64 par le
+protocole et se range à côté de `gestion.sqlite` — donc sur le serveur en
+multi-postes, et tous les postes le voient. Limite à 15 Mo par fichier, avec un
+message qui explique quoi faire. Le corps maximal du protocole est passé à
+25 Mo pour l'encodage base64. En local, le dossier ne change pas
+(`%APPDATA%\Ohmnia\Justificatifs`) : rien à migrer.
+
+**Le logo est rangé dans la base**, colonne `entreprise.logo_donnees`, en data
+URL. Avant, seul son chemin était mémorisé : il disparaissait des documents dès
+qu'on changeait de machine. Le chemin reste lu en secours pour les bases
+d'avant ce changement. Limite à 2 Mo — il voyage dans chaque PDF.
+
+**Thème, langue et couleur d'accent sont propres au poste** en multi-postes.
+Ils vivent dans `parametres_app` avec des réglages d'entreprise réservés à
+l'administration : les laisser côté serveur revenait à interdire à un employé
+de choisir son thème. `parametresApp:lire` et `:enregistrer` sont donc les
+**deux seuls canaux du registre qui ne sont pas renvoyés au serveur** — voir
+`CANAUX_NON_RENVOYES` dans `multipostes/handlers.ts`. Une vérification impose
+que toute exception y soit servie par le poste, sinon le canal n'existerait
+plus du tout en mode serveur.
+
+**Les actions d'écriture disparaissent pour le rôle `lecture`.** Chaque bouton
+concerné porte `action-ecriture` ou `action-administration` ; deux attributs
+sur `.app` et une règle CSS décident. Choix assumé : marquer soixante boutons
+d'une classe est plus court et plus sûr à relire que soixante enveloppes JSX.
+`display: none` plutôt qu'un bouton grisé — un bouton désactivé invite à
+chercher comment l'activer. **Le vrai garde-fou reste le serveur**, qui refuse
+l'opération de toute façon.
+
+**Le serveur sait parler HTTPS** : options `certificat` et `cleePrivee`. Et
+surtout, **il refuse d'écouter sur le réseau sans chiffrement** — les mots de
+passe et les jetons y circuleraient en clair. Sur `127.0.0.1`, HTTP reste
+accepté : le trafic ne quitte pas la machine. Les deux garde-fous du réseau
+(un administrateur, du chiffrement) sont vérifiés séparément.
+
 ### Ce qui reste à faire
 
-- **Les justificatifs en multi-postes.** Ils doivent transiter par le protocole
-  pour vivre à côté de la base du serveur. C'est le prochain chantier.
-- **Le logo est un chemin de fichier dans la base.** Un chemin du serveur ne
-  veut rien dire sur un poste. Les PDF sortent avec le logo (le serveur le
-  renvoie en data URL) mais on ne peut pas le changer depuis un poste. La
-  correction est de ranger l'image dans la base — changement de schéma.
-- **Masquer les boutons d'écriture pour le rôle `lecture`.** Le menu et le
-  bandeau sont faits ; bouton par bouton, dans les 17 écrans, ne l'est pas.
-  Aujourd'hui le clic échoue avec un message clair du serveur — correct, mais
-  pas agréable.
-- **Le transport n'est toujours pas chiffré** (voir plus haut).
+- **Le certificat n'est pas fabriqué par l'application.** Il faut le fournir.
+  Un certificat auto-signé convient sur un réseau d'entreprise, mais devra être
+  accepté une fois sur chaque poste.
+- **La traduction anglaise** des nouveaux écrans (connexion, mode multi-postes)
+  n'est pas faite — comme le reste des écrans, voir §8.
 
 ### Pièges rencontrés, à ne pas réintroduire
 

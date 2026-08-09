@@ -1,4 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { createServer as createServerTls } from 'node:https'
+import { existsSync, readFileSync } from 'node:fs'
 import { definirContexte } from '../main/contexte'
 import { ouvrirBaseDeDonnees } from '../main/db/database'
 import { REGISTRE, type Operation } from './registre'
@@ -42,14 +44,17 @@ import {
  *   → 401 { "erreur": ... }                      pas de session valable
  *   → 403 { "erreur": ... }                      session valable, droits insuffisants
  *
- * ⚠️ **Ce qui manque encore : le chiffrement du transport.** Les mots de passe
- * et les jetons circulent en clair en HTTP. Sur le réseau local d'une petite
- * entreprise c'est un risque assumé ; sur un réseau ouvert ou à travers
- * Internet, il faut mettre ce serveur derrière un reverse-proxy HTTPS.
- * C'est écrit ici parce que personne ne doit le découvrir en production.
+ * **Chiffrement du transport.** Passez `certificat` et `cleePrivee` pour que le
+ * serveur parle HTTPS lui-même. Sans eux il parle HTTP en clair : acceptable
+ * sur `127.0.0.1`, et **refusé sur le réseau** — mots de passe et jetons
+ * circuleraient en clair sur le câble.
  */
 
-const TAILLE_MAX_CORPS = 5 * 1024 * 1024
+/**
+ * Assez large pour un justificatif de 15 Mo encodé en base64 (~20 Mo) et son
+ * enveloppe JSON. Au-delà, la requête est refusée avant de remplir la mémoire.
+ */
+const TAILLE_MAX_CORPS = 25 * 1024 * 1024
 
 export interface OptionsServeur {
   /** Dossier des données, comme `%APPDATA%\Ohmnia` côté application. */
@@ -61,6 +66,13 @@ export interface OptionsServeur {
    * administrateur : sinon n'importe qui pourrait s'en octroyer un.
    */
   hote?: string
+  /**
+   * Chemins du certificat et de la clé privée, au format PEM. Un certificat
+   * auto-signé convient sur un réseau d'entreprise : il faudra l'accepter une
+   * fois sur chaque poste.
+   */
+  certificat?: string
+  cleePrivee?: string
 }
 
 /* ── Opérations propres au serveur ────────────────────────────────────────── */
@@ -271,11 +283,38 @@ export function demarrerServeur(options: OptionsServeur): ReturnType<typeof crea
     )
   }
 
-  const serveur = createServer((requete, reponse) => {
+  const avecTls = Boolean(options.certificat && options.cleePrivee)
+
+  // Un mot de passe qui traverse le réseau en clair peut être lu par n'importe
+  // quelle machine du même réseau. En local le trafic ne quitte pas la machine,
+  // donc HTTP y reste acceptable ; au-delà, non.
+  if (!estLocal && !avecTls) {
+    throw new Error(
+      `Le serveur ne peut pas écouter sur « ${hote} » sans chiffrement : les mots ` +
+        'de passe et les jetons circuleraient en clair. Fournissez un certificat ' +
+        'et une clé privée (options « certificat » et « cleePrivee »), ou placez ' +
+        'le serveur derrière un proxy HTTPS.'
+    )
+  }
+
+  const surRequete = (requete: IncomingMessage, reponse: ServerResponse): void => {
     traiter(requete, reponse).catch(() => {
       repondre(reponse, 500, { erreur: 'Erreur interne du serveur.' })
     })
-  })
+  }
+
+  let serveur: ReturnType<typeof createServer>
+  if (avecTls) {
+    for (const chemin of [options.certificat!, options.cleePrivee!]) {
+      if (!existsSync(chemin)) throw new Error(`Fichier introuvable : ${chemin}`)
+    }
+    serveur = createServerTls(
+      { cert: readFileSync(options.certificat!), key: readFileSync(options.cleePrivee!) },
+      surRequete
+    ) as unknown as ReturnType<typeof createServer>
+  } else {
+    serveur = createServer(surRequete)
+  }
 
   serveur.listen(options.port, hote)
   return serveur

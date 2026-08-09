@@ -73,6 +73,59 @@ function validerEntreprise(valeurs: Entreprise): string | null {
   return null
 }
 
+const EXTENSIONS_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp'
+}
+
+/** Taille au-delà de laquelle un logo est refusé : il voyage dans chaque PDF. */
+const TAILLE_MAX_LOGO = 2 * 1024 * 1024
+
+/**
+ * Range le logo **dans la base**, en data URL.
+ *
+ * Avant, seule le chemin du fichier était mémorisé. Un chemin du poste A ne
+ * veut rien dire sur le poste B ni sur le serveur : le logo disparaissait des
+ * documents dès qu'on changeait de machine. Le contenu, lui, suit les données
+ * et se retrouve dans les sauvegardes.
+ */
+export function definirLogo(nomFichier: string, contenuBase64: string): string {
+  const point = nomFichier.lastIndexOf('.')
+  const extension = point < 0 ? '' : nomFichier.slice(point).toLowerCase()
+  const mime = EXTENSIONS_MIME[extension]
+  if (!mime) {
+    throw new Error("Format d'image non pris en charge. Utilisez PNG, JPG, SVG ou WEBP.")
+  }
+
+  const octets = Buffer.from(contenuBase64, 'base64')
+  if (octets.length === 0) throw new Error('Ce fichier est vide.')
+  if (octets.length > TAILLE_MAX_LOGO) {
+    throw new Error(
+      `Ce logo fait ${Math.round(octets.length / 1024)} Ko, la limite est de 2 Mo. ` +
+        'Un logo de facture n’a pas besoin d’être plus lourd.'
+    )
+  }
+
+  const dataUrl = `data:${mime};base64,${contenuBase64}`
+  getDb().prepare('UPDATE entreprise SET logo_donnees = ? WHERE id = 1').run(dataUrl)
+  return dataUrl
+}
+
+/** Le logo tel qu'il doit s'afficher, ou `null` s'il n'y en a pas. */
+export function lireLogo(): string | null {
+  const ligne = getDb()
+    .prepare('SELECT logo_donnees FROM entreprise WHERE id = 1')
+    .get() as { logo_donnees: string | null }
+  return ligne.logo_donnees
+}
+
+export function retirerLogo(): void {
+  getDb().prepare('UPDATE entreprise SET logo_donnees = NULL, logo_path = NULL WHERE id = 1').run()
+}
+
 export function lireEntreprise(): Entreprise {
   const ligne = getDb()
     .prepare('SELECT * FROM entreprise WHERE id = 1')
