@@ -230,8 +230,8 @@ qui nommait l'ancien compte.
 `gh` (GitHub CLI) est installé **et authentifié** sur le compte `Leimmingz`,
 administrateur de l'organisation.
 
-**En attente** : une branche `securite-et-documentation` est poussée et non fusionnée.
-À intégrer avec `git checkout main && git merge securite-et-documentation && git push`.
+**Fait** : les deux branches sont fusionnées dans `main` —
+`securite-et-documentation`, et `serveur-multipostes` le 10 août 2026 (voir §12).
 
 **Fait** : le site est en ligne sur https://resonlab.github.io/ohmnia/ (GitHub Pages,
 branche `main`, dossier `/docs`). Douze pages, six en français et six en anglais
@@ -297,17 +297,34 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 - qu'on **signale honnêtement** ce qui n'a pas pu être vérifié ;
 - qu'on **corrige les bugs qu'il signale en cherchant la cause**, pas en contournant.
 
-## 12. Chantier en cours : le serveur multi-postes (branche `serveur-multipostes`)
+## 12. Le serveur multi-postes — **fusionné dans `main`**
 
-> **Le serveur s'appelle désormais Nexika** et vit dans `../Nexika/`, hors de ce
-> projet, parce qu'il sert aussi Scenika. Tout ce qui suit parle de lui.
+> **Le serveur s'appelle Nexika** et vit hors de ce projet, parce qu'il sert
+> aussi Scenika. Tout ce qui suit parle de lui.
 >
-> **La branche n'est pas fusionnée, et c'est délibéré** : un clone du seul dépôt
-> `ohmnia` ne compile plus le serveur, faute de `Nexika/`. Vérifié en clonant
-> vraiment. La fusion attend que Nexika soit un dépôt de l'organisation ResonLab
-> et une dépendance npm. Voir `../LISEZ-MOI.md`.
+> **La branche `serveur-multipostes` est fusionnée depuis le 10 août 2026.**
+> Elle attendait une seule chose : que Nexika cesse d'être un chemin relatif.
+> Les trois imports de `src/serveur/` visaient `../../../Nexika/serveur/index`,
+> si bien qu'un clone du seul dépôt `ohmnia` ne compilait plus son serveur.
+> Nexika est maintenant le paquet [`github:ResonLab/nexika`](https://github.com/ResonLab/nexika),
+> et l'on écrit `from 'nexika'`.
+>
+> **Vérifié en clonant pour de vrai**, dans un dossier où `Nexika/` n'existe
+> pas : `npm install`, `npm run typecheck`, `npm run serveur:build`, le serveur
+> qui répond à `--aide`, et la suite complète. C'est le seul contrôle qui prouve
+> quelque chose ici — le projet de développement, lui, a toujours le dossier
+> voisin sous la main et ne peut pas voir le problème.
 
-**`main` est intact et publiable.** Tout ce chantier vit sur une branche.
+**`npm 12` refuse par défaut toute dépendance installée depuis un dépôt git**
+(`allow-git = none`), et c'est une bonne protection de la chaîne
+d'approvisionnement. `.npmrc` l'ouvre avec **`root`**, pas `all` : les
+dépendances git déclarées par ce projet sont autorisées, celles qu'une
+dépendance amènerait dans son dos ne le sont pas. Sans ce fichier,
+`npm install` échoue sur `EALLOWGIT`.
+
+**Modifier Nexika ne suffit pas à le voir ici.** npm garde la copie clonée dans
+`node_modules` : il faut repousser Nexika puis `npm install github:ResonLab/nexika`
+à nouveau, ou passer par `npm link` pour travailler sur les deux à la fois.
 
 ### Ce qui est fait
 
@@ -449,15 +466,21 @@ et un bandeau annonce la lecture seule.
 
 **Le serveur est commun à la maison.** Tout ce qui ne dépend pas d'Ohmnia —
 transport, comptes, sessions, droits, certificat, ligne de commande — vit dans
-`../Nexika/serveur/`, parce que Scenika s'en servira aussi. Ne restent dans
+le paquet `nexika`, parce que Scenika s'en servira aussi. Ne restent dans
 `src/serveur/` que les canaux d'Ohmnia (`registre.ts`), leurs droits
 (`droits.ts`) et le branchement (`ohmnia.ts`, quinze lignes).
 
-**L'application Electron, elle, ne dépend jamais de `Nexika/`** : elle ne parle
-au serveur que par le réseau. C'est ce qui permet au dépôt d'Ohmnia de se
-construire seul. Une vérification refuse tout import de `Nexika/` depuis
+**L'application Electron, elle, ne dépend jamais de `nexika`** : elle ne parle
+au serveur que par le réseau. C'est ce qui évite que son installateur embarque
+le code du serveur. Une vérification refuse tout import de `nexika` depuis
 `main/`, `renderer/` ou `preload/` — sans elle, on ne s'en apercevrait qu'au
 moment de publier.
+
+**Ce garde-fou lit la provenance de l'import, pas une chaîne de caractères**, et
+il faut que ça le reste. Il visait autrefois le chemin `Nexika/serveur` ; le
+jour où Nexika est devenu un paquet, `from 'nexika'` serait passé dessous sans
+rien déclencher. Le contrôle aurait continué de dire oui en ne regardant plus
+rien — pire qu'un contrôle absent, parce qu'on lui fait confiance.
 
 **`demarrerServeur` n'était appelé que par les tests** : la fonctionnalité
 passait toutes les vérifications sans que personne puisse s'en servir. D'où
