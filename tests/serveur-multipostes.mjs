@@ -63,10 +63,18 @@ verifier(
 
 /* ── 2. Il refuse d'écouter sur le réseau sans authentification ──────────── */
 
-console.log("\n=== Refus d'exposition sans authentification ===")
+// L'étape 2 a apporté les comptes : la condition n'est plus « jamais le
+// réseau » mais « pas de réseau sans administrateur ». Le refus lui-même est
+// éprouvé pour de vrai dans serveur-authentification.mjs, sur le serveur
+// compilé ; ici on vérifie seulement que le garde-fou n'a pas disparu du code.
+console.log("\n=== Refus d'exposition sans administrateur ===")
 verifier(
-  "le code refuse une autre adresse que 127.0.0.1 tant qu'il n'y a pas de comptes",
-  serveurIndex.includes("hote !== '127.0.0.1'") && serveurIndex.includes('throw new Error')
+  "le code refuse le réseau tant qu'aucun administrateur n'existe",
+  serveurIndex.includes('existeAdministrateurActif()') && serveurIndex.includes('throw new Error')
+)
+verifier(
+  'toute opération métier passe par une vérification de droits',
+  serveurIndex.includes('roleExige(canal)') && serveurIndex.includes('roleSuffit(')
 )
 
 /* ── 3. Bout en bout : les mêmes opérations, par le réseau ───────────────── */

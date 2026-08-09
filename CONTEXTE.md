@@ -118,7 +118,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  9 suites — `npm run verifier`
+tests/                  10 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -240,7 +240,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 9 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 10 suites de tests, **tout passe**.
 - Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la
@@ -309,16 +309,59 @@ L'utilisateur travaille souvent en autonomie déléguée (« débrouille-toi »)
 - `tests/serveur-multipostes.mjs` : démarre un vrai serveur sur une base
   temporaire et fait de vrais appels réseau.
 
-### Les trois garde-fous, à ne pas retirer
+**Étape 2 faite : comptes, droits, authentification.**
+
+- `src/serveur/comptes.ts` : comptes, mots de passe, sessions, journal des
+  accès. **Base séparée `comptes.sqlite`**, pas dans `gestion.sqlite` — les
+  comptes seront communs à Ohmnia et Scenika, et le mode local ne doit pas
+  hériter d'un schéma dont il n'a pas l'usage.
+- `src/serveur/droits.ts` : **qui a le droit de quoi, dans un seul fichier**,
+  opération par opération. Trois rôles : `lecture` < `ecriture` <
+  `administration`.
+- `src/serveur/index.ts` : toute opération métier exige une session. Le jeton
+  voyage dans `Authorization: Bearer <jeton>`.
+- `tests/serveur-authentification.mjs` : **compile le vrai serveur avec esbuild
+  et l'attaque par le réseau.** Rien n'y est transcrit — une authentification
+  réécrite pour le test ne prouverait que la justesse de la réécriture.
+
+Protocole d'authentification :
+
+| Appel | Effet |
+|---|---|
+| `serveur:etat` | public — dit si un compte existe déjà |
+| `comptes:creerPremierAdministrateur` | public, mais **refusé dès qu'un compte existe** |
+| `session:ouvrir` | public — rend un jeton valable 12 h |
+| tout le reste | jeton obligatoire, rôle vérifié |
+
+Codes de réponse : `400` erreur métier · `401` pas de session · `403` droits
+insuffisants · `404` opération inconnue.
+
+### Les garde-fous, à ne pas retirer
 
 1. **Aucun import d'Electron** dans `domaines/` ni `serveur/`.
-2. **Le serveur refuse d'écouter ailleurs que sur `127.0.0.1`** tant qu'il n'y a
-   pas d'authentification. Un serveur de comptabilité ouvert sans mot de passe
-   serait pire que pas de serveur du tout.
+2. **Pas de réseau sans administrateur.** Le serveur refuse d'écouter ailleurs
+   que sur `127.0.0.1` tant qu'aucun compte administrateur n'existe : sinon le
+   premier venu créerait le sien et prendrait la comptabilité.
 3. **Chaque opération du registre doit exister comme canal IPC.** Vérifié
    automatiquement : une faute de frappe fait échouer la suite.
+4. **Chaque opération du registre doit avoir un droit déclaré.** Une opération
+   sans droit est refusée à l'exécution, et `npm test` la signale. Les droits
+   ne sont **jamais déduits du nom du canal** : une règle « `lister` = lecture »
+   se tromperait en silence sur `conditions:accepter` ou `recherche:globale`.
+5. **Le message d'échec de connexion est le même** que le compte existe ou non.
+   Sinon la page de connexion devient un moyen de savoir qui travaille ici.
+6. **Le dernier administrateur ne peut être ni rétrogradé ni désactivé.** Un
+   serveur sans administrateur ne se reprend plus en main.
 
-Les trois ont été **vérifiés en les cassant volontairement**.
+Tous ont été **vérifiés en les cassant volontairement**.
+
+### Ce qui manque encore, et qu'il ne faut pas oublier
+
+**Le transport n'est pas chiffré.** Mots de passe et jetons circulent en clair
+en HTTP. Sur le réseau local d'une petite entreprise, c'est un risque assumé ;
+dès que le serveur est joignable au-delà, il faut le mettre derrière un
+reverse-proxy HTTPS. C'est écrit en tête de `src/serveur/index.ts` pour que
+personne ne le découvre en production.
 
 ### Ce qui reste volontairement dans `ipc/`
 
@@ -342,11 +385,22 @@ pas d'un simple déplacement de code.
 
 ### Ce qui reste à faire
 
-**Étape 2** : comptes, droits, authentification. Tant qu'elle n'est pas faite,
-le serveur ne doit pas quitter `127.0.0.1`.
-
 **Étape 3** : l'application sait se connecter à un serveur au lieu de sa base
-locale. C'est là que ça devient visible pour l'utilisateur.
+locale. C'est là que ça devient visible pour l'utilisateur. Il faudra y
+trancher trois points laissés ouverts :
+
+- **Où vivent les justificatifs** en mode serveur (voir juste au-dessus).
+- **Ce que l'interface fait d'un `401`** : une session de 12 h expire en pleine
+  saisie. Reconnexion transparente ou écran de connexion qui préserve le
+  travail en cours — mais jamais une perte silencieuse.
+- **Ce qu'un rôle `lecture` voit à l'écran.** Aujourd'hui le serveur refuse
+  l'écriture ; l'interface, elle, afficherait toujours ses boutons. Un bouton
+  qui échoue systématiquement est une mauvaise interface : il faut les masquer
+  selon le rôle rendu par `session:ouvrir`.
+
+**Mise en service, quand l'étape 3 sera là** : démarrer le serveur sur
+`127.0.0.1`, créer le premier administrateur, l'arrêter, le rouvrir sur
+l'adresse du réseau. Le garde-fou impose cet ordre.
 
 ### Pièges rencontrés, à ne pas réintroduire
 
