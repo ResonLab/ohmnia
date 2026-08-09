@@ -119,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  11 suites — `npm run verifier`
+tests/                  12 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -241,7 +241,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 11 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 12 suites de tests, **tout passe**.
 - Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la
@@ -429,14 +429,49 @@ qui repasse par l'écran de connexion sans détruire l'écran en cours.
 **Rôle `lecture`** : les modules Audit et Mon entreprise disparaissent du menu,
 et un bandeau annonce la lecture seule.
 
+### Lancer le serveur
+
+**`demarrerServeur` n'était appelé que par les tests** : la fonctionnalité
+passait toutes les vérifications sans que personne puisse s'en servir. D'où
+`src/serveur/principal.ts` et `scripts/construire-serveur.mjs`.
+
+```bash
+npm run serveur:build      # produit out/serveur/ohmnia-serveur.mjs
+node out/serveur/ohmnia-serveur.mjs --aide
+```
+
+Le serveur est compilé en **un seul fichier** : on le copie sur la machine qui
+héberge les données, sans `npm install` ni le reste du projet. Aucune
+dépendance native — `node:sqlite` est intégré à Node 24.
+
+```bash
+node ohmnia-serveur.mjs --donnees "D:\OhmniaServeur" --port 8787
+```
+
+Options : `--donnees` (obligatoire), `--port`, `--hote`, `--certificat`,
+`--cle`, `--aide`. Une option mal orthographiée est **signalée**, pas ignorée.
+
+`VERSION_SERVEUR` dans `src/serveur/version.ts` est écrite en dur — le fichier
+compilé n'a pas de `package.json` à côté. `npm test` vérifie qu'elle n'a pas
+dérivé de celle du projet.
+
 ### Mise en service
 
-1. Démarrer le serveur sur `127.0.0.1`.
-2. Depuis un poste, renseigner l'adresse et **créer le premier administrateur**.
-3. Arrêter le serveur, le rouvrir sur l'adresse du réseau.
-4. Créer les comptes des collègues.
+1. Démarrer le serveur sur `127.0.0.1` (le défaut).
+2. Depuis un poste : **Paramètres de l'app → Mode multi-postes**, renseigner
+   l'adresse, puis **créer le premier administrateur**.
+3. Arrêter le serveur, le rouvrir avec `--hote 0.0.0.0` **et un certificat**.
+4. Créer les comptes des collègues depuis un poste administrateur.
 
-Le garde-fou de l'étape 2 impose cet ordre : pas de réseau sans administrateur.
+Les deux garde-fous imposent cet ordre : pas de réseau sans administrateur, et
+pas de réseau sans chiffrement. Fabriquer un certificat auto-signé (OpenSSL est
+livré avec Git pour Windows) :
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -days 1825 -keyout cle.pem -out certificat.pem -subj "/CN=ohmnia"
+```
+
+Chaque poste devra l'accepter une première fois.
 
 ### Finitions faites après l'étape 3
 
@@ -477,9 +512,12 @@ accepté : le trafic ne quitte pas la machine. Les deux garde-fous du réseau
 
 ### Ce qui reste à faire
 
-- **Le certificat n'est pas fabriqué par l'application.** Il faut le fournir.
-  Un certificat auto-signé convient sur un réseau d'entreprise, mais devra être
-  accepté une fois sur chaque poste.
+- **Le certificat n'est pas fabriqué par l'application.** La commande OpenSSL
+  est donnée ci-dessus et dans `--aide` ; l'automatiser demanderait d'écrire de
+  l'ASN.1 à la main, ce qui n'en vaut pas la peine.
+- **Le serveur n'est pas installé comme service Windows.** Il faut le lancer à
+  la main ou par une tâche planifiée. Il s'arrête proprement sur Ctrl+C
+  (Windows envoie l'équivalent à l'arrêt d'une tâche), en refermant les bases.
 - **La traduction anglaise** des nouveaux écrans (connexion, mode multi-postes)
   n'est pas faite — comme le reste des écrans, voir §8.
 
