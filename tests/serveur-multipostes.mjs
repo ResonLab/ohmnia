@@ -22,10 +22,21 @@ const verifier = (intitule, ok, detail = '') => {
 
 const lire = (f) => readFileSync(f, 'utf-8')
 
+function fichiersTs(dossier) {
+  const resultats = []
+  for (const entree of readdirSync(dossier, { withFileTypes: true })) {
+    const chemin = join(dossier, entree.name)
+    if (entree.isDirectory()) resultats.push(...fichiersTs(chemin))
+    else if (chemin.endsWith('.ts')) resultats.push(chemin)
+  }
+  return resultats
+}
+
+
 /* ── 1. Le serveur ne doit dépendre ni d'Electron ni d'une bibliothèque ──── */
 
 console.log('=== Indépendance du serveur ===')
-const serveurIndex = lire(join(SRC, 'serveur/index.ts'))
+const serveurIndex = lire(join(SRC, '../../Commun/serveur/transport.ts'))
 const serveurRegistre = lire(join(SRC, 'serveur/registre.ts'))
 
 verifier(
@@ -50,16 +61,6 @@ const canauxRegistre = [...serveurRegistre.matchAll(/^\s*'([^']+)':/gm)].map((m)
 // (l'apparence) sont servis depuis `main/multipostes/`, parce qu'ils doivent
 // être interceptés dans les deux modes. Ce qui compte n'est pas le dossier,
 // c'est qu'un canal du serveur existe bien aussi côté fenêtre.
-function fichiersTs(dossier) {
-  const resultats = []
-  for (const entree of readdirSync(dossier, { withFileTypes: true })) {
-    const chemin = join(dossier, entree.name)
-    if (entree.isDirectory()) resultats.push(...fichiersTs(chemin))
-    else if (chemin.endsWith('.ts')) resultats.push(chemin)
-  }
-  return resultats
-}
-
 const canauxIpc = new Set()
 for (const fichier of fichiersTs(join(SRC, 'main'))) {
   for (const m of lire(fichier).matchAll(/ipcMain\.handle\(\s*'([^']+)'/g)) {
@@ -72,6 +73,35 @@ verifier(
   `les ${canauxRegistre.length} opérations du serveur existent toutes comme canal IPC`,
   orphelins.length === 0,
   orphelins.join(', ')
+)
+
+/* ── 1 ter. L'application Electron ne dépend pas du serveur commun ───────── */
+
+console.log('\n=== Frontière avec le code commun ===')
+
+// Le serveur commun de la maison vit dans `Commun/serveur/`, hors du projet
+// Ohmnia, parce que Scenika s'en servira aussi. L'application Electron, elle,
+// ne doit **jamais** en dépendre : elle ne parle au serveur que par le réseau.
+// Sinon le dépôt d'Ohmnia ne se construirait plus seul — et on ne s'en
+// apercevrait qu'au moment de publier.
+const dossiersApplication = ['main', 'renderer', 'preload']
+const importsInterdits = []
+for (const dossier of dossiersApplication) {
+  for (const fichier of fichiersTs(join(SRC, dossier))) {
+    for (const ligne of lire(fichier).split('\n')) {
+      if (!ligne.includes('Commun/serveur')) continue
+      // Un import de type disparaît à la compilation : il ne crée pas de
+      // dépendance réelle et reste donc acceptable.
+      if (ligne.trimStart().startsWith('import type')) continue
+      if (ligne.trimStart().startsWith('//') || ligne.trimStart().startsWith('*')) continue
+      importsInterdits.push(`${fichier.replace(SRC, 'src')} : ${ligne.trim()}`)
+    }
+  }
+}
+verifier(
+  "l'application Electron n'importe rien du serveur commun",
+  importsInterdits.length === 0,
+  importsInterdits.join(' | ')
 )
 
 /* ── 2. Il refuse d'écouter sur le réseau sans authentification ──────────── */

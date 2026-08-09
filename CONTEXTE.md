@@ -431,6 +431,18 @@ et un bandeau annonce la lecture seule.
 
 ### Lancer le serveur
 
+**Le serveur est commun à la maison.** Tout ce qui ne dépend pas d'Ohmnia —
+transport, comptes, sessions, droits, certificat, ligne de commande — vit dans
+`../Commun/serveur/`, parce que Scenika s'en servira aussi. Ne restent dans
+`src/serveur/` que les canaux d'Ohmnia (`registre.ts`), leurs droits
+(`droits.ts`) et le branchement (`ohmnia.ts`, quinze lignes).
+
+**L'application Electron, elle, ne dépend jamais de `Commun/`** : elle ne parle
+au serveur que par le réseau. C'est ce qui permet au dépôt d'Ohmnia de se
+construire seul. Une vérification refuse tout import de `Commun/` depuis
+`main/`, `renderer/` ou `preload/` — sans elle, on ne s'en apercevrait qu'au
+moment de publier.
+
 **`demarrerServeur` n'était appelé que par les tests** : la fonctionnalité
 passait toutes les vérifications sans que personne puisse s'en servir. D'où
 `src/serveur/principal.ts` et `scripts/construire-serveur.mjs`.

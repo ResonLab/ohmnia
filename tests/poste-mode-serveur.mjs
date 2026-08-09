@@ -157,7 +157,7 @@ async function compiler(entree, sortie, entreeAbsolue = null) {
   return import('file://' + join(DOSSIER, sortie).replace(/\\/g, '/'))
 }
 
-const serveurModule = await compiler('serveur/index.ts', 'serveur.mjs')
+const serveurModule = await compiler('serveur/ohmnia.ts', 'serveur.mjs')
 
 // Le client et le contexte doivent être dans le *même* bundle : compilés
 // séparément, chacun aurait sa copie du contexte, et le client ne verrait
@@ -180,7 +180,7 @@ const clientModule = await compiler(null, 'client.mjs', entreePoste)
 
 console.log('\n=== Le poste écrit et lit sur le serveur ===')
 
-const serveur = serveurModule.demarrerServeur({
+const serveur = serveurModule.demarrerServeurOhmnia({
   dossierDonnees: DOSSIER_SERVEUR,
   version: '0.0.0-test',
   port: 0,

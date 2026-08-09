@@ -1,4 +1,4 @@
-import type { Role } from './comptes'
+import type { Role } from '../../../Commun/serveur/index'
 
 /**
  * Qui a le droit de quoi — **la politique de droits tient dans ce seul fichier**.

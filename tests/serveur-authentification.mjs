@@ -1,7 +1,7 @@
 // Comptes, droits et authentification du serveur multi-postes (étape 2).
 //
 // Contrairement à `serveur-multipostes.mjs`, ce test ne transcrit rien : il
-// compile le vrai `src/serveur/index.ts` avec esbuild et fait de vrais appels
+// compile le vrai serveur avec esbuild et fait de vrais appels
 // réseau dessus. C'est le seul moyen de vérifier une authentification — une
 // version réécrite pour le test prouverait seulement que la réécriture est
 // juste, ce qui n'intéresse personne.
@@ -72,7 +72,7 @@ const chargerSqlBrut = {
 }
 
 await build({
-  entryPoints: [join(SRC, 'serveur/index.ts')],
+  entryPoints: [join(SRC, 'serveur/ohmnia.ts')],
   outfile: bundle,
   bundle: true,
   platform: 'node',
@@ -82,7 +82,11 @@ await build({
   logLevel: 'silent'
 })
 
-const { demarrerServeur } = await import('file://' + bundle.replace(/\\/g, '/'))
+// `demarrerServeurOhmnia`, c'est le serveur commun de la maison branché sur les
+// opérations d'Ohmnia : c'est bien le vrai chemin qui est éprouvé ici.
+const { demarrerServeurOhmnia: demarrerServeur } = await import(
+  'file://' + bundle.replace(/\\/g, '/')
+)
 
 /* ── 3. Refus d'ouverture au réseau sans administrateur ──────────────────── */
 

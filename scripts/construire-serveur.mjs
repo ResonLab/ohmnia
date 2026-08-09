@@ -3,6 +3,12 @@
 // Pourquoi un bundle : la machine qui héberge les données n'a pas à recevoir
 // tout le projet ni un `npm install`. On y copie un fichier, et Node le lance.
 // Aucune dépendance native — `node:sqlite` est intégré à Node 24.
+//
+// Le bundle réunit deux choses : le serveur commun de la maison
+// (`../../Commun/serveur/`, partagé avec Scenika) et les opérations propres à
+// Ohmnia. L'application Electron, elle, ne dépend pas de `Commun/` : elle ne
+// parle au serveur que par le réseau. C'est ce qui permet au dépôt d'Ohmnia de
+// se construire seul.
 import { readFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
