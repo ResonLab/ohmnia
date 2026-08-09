@@ -1,4 +1,4 @@
-import { demarrerDepuisLaLigneDeCommande } from '../../../Commun/serveur/index'
+import { demarrerDepuisLaLigneDeCommande } from '../../../Nexika/serveur/index'
 import { APPLICATION_OHMNIA } from './ohmnia'
 import { VERSION_SERVEUR } from './version'
 

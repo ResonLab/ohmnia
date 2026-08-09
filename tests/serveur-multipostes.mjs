@@ -36,7 +36,7 @@ function fichiersTs(dossier) {
 /* ── 1. Le serveur ne doit dépendre ni d'Electron ni d'une bibliothèque ──── */
 
 console.log('=== Indépendance du serveur ===')
-const serveurIndex = lire(join(SRC, '../../Commun/serveur/transport.ts'))
+const serveurIndex = lire(join(SRC, '../../Nexika/serveur/transport.ts'))
 const serveurRegistre = lire(join(SRC, 'serveur/registre.ts'))
 
 verifier(
@@ -79,7 +79,7 @@ verifier(
 
 console.log('\n=== Frontière avec le code commun ===')
 
-// Le serveur commun de la maison vit dans `Commun/serveur/`, hors du projet
+// Le serveur commun de la maison vit dans `Nexika/serveur/`, hors du projet
 // Ohmnia, parce que Scenika s'en servira aussi. L'application Electron, elle,
 // ne doit **jamais** en dépendre : elle ne parle au serveur que par le réseau.
 // Sinon le dépôt d'Ohmnia ne se construirait plus seul — et on ne s'en
@@ -89,7 +89,7 @@ const importsInterdits = []
 for (const dossier of dossiersApplication) {
   for (const fichier of fichiersTs(join(SRC, dossier))) {
     for (const ligne of lire(fichier).split('\n')) {
-      if (!ligne.includes('Commun/serveur')) continue
+      if (!ligne.includes('Nexika/serveur')) continue
       // Un import de type disparaît à la compilation : il ne crée pas de
       // dépendance réelle et reste donc acceptable.
       if (ligne.trimStart().startsWith('import type')) continue

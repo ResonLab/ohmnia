@@ -55,7 +55,7 @@ mkdirSync(DOSSIER, { recursive: true })
 
 const bundleArguments = join(DOSSIER, 'demarrer.mjs')
 await build({
-  entryPoints: [join(PROJET, '../Commun/serveur/demarrer.ts')],
+  entryPoints: [join(PROJET, '../Nexika/serveur/demarrer.ts')],
   outfile: bundleArguments,
   bundle: true,
   platform: 'node',

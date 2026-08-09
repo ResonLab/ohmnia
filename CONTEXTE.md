@@ -433,13 +433,13 @@ et un bandeau annonce la lecture seule.
 
 **Le serveur est commun à la maison.** Tout ce qui ne dépend pas d'Ohmnia —
 transport, comptes, sessions, droits, certificat, ligne de commande — vit dans
-`../Commun/serveur/`, parce que Scenika s'en servira aussi. Ne restent dans
+`../Nexika/serveur/`, parce que Scenika s'en servira aussi. Ne restent dans
 `src/serveur/` que les canaux d'Ohmnia (`registre.ts`), leurs droits
 (`droits.ts`) et le branchement (`ohmnia.ts`, quinze lignes).
 
-**L'application Electron, elle, ne dépend jamais de `Commun/`** : elle ne parle
+**L'application Electron, elle, ne dépend jamais de `Nexika/`** : elle ne parle
 au serveur que par le réseau. C'est ce qui permet au dépôt d'Ohmnia de se
-construire seul. Une vérification refuse tout import de `Commun/` depuis
+construire seul. Une vérification refuse tout import de `Nexika/` depuis
 `main/`, `renderer/` ou `preload/` — sans elle, on ne s'en apercevrait qu'au
 moment de publier.
 

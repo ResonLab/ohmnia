@@ -2,7 +2,7 @@ import {
   demarrerServeur,
   type ApplicationServie,
   type OptionsServeur
-} from '../../../Commun/serveur/index'
+} from '../../../Nexika/serveur/index'
 import { definirContexte } from '../main/contexte'
 import { fermerBaseDeDonnees, ouvrirBaseDeDonnees } from '../main/db/database'
 import { REGISTRE } from './registre'
@@ -13,7 +13,7 @@ import { roleExige } from './droits'
  *
  * Tout ce qui n'est pas propre à Ohmnia — transport, comptes, sessions,
  * droits, certificat, arguments de la ligne de commande — vit dans
- * `Commun/serveur/`, parce que Scenika s'en servira aussi. Ne sont déclarés ici
+ * `Nexika/serveur/`, parce que Scenika s'en servira aussi. Ne sont déclarés ici
  * que les canaux d'Ohmnia, leurs droits, et sa base.
  */
 export const APPLICATION_OHMNIA: ApplicationServie = {
