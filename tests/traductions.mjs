@@ -47,7 +47,21 @@ const ECRANS_TRADUITS = [
   'src/renderer/src/pages/Clients.tsx'
 ]
 
-const i18n = readFileSync(join(RACINE, 'src/shared/i18n.ts'), 'utf-8')
+/**
+ * Les fins de ligne sont normalisées avant toute analyse.
+ *
+ * Sans cela, la suite passait en local et **échouait sur le runner Windows de
+ * GitHub Actions**, qui extrait les fichiers en CRLF : le motif attendait un
+ * saut de ligne juste après `}`, et trouvait un retour chariot. Elle
+ * n'annonçait pas une erreur de traduction mais « 0 clé trouvée » — un
+ * contrôle qui ne regarde plus rien.
+ */
+const sansRetourChariot = (texte) => texte.replaceAll('\r\n', '\n')
+
+const lireNormalise = (relatif) =>
+  sansRetourChariot(readFileSync(join(RACINE, relatif), 'utf-8'))
+
+const i18n = lireNormalise('src/shared/i18n.ts')
 
 /* ── 1. Toute clé a une version anglaise ─────────────────────────────────── */
 
@@ -91,7 +105,7 @@ function fichiersTs(dossier) {
 
 const sources = fichiersTs(join(RACINE, 'src'))
   .filter((f) => !f.endsWith('i18n.ts'))
-  .map((f) => readFileSync(f, 'utf-8'))
+  .map((f) => sansRetourChariot(readFileSync(f, 'utf-8')))
   .join('\n')
 
 // `i18n.ts` est écarté du relevé des littéraux — il les contient tous, et rien
@@ -120,7 +134,7 @@ const ACCENTS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]/
 
 for (const relatif of ECRANS_TRADUITS) {
   const chemin = join(RACINE, relatif)
-  const contenu = readFileSync(chemin, 'utf-8')
+  const contenu = sansRetourChariot(readFileSync(chemin, 'utf-8'))
   const etiquette = relatif
 
   let dansCommentaire = false
