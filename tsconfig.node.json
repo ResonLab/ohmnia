@@ -3,6 +3,10 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    // Nexika designe ses modules internes avec leur extension .ts, pour que
+    // Node 24 puisse le charger seul, sans empaqueteur. C'est ce qui lui
+    // permet de s'eprouver lui-meme et d'etre lance sans installation.
+    "allowImportingTsExtensions": true,
     "types": ["node", "electron-vite/node"],
     "strict": true,
     "noUnusedLocals": true,
