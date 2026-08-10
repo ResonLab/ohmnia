@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Client, ClientDetail } from '../../../shared/types'
+import { t } from '../../../shared/i18n'
 import { formaterMontant } from '../lib/devise'
 import { SiAutorise } from '../lib/role'
 
@@ -74,7 +75,7 @@ export default function Clients(): React.JSX.Element {
   }
 
   async function supprimerClient(id: number): Promise<void> {
-    if (!window.confirm('Supprimer définitivement ce client ?')) return
+    if (!window.confirm(t('client.confirmerSuppression'))) return
     try {
       await window.api.clients.supprimer(id)
       setDetail(null)
@@ -86,7 +87,7 @@ export default function Clients(): React.JSX.Element {
     }
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   const clientsFiltres = clients.filter((c) =>
     c.nom.toLowerCase().includes(recherche.trim().toLowerCase())
@@ -95,10 +96,10 @@ export default function Clients(): React.JSX.Element {
   return (
     <div className="clients-layout">
       <aside className="carte clients-liste">
-        <h2>Clients</h2>
+        <h2>{t('client.titre')}</h2>
         <input
           className="champ-recherche"
-          placeholder="Rechercher un client…"
+          placeholder={t('client.rechercher')}
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
         />
@@ -114,7 +115,7 @@ export default function Clients(): React.JSX.Element {
               </button>
             </li>
           ))}
-          {clientsFiltres.length === 0 && <li className="liste-vide">Aucun client trouvé.</li>}
+          {clientsFiltres.length === 0 && <li className="liste-vide">{t('client.aucunTrouve')}</li>}
         </ul>
         <SiAutorise>
           <button
@@ -124,7 +125,7 @@ export default function Clients(): React.JSX.Element {
               setBrouillon(null)
             }}
           >
-            + Nouveau client
+            {t('client.nouveau')}
           </button>
         </SiAutorise>
       </aside>
@@ -132,13 +133,13 @@ export default function Clients(): React.JSX.Element {
       <section className="clients-detail">
         {nouveau && (
           <div className="carte">
-            <h2>Nouveau client</h2>
+            <h2>{t('client.titreNouveau')}</h2>
             <label>
-              Nom
+              {t('client.nom')}
               <input value={nouveau.nom} onChange={(e) => setNouveau({ ...nouveau, nom: e.target.value })} />
             </label>
             <label>
-              Adresse
+              {t('client.adresse')}
               <textarea
                 value={nouveau.adresse}
                 onChange={(e) => setNouveau({ ...nouveau, adresse: e.target.value })}
@@ -146,7 +147,7 @@ export default function Clients(): React.JSX.Element {
             </label>
             <div className="ligne-formulaire">
               <label>
-                Email
+                {t('client.email')}
                 <input
                   type="email"
                   value={nouveau.email}
@@ -154,7 +155,7 @@ export default function Clients(): React.JSX.Element {
                 />
               </label>
               <label>
-                Téléphone
+                {t('client.telephone')}
                 <input
                   value={nouveau.telephone}
                   onChange={(e) => setNouveau({ ...nouveau, telephone: e.target.value })}
@@ -162,9 +163,9 @@ export default function Clients(): React.JSX.Element {
               </label>
             </div>
             <div className="barre-boutons">
-              <button onClick={creerClient}>Créer</button>
+              <button onClick={creerClient}>{t('client.creer')}</button>
               <button className="bouton-secondaire" onClick={() => setNouveau(null)}>
-                Annuler
+                {t('action.annuler')}
               </button>
             </div>
           </div>
@@ -173,16 +174,16 @@ export default function Clients(): React.JSX.Element {
         {detail && brouillon && (
           <>
             <div className="carte">
-              <h2>Fiche client</h2>
+              <h2>{t('client.fiche')}</h2>
               <label>
-                Nom
+                {t('client.nom')}
                 <input
                   value={brouillon.nom}
                   onChange={(e) => setBrouillon({ ...brouillon, nom: e.target.value })}
                 />
               </label>
               <label>
-                Adresse
+                {t('client.adresse')}
                 <textarea
                   value={brouillon.adresse}
                   onChange={(e) => setBrouillon({ ...brouillon, adresse: e.target.value })}
@@ -190,7 +191,7 @@ export default function Clients(): React.JSX.Element {
               </label>
               <div className="ligne-formulaire">
                 <label>
-                  Email
+                  {t('client.email')}
                   <input
                     type="email"
                     value={brouillon.email}
@@ -198,7 +199,7 @@ export default function Clients(): React.JSX.Element {
                   />
                 </label>
                 <label>
-                  Téléphone
+                  {t('client.telephone')}
                   <input
                     value={brouillon.telephone}
                     onChange={(e) => setBrouillon({ ...brouillon, telephone: e.target.value })}
@@ -207,50 +208,50 @@ export default function Clients(): React.JSX.Element {
               </div>
               <SiAutorise>
                 <div className="barre-boutons">
-                  <button onClick={enregistrerModification}>Enregistrer</button>
+                  <button onClick={enregistrerModification}>{t('action.enregistrer')}</button>
                   <button className="bouton-danger" onClick={() => supprimerClient(brouillon.id)}>
-                    Supprimer
+                    {t('action.supprimer')}
                   </button>
                 </div>
               </SiAutorise>
             </div>
 
             <div className="carte">
-              <h2>Chiffres du client</h2>
+              <h2>{t('client.chiffres')}</h2>
               <div className="tuiles">
                 <div className="tuile">
                   <span className="tuile-valeur">{formaterMontant(detail.totalFacture)}</span>
-                  <span className="tuile-libelle">Total facturé</span>
+                  <span className="tuile-libelle">{t('client.totalFacture')}</span>
                 </div>
                 <div className="tuile">
                   <span className={`tuile-valeur ${detail.totalEnAttente > 0 ? 'texte-alerte' : ''}`}>
                     {formaterMontant(detail.totalEnAttente)}
                   </span>
-                  <span className="tuile-libelle">En attente de paiement</span>
+                  <span className="tuile-libelle">{t('client.enAttentePaiement')}</span>
                 </div>
                 <div className="tuile">
                   <span className="tuile-valeur">{detail.factures.length}</span>
-                  <span className="tuile-libelle">Factures</span>
+                  <span className="tuile-libelle">{t('client.factures')}</span>
                 </div>
                 <div className="tuile">
                   <span className="tuile-valeur">{detail.devis.length}</span>
-                  <span className="tuile-libelle">Devis</span>
+                  <span className="tuile-libelle">{t('client.devis')}</span>
                 </div>
               </div>
             </div>
 
             <div className="carte">
-              <h2>Factures de ce client</h2>
+              <h2>{t('client.facturesDuClient')}</h2>
               {detail.factures.length === 0 ? (
-                <p className="graphique-vide">Aucune facture pour ce client.</p>
+                <p className="graphique-vide">{t('client.aucuneFacture')}</p>
               ) : (
                 <table className="table-editable">
                   <thead>
                     <tr>
-                      <th>Numéro</th>
-                      <th>Date</th>
-                      <th>Statut</th>
-                      <th>Montant</th>
+                      <th>{t('colonne.numero')}</th>
+                      <th>{t('colonne.date')}</th>
+                      <th>{t('colonne.statut')}</th>
+                      <th>{t('colonne.montant')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -263,7 +264,9 @@ export default function Clients(): React.JSX.Element {
                           <td>
                             {f.statut}
                             {enRetard && (
-                              <span className="badge-alerte">En attente depuis {f.joursEnAttente} jours</span>
+                              <span className="badge-alerte">
+                                {t('client.enAttenteDepuis', { jours: f.joursEnAttente ?? 0 })}
+                              </span>
                             )}
                           </td>
                           <td>{f.montant === null ? '—' : `${formaterMontant(f.montant)}`}</td>
@@ -276,17 +279,17 @@ export default function Clients(): React.JSX.Element {
             </div>
 
             <div className="carte">
-              <h2>Devis de ce client</h2>
+              <h2>{t('client.devisDuClient')}</h2>
               {detail.devis.length === 0 ? (
-                <p className="graphique-vide">Aucun devis pour ce client.</p>
+                <p className="graphique-vide">{t('client.aucunDevis')}</p>
               ) : (
                 <table className="table-editable">
                   <thead>
                     <tr>
-                      <th>Numéro</th>
-                      <th>Date</th>
-                      <th>Statut</th>
-                      <th>Total</th>
+                      <th>{t('colonne.numero')}</th>
+                      <th>{t('colonne.date')}</th>
+                      <th>{t('colonne.statut')}</th>
+                      <th>{t('colonne.total')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -307,7 +310,7 @@ export default function Clients(): React.JSX.Element {
 
         {!detail && !nouveau && (
           <div className="carte etat-vide">
-            <p>Sélectionne un client à gauche pour voir sa fiche et ses factures.</p>
+            <p>{t('client.riendSelectionne')}</p>
           </div>
         )}
 

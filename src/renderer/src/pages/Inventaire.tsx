@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ArticleInventaire, ResumeInventaire } from '../../../shared/types'
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 
 const CATEGORIES = [
   'Composants',
@@ -78,24 +79,24 @@ export default function Inventaire(): React.JSX.Element {
   }
 
   async function supprimerArticle(reference: string): Promise<void> {
-    if (!window.confirm(`Supprimer la référence ${reference} de l'inventaire ?`)) return
+    if (!window.confirm(t('inventaire.confirmerSuppression', { reference }))) return
     await window.api.inventaire.supprimer(reference)
     await recharger()
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Résumé du stock</h2>
+        <h2>{t('inventaire.resume')}</h2>
         <div className="resultats-calcules" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
           <p>
-            Valeur totale du stock (au prix d'achat) :{' '}
+            {t('inventaire.valeurTotale')}{' '}
             <strong>{formaterMontant(resume.valeurTotaleStock)}</strong>
           </p>
           <p>
-            Références sous le seuil d'alerte :{' '}
+            {t('inventaire.sousSeuil')}{' '}
             <strong className={resume.nbReferencesSousSeuil > 0 ? 'texte-alerte' : ''}>
               {resume.nbReferencesSousSeuil}
             </strong>
@@ -104,20 +105,20 @@ export default function Inventaire(): React.JSX.Element {
       </div>
 
       <div className="carte">
-        <h2>Inventaire</h2>
+        <h2>{t('inventaire.titre')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Référence</th>
-              <th>Désignation</th>
-              <th>Catégorie</th>
-              <th>Stock</th>
-              <th>Seuil</th>
-              <th>Prix achat</th>
-              <th>Prix vente</th>
-              <th>Fournisseur</th>
-              <th>Emplacement</th>
-              <th>Dernière MAJ</th>
+              <th>{t('colonne.reference')}</th>
+              <th>{t('colonne.designation')}</th>
+              <th>{t('inventaire.categorie')}</th>
+              <th>{t('inventaire.stock')}</th>
+              <th>{t('inventaire.seuil')}</th>
+              <th>{t('inventaire.prixAchat')}</th>
+              <th>{t('inventaire.prixVente')}</th>
+              <th>{t('inventaire.fournisseur')}</th>
+              <th>{t('inventaire.emplacement')}</th>
+              <th>{t('inventaire.derniereMaj')}</th>
               <th></th>
             </tr>
           </thead>
@@ -227,7 +228,7 @@ export default function Inventaire(): React.JSX.Element {
                   <td className="colonne-etroite">{article.derniereMaj.slice(0, 10)}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerArticle(article.reference)}>
-                      Supprimer
+                      {t('action.supprimer')}
                     </button>
                   </td>
                 </tr>
@@ -239,21 +240,21 @@ export default function Inventaire(): React.JSX.Element {
         {nouvelArticle ? (
           <div className="ligne-formulaire">
             <label>
-              Référence
+              {t('colonne.reference')}
               <input
                 value={nouvelArticle.reference}
                 onChange={(e) => setNouvelArticle({ ...nouvelArticle, reference: e.target.value })}
               />
             </label>
             <label>
-              Désignation
+              {t('colonne.designation')}
               <input
                 value={nouvelArticle.designation}
                 onChange={(e) => setNouvelArticle({ ...nouvelArticle, designation: e.target.value })}
               />
             </label>
             <label>
-              Catégorie
+              {t('inventaire.categorie')}
               <select
                 value={nouvelArticle.categorie}
                 onChange={(e) => setNouvelArticle({ ...nouvelArticle, categorie: e.target.value })}
@@ -266,7 +267,7 @@ export default function Inventaire(): React.JSX.Element {
               </select>
             </label>
             <label>
-              Stock
+              {t('inventaire.stock')}
               <input
                 type="number"
                 step="1"
@@ -277,7 +278,7 @@ export default function Inventaire(): React.JSX.Element {
               />
             </label>
             <label>
-              Seuil d'alerte
+              {t('inventaire.seuilAlerte')}
               <input
                 type="number"
                 step="1"
@@ -286,7 +287,7 @@ export default function Inventaire(): React.JSX.Element {
               />
             </label>
             <label>
-              Prix achat
+              {t('inventaire.prixAchat')}
               <input
                 type="number"
                 step="0.05"
@@ -297,7 +298,7 @@ export default function Inventaire(): React.JSX.Element {
               />
             </label>
             <label>
-              Prix vente
+              {t('inventaire.prixVente')}
               <input
                 type="number"
                 step="0.05"
@@ -308,28 +309,32 @@ export default function Inventaire(): React.JSX.Element {
               />
             </label>
             <label>
-              Fournisseur
+              {t('inventaire.fournisseur')}
               <input
                 value={nouvelArticle.fournisseur}
                 onChange={(e) => setNouvelArticle({ ...nouvelArticle, fournisseur: e.target.value })}
               />
             </label>
             <label>
-              Emplacement
+              {t('inventaire.emplacement')}
               <input
                 value={nouvelArticle.emplacement}
                 onChange={(e) => setNouvelArticle({ ...nouvelArticle, emplacement: e.target.value })}
               />
             </label>
             <div className="barre-boutons">
-              <button className="action-ecriture" onClick={enregistrerNouvelArticle}>Enregistrer</button>
+              <button className="action-ecriture" onClick={enregistrerNouvelArticle}>
+                {t('action.enregistrer')}
+              </button>
               <button className="bouton-danger" onClick={() => setNouvelArticle(null)}>
-                Annuler
+                {t('action.annuler')}
               </button>
             </div>
           </div>
         ) : (
-          <button className="action-ecriture" onClick={preparerNouvelArticle}>+ Ajouter un article</button>
+          <button className="action-ecriture" onClick={preparerNouvelArticle}>
+            {t('inventaire.ajouterArticle')}
+          </button>
         )}
 
         {messageErreur && <p className="erreur">{messageErreur}</p>}

@@ -40,7 +40,12 @@ const echec = (message) => {
  * En ajouter un : le traduire entièrement, puis l'inscrire ici. Le faire dans
  * l'autre sens ferait échouer la suite, ce qui est exactement le but.
  */
-const ECRANS_TRADUITS = ['src/renderer/src/App.tsx', 'src/renderer/src/pages/Accueil.tsx']
+const ECRANS_TRADUITS = [
+  'src/renderer/src/App.tsx',
+  'src/renderer/src/pages/Accueil.tsx',
+  'src/renderer/src/pages/Inventaire.tsx',
+  'src/renderer/src/pages/Clients.tsx'
+]
 
 const i18n = readFileSync(join(RACINE, 'src/shared/i18n.ts'), 'utf-8')
 

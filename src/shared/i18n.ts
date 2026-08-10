@@ -118,6 +118,77 @@ const TEXTES = {
   'colonne.reference': { fr: 'Référence', en: 'Reference' },
   'colonne.designation': { fr: 'Désignation', en: 'Description' },
 
+  // --- Actions communes ---
+  'action.enregistrer': { fr: 'Enregistrer', en: 'Save' },
+  'action.annuler': { fr: 'Annuler', en: 'Cancel' },
+  'action.supprimer': { fr: 'Supprimer', en: 'Delete' },
+
+  // --- Clients ---
+  'client.titre': { fr: 'Clients', en: 'Clients' },
+  'client.rechercher': { fr: 'Rechercher un client…', en: 'Search for a client…' },
+  'client.aucunTrouve': { fr: 'Aucun client trouvé.', en: 'No client found.' },
+  'client.nouveau': { fr: '+ Nouveau client', en: '+ New client' },
+  'client.titreNouveau': { fr: 'Nouveau client', en: 'New client' },
+  'client.fiche': { fr: 'Fiche client', en: 'Client record' },
+  'client.nom': { fr: 'Nom', en: 'Name' },
+  'client.adresse': { fr: 'Adresse', en: 'Address' },
+  'client.email': { fr: 'Email', en: 'Email' },
+  'client.telephone': { fr: 'Téléphone', en: 'Phone' },
+  'client.creer': { fr: 'Créer', en: 'Create' },
+  'client.confirmerSuppression': {
+    fr: 'Supprimer définitivement ce client ?',
+    en: 'Permanently delete this client?'
+  },
+  'client.chiffres': { fr: 'Chiffres du client', en: 'Client figures' },
+  'client.totalFacture': { fr: 'Total facturé', en: 'Total invoiced' },
+  'client.enAttentePaiement': { fr: 'En attente de paiement', en: 'Awaiting payment' },
+  'client.factures': { fr: 'Factures', en: 'Invoices' },
+  'client.devis': { fr: 'Devis', en: 'Quotes' },
+  'client.facturesDuClient': { fr: 'Factures de ce client', en: 'This client’s invoices' },
+  'client.aucuneFacture': { fr: 'Aucune facture pour ce client.', en: 'No invoice for this client.' },
+  'client.devisDuClient': { fr: 'Devis de ce client', en: 'This client’s quotes' },
+  'client.aucunDevis': { fr: 'Aucun devis pour ce client.', en: 'No quote for this client.' },
+  'client.enAttenteDepuis': {
+    fr: 'En attente depuis {jours} jours',
+    en: 'Awaiting payment for {jours} days'
+  },
+  'client.riendSelectionne': {
+    fr: 'Sélectionne un client à gauche pour voir sa fiche et ses factures.',
+    en: 'Select a client on the left to see their record and invoices.'
+  },
+
+  // --- Colonnes de tableaux, suite ---
+  'colonne.numero': { fr: 'Numéro', en: 'Number' },
+  'colonne.date': { fr: 'Date', en: 'Date' },
+  'colonne.statut': { fr: 'Statut', en: 'Status' },
+  'colonne.total': { fr: 'Total', en: 'Total' },
+
+  // --- Inventaire ---
+  'inventaire.titre': { fr: 'Inventaire', en: 'Inventory' },
+  'inventaire.resume': { fr: 'Résumé du stock', en: 'Stock summary' },
+  'inventaire.valeurTotale': {
+    fr: "Valeur totale du stock (au prix d'achat) :",
+    en: 'Total stock value (at purchase price):'
+  },
+  'inventaire.sousSeuil': {
+    fr: "Références sous le seuil d'alerte :",
+    en: 'References below the alert threshold:'
+  },
+  'inventaire.categorie': { fr: 'Catégorie', en: 'Category' },
+  'inventaire.stock': { fr: 'Stock', en: 'Stock' },
+  'inventaire.seuil': { fr: 'Seuil', en: 'Threshold' },
+  'inventaire.seuilAlerte': { fr: "Seuil d'alerte", en: 'Alert threshold' },
+  'inventaire.prixAchat': { fr: 'Prix achat', en: 'Purchase price' },
+  'inventaire.prixVente': { fr: 'Prix vente', en: 'Selling price' },
+  'inventaire.fournisseur': { fr: 'Fournisseur', en: 'Supplier' },
+  'inventaire.emplacement': { fr: 'Emplacement', en: 'Location' },
+  'inventaire.derniereMaj': { fr: 'Dernière MAJ', en: 'Last update' },
+  'inventaire.ajouterArticle': { fr: '+ Ajouter un article', en: '+ Add an item' },
+  'inventaire.confirmerSuppression': {
+    fr: "Supprimer la référence {reference} de l'inventaire ?",
+    en: 'Remove reference {reference} from the inventory?'
+  },
+
   // --- Paramètres de l'application ---
   'param.langue': { fr: 'Langue', en: 'Language' },
   'param.langueAide': {
