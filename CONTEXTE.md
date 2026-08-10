@@ -276,7 +276,10 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 ## 9. État actuel
 
 - `npm run verifier` : typecheck + 13 suites de tests, **tout passe**.
-- Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
+- Version `0.1.3`. Construite par GitHub Actions pour Windows et Linux.
+  Elle apporte le **mode multi-postes**, le passage à l'organisation ResonLab et
+  les premiers écrans traduits. La `0.1.2` n'a jamais été publiée : son
+  étiquette pointe sur du code antérieur à la fusion.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la
   verification de mise a jour qui restait figee sans message.
