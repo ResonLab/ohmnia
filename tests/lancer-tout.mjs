@@ -17,6 +17,7 @@ const SUITES = [
   ['Contraintes inventaire non bloquantes', 'contraintes-inventaire.cjs'],
   ['Cohérence de la documentation', 'coherence-documentation.mjs'],
   ['Cohérence du site vitrine', 'coherence-site.mjs'],
+  ['Traductions', 'traductions.mjs'],
   ['Serveur multi-postes (étape 1)', 'serveur-multipostes.mjs'],
   ['Comptes, droits et authentification (étape 2)', 'serveur-authentification.mjs'],
   ['Le poste en mode serveur (étape 3)', 'poste-mode-serveur.mjs'],

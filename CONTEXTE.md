@@ -119,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  12 suites — `npm run verifier`
+tests/                  13 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -195,10 +195,36 @@ modifier l'un sans l'autre fait échouer `npm run verifier`.
 ### Traduction anglaise — partielle
 
 **Fait** : infrastructure `src/shared/i18n.ts`, sélecteur de langue, navigation
-complète, **documents PDF entièrement traduits** (testé FR et EN), paramètres
-d'apparence.
+complète, **documents PDF entièrement traduits** (testé FR et EN), et l'écran
+**Accueil**.
 
-**À faire** : le corps des 17 écrans est encore en français en dur (~400 chaînes).
+`t()` sait maintenant **insérer des valeurs** : `t('accueil.dansJours', { jours: 4 })`.
+Sans cela, une phrase citant un chiffre devait être découpée en morceaux à
+concaténer — « Dans » + n + « j » — ce qui ne se traduit pas : l'ordre des mots
+change d'une langue à l'autre.
+
+**Un détail qui trahissait la traduction à moitié** : `nomDuMois()` écrivait
+`fr-CH` en dur. Un anglophone lisait « août 2026 » au milieu d'un écran anglais.
+La locale suit désormais la langue de l'interface — chercher les autres
+`toLocaleDateString` en traduisant les écrans restants.
+
+**À faire** : le corps des 16 autres écrans est encore en français en dur.
+
+**`tests/traductions.mjs` mesure l'avancement et l'affiche à chaque exécution.**
+Il vérifie trois choses : aucune clé sans version anglaise **ni** française
+(une chaîne vide sortirait à l'écran, invisible) ; aucune clé déclarée sans être
+employée ; et aucun texte français en dur dans un écran **déclaré traduit**.
+
+La liste `ECRANS_TRADUITS` est ce qui rend le contrôle honnête sur un chantier à
+moitié fait : elle dit ce qui est protégé, et le compte affiché dit ce qui reste.
+**Traduire un écran, c'est le traduire entièrement puis l'inscrire dans cette
+liste** — l'inverse fait échouer la suite, ce qui est le but.
+
+Dix-sept clés ont été retirées au passage : déclarées, jamais employées. Une clé
+morte laisse croire qu'un écran est traduit alors qu'il ne l'est pas. Elles
+reviendront avec l'écran qui s'en servira.
+
+Les trois contrôles ont été éprouvés en les cassant.
 
 Méthode, écran par écran :
 1. Ajouter les chaînes dans `TEXTES` de `src/shared/i18n.ts` (clé préfixée par
@@ -249,7 +275,7 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 12 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 13 suites de tests, **tout passe**.
 - Version `0.1.2`. Construite par GitHub Actions pour Windows et Linux.
   Corrige deux defauts : les boites de dialogue natives sans fenetre parente,
   qui pouvaient passer derriere l'app en gardant le focus clavier, et la

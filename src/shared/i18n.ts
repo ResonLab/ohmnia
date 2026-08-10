@@ -35,18 +35,7 @@ const TEXTES = {
   'menu.sousTitre': { fr: 'Gestion', en: 'Management' },
 
   // --- Actions communes ---
-  'action.enregistrer': { fr: 'Enregistrer', en: 'Save' },
-  'action.annuler': { fr: 'Annuler', en: 'Cancel' },
-  'action.supprimer': { fr: 'Supprimer', en: 'Delete' },
-  'action.ouvrir': { fr: 'Ouvrir', en: 'Open' },
-  'action.dupliquer': { fr: 'Dupliquer', en: 'Duplicate' },
-  'action.ajouter': { fr: 'Ajouter', en: 'Add' },
-  'action.creer': { fr: 'Créer', en: 'Create' },
-  'action.retirer': { fr: 'Retirer', en: 'Remove' },
-  'action.exporterPdf': { fr: 'Exporter en PDF', en: 'Export as PDF' },
-  'action.choisir': { fr: 'Choisir', en: 'Choose' },
   'etat.chargement': { fr: 'Chargement…', en: 'Loading…' },
-  'etat.erreurInconnue': { fr: 'Erreur inconnue.', en: 'Unknown error.' },
 
   // --- Documents imprimés (facture, devis, rappel) ---
   'doc.facture': { fr: 'Facture', en: 'Invoice' },
@@ -84,12 +73,50 @@ const TEXTES = {
     fr: 'Si le paiement a été effectué entre-temps, merci de considérer ce courrier sans objet.',
     en: 'If payment has been made in the meantime, please disregard this letter.'
   },
-  'doc.fraisRappel': { fr: 'Frais de rappel', en: 'Reminder fee' },
-  'doc.fraisImpression': {
-    fr: "Frais d'impression et d'envoi",
-    en: 'Printing and mailing fee'
-  },
   'doc.rappelNiveau': { fr: 'rappel', en: 'reminder' },
+
+  // --- Accueil (tableau de bord) ---
+  'accueil.ceMois': { fr: 'Ce mois', en: 'This month' },
+  'accueil.entrees': { fr: 'Entrées', en: 'Income' },
+  'accueil.depenses': { fr: 'Dépenses', en: 'Expenses' },
+  'accueil.benefice': { fr: 'Bénéfice', en: 'Profit' },
+  'accueil.valeurStock': { fr: 'Valeur du stock', en: 'Stock value' },
+  'accueil.objectifAnnuel': { fr: 'Objectif annuel', en: 'Yearly target' },
+  'accueil.objectifProgression': {
+    fr: '{fait} réalisés sur {objectif} —',
+    en: '{fait} of {objectif} —'
+  },
+  'accueil.objectifAbsent': {
+    fr: "Aucun objectif défini pour cette année. Tu peux le saisir dans « Résumé annuel ».",
+    en: 'No target set for this year. You can enter one under “Yearly summary”.'
+  },
+  'accueil.aSuivre': { fr: 'À suivre', en: 'To watch' },
+  'accueil.facturesEnAttente': { fr: 'Factures en attente', en: 'Invoices outstanding' },
+  'accueil.facturesEnRetard': { fr: 'Factures en retard', en: 'Invoices overdue' },
+  'accueil.devisEnAttente': { fr: 'Devis en attente', en: 'Quotes pending' },
+  'accueil.articlesSousSeuil': { fr: 'Articles sous le seuil', en: 'Items below threshold' },
+  'accueil.prochainesEcheances': { fr: 'Prochaines échéances', en: 'Upcoming due dates' },
+  'accueil.aucuneEcheance': {
+    fr: 'Aucune facture en attente de paiement.',
+    en: 'No invoice awaiting payment.'
+  },
+  'accueil.delai': { fr: 'Délai', en: 'Due in' },
+  'accueil.enRetardDe': { fr: 'En retard de {jours} j', en: '{jours} d overdue' },
+  'accueil.dansJours': { fr: 'Dans {jours} j', en: 'In {jours} d' },
+  'accueil.stockAReapprovisionner': {
+    fr: 'Stock à réapprovisionner',
+    en: 'Stock to reorder'
+  },
+  'accueil.enStock': { fr: 'En stock', en: 'In stock' },
+  'accueil.seuil': { fr: 'Seuil', en: 'Threshold' },
+
+  // --- Colonnes communes aux tableaux ---
+  'colonne.facture': { fr: 'Facture', en: 'Invoice' },
+  'colonne.client': { fr: 'Client', en: 'Client' },
+  'colonne.echeance': { fr: 'Échéance', en: 'Due date' },
+  'colonne.montant': { fr: 'Montant', en: 'Amount' },
+  'colonne.reference': { fr: 'Référence', en: 'Reference' },
+  'colonne.designation': { fr: 'Désignation', en: 'Description' },
 
   // --- Paramètres de l'application ---
   'param.langue': { fr: 'Langue', en: 'Language' },
@@ -99,10 +126,6 @@ const TEXTES = {
   },
   'param.apparence': { fr: 'Apparence', en: 'Appearance' },
   'param.theme': { fr: 'Thème', en: 'Theme' },
-  'param.themeSombre': { fr: 'Sombre', en: 'Dark' },
-  'param.themeClair': { fr: 'Clair', en: 'Light' },
-  'param.themeAuto': { fr: 'Automatique (suit Windows)', en: 'Automatic (follows Windows)' },
-  'param.couleurAccent': { fr: "Couleur d'accent", en: 'Accent colour' }
 } satisfies Record<string, Traduction>
 
 export type CleTraduction = keyof typeof TEXTES
@@ -117,11 +140,25 @@ export function langue(): Langue {
   return langueCourante
 }
 
-/** Traduit une clé. Repli sur le français si la traduction anglaise manque. */
-export function t(cle: CleTraduction): string {
+/**
+ * Traduit une clé, en remplaçant `{nom}` par `valeurs.nom`.
+ *
+ * L'insertion de valeurs est nécessaire dès qu'une phrase cite un chiffre :
+ * découper la phrase en morceaux à concaténer donnerait « Dans » + n + « j »,
+ * qui ne se traduit pas — l'ordre des mots change d'une langue à l'autre.
+ *
+ * Repli sur le français si la traduction anglaise manque : l'interface reste
+ * lisible pendant une traduction partielle. **Jamais l'inverse** — un français
+ * manquant est un oubli, et `tests/traductions.mjs` le signale.
+ */
+export function t(cle: CleTraduction, valeurs?: Record<string, string | number>): string {
   const entree = TEXTES[cle]
   if (!entree) return cle
-  return langueCourante === 'en' ? entree.en || entree.fr : entree.fr
+  const texte = langueCourante === 'en' ? entree.en || entree.fr : entree.fr
+  if (!valeurs) return texte
+  return texte.replace(/\{(\w+)\}/g, (entier, nom) =>
+    nom in valeurs ? String(valeurs[nom]) : entier
+  )
 }
 
 export const LANGUES: { code: Langue; nom: string }[] = [
