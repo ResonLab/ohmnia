@@ -19,7 +19,9 @@
     "test": "node tests/lancer-tout.mjs",
     "verifier": "npm run typecheck && npm test",
     "serveur:build": "node scripts/construire-serveur.mjs",
-    "serveur": "node scripts/construire-serveur.mjs && node out/serveur/ohmnia-serveur.mjs"
+    "serveur": "node scripts/construire-serveur.mjs && node out/serveur/ohmnia-serveur.mjs",
+    "guide:publier": "node scripts/publier-guide.mjs",
+    "guide:pdf": "electron scripts/guide-pdf.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ohmnia — Gestion locale pour indépendants</title>
+<title>Ohmnia — par où commencer</title>
 <meta name="description" content="Ohmnia est une application desktop de gestion (facturation, devis, comptabilité simplifiée, inventaire) qui fonctionne entièrement en local, hors ligne.">
 <script>
 (function () {
@@ -665,13 +665,13 @@
       <span class="nom">Ohmnia</span>
     </span>
     <nav class="nav">
-      <a class="hide-sm" href="#fonctionnalites">Fonctionnalités</a>
-      <a class="hide-sm" href="#apercu">Aperçu</a>
+      <a class="hide-sm" href="index.html#fonctionnalites">Fonctionnalités</a>
+      <a class="hide-sm" href="index.html#apercu">Aperçu</a>
       <a href="apropos.html">À propos</a>
       <a class="hide-sm" href="suite.html">La suite</a>
       <a class="hide-sm" href="conditions.html">Conditions</a>
       <a href="guide.html">Par où commencer</a>
-      <a href="#telecharger">Télécharger</a>
+      <a href="index.html#telecharger">Télécharger</a>
     </nav>
       <a class="langue" href="en/index.html" hreflang="en" title="Read this page in English">EN</a>
       <button class="anim" id="anim" type="button" aria-label="Activer ou couper les animations" title="Animations">
@@ -695,143 +695,82 @@
 </header>
 
 <main>
-  <div class="wrap hero">
-    <div class="pill entree" style="--d:.05s"><span class="dot"></span> Application desktop Windows · fonctionne hors ligne</div>
-    <h1 class="entree" style="--d:.14s">La gestion de votre activité, <span class="grad-text">entièrement sur votre ordinateur</span></h1>
-    <p class="lede entree" style="--d:.24s">Facturation, devis, comptabilité simplifiée et inventaire dans une seule application installée sur votre machine. Aucun compte, aucun serveur, aucune connexion requise.</p>
-    <div class="cta-row entree" style="--d:.34s">
-      <a class="btn" id="dl-hero" href="https://github.com/ResonLab/ohmnia/releases/latest">Télécharger la dernière version</a>
-      <a class="btn btn-ghost" href="#fonctionnalites">Voir les fonctionnalités</a>
-    </div>
-    <p class="cta-note entree" style="--d:.42s">Windows · installation locale</p>
-  </div>
-
-  <div class="band">
-    <div class="wrap band-grid">
-      <div class="reveal">
-        <h2>Vos données ne quittent jamais votre machine</h2>
-        <p style="color:var(--fg-dim);margin:0;max-width:52ch">Ohmnia stocke l'intégralité de vos dossiers dans un fichier local que vous contrôlez. Il n'existe aucune synchronisation implicite, aucun envoi de statistiques d'usage et aucun accès distant à votre comptabilité.</p>
-      </div>
-      <ul class="checks">
-        <li class="reveal" style="--d:.05s"><span class="tick"></span><span><b>Stockage local.</b> Une base de données sur votre disque, sauvegardable comme n'importe quel fichier.</span></li>
-        <li class="reveal" style="--d:.13s"><span class="tick"></span><span><b>Aucun compte.</b> Pas d'inscription, pas d'authentification distante.</span></li>
-        <li class="reveal" style="--d:.21s"><span class="tick"></span><span><b>Aucune télémétrie.</b> Le seul accès réseau possible est la vérification de mise à jour — désactivée par défaut, et vers l'adresse que vous configurez vous-même.</span></li>
-        <li class="reveal" style="--d:.29s"><span class="tick"></span><span><b>Fonctionnement hors ligne.</b> Toutes les fonctions de gestion restent disponibles sans connexion.</span></li>
-      </ul>
-    </div>
-  </div>
-
-  <section style="padding-top:0">
-    <div class="wrap">
-      <ul class="chiffres">
-        <li class="reveal"><span class="valeur" data-vers="17">0</span><span class="quoi">écrans de gestion</span></li>
-        <li class="reveal" style="--d:.07s"><span class="valeur" data-vers="5">0</span><span class="quoi">pays pris en charge</span></li>
-        <li class="reveal" style="--d:.14s"><span class="valeur" data-vers="100" data-suffixe=" %">0</span><span class="quoi">local, hors ligne</span></li>
-        <li class="reveal" style="--d:.21s"><span class="valeur" data-vers="0">0</span><span class="quoi">donnée envoyée</span></li>
-      </ul>
-    </div>
+  <section class="hero wrap">
+    <p class="etat-ligne">GUIDE DE PRISE EN MAIN</p>
+    <h1>Par où <span class="grad-text">commencer</span>.</h1>
+    <p class="chapo">Entreprise, clients et prestations, devis et factures, comptabilité, sauvegardes. Cet ordre-là, et pas un autre : c’est celui dans lequel l’application ne refuse rien.</p>
   </section>
 
-  <section id="fonctionnalites">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <h2>Fonctionnalités</h2>
-        <p>Les outils courants d'une activité indépendante, sans dépendance à un service en ligne.</p>
-      </div>
-      <div class="cards">
-        <article class="card reveal" style="--d:.00s"><span class="num">01</span><h3>Facturation et devis</h3><p>Création de devis et de factures, conversion en un clic, export PDF prêt à envoyer.</p></article>
-        <article class="card reveal" style="--d:.06s"><span class="num">02</span><h3>Rappels de paiement</h3><p>Suivi des échéances et relances des factures impayées selon vos délais.</p></article>
-        <article class="card reveal" style="--d:.12s"><span class="num">03</span><h3>Suivi du temps</h3><p>Enregistrement des heures par client et par projet, report direct en ligne de facture.</p></article>
-        <article class="card reveal" style="--d:.06s"><span class="num">04</span><h3>Inventaire</h3><p>Gestion des articles et des mouvements de stock, avec alertes de seuil.</p></article>
-        <article class="card reveal" style="--d:.12s"><span class="num">05</span><h3>Comptabilité simplifiée</h3><p>Journal des recettes et dépenses, import de relevés bancaires (CSV et CAMT.053) et rapprochement automatique.</p></article>
-        <article class="card reveal" style="--d:.18s"><span class="num">06</span><h3>Sauvegardes chiffrées</h3><p>Archives chiffrées de vos données, sur le support de votre choix.</p></article>
-        <article class="card reveal" style="--d:.12s"><span class="num">07</span><h3>Multi-pays</h3><p>Réglages de taxe et mentions légales pour la Suisse, la France, la Belgique, le Luxembourg et l'Allemagne — des points de départ à vérifier, pas une certification.</p></article>
-        <article class="card reveal" style="--d:.18s"><span class="num">08</span><h3>Export ouvert</h3><p>Vos écritures, clients et articles exportables en CSV et PDF à tout moment.</p></article>
-      </div>
+  <section class="wrap">
+    <h2 class="titre reveal">1. Configurer votre entreprise</h2>
+    <p class="intro reveal">On commence toujours par là. Sans entreprise renseignée, une facture sort sans en-tête, sans identifiant fiscal et sans mentions légales — donc inutilisable.</p>
+    <div class="card reveal">
+      <h3>Vos coordonnées et votre pays</h3>
+      <p>Écran Mon entreprise. Nom, adresse, contact, logo. Puis le pays : Suisse, France, Belgique, Luxembourg ou Allemagne. Le pays fixe la devise, le format d’identifiant fiscal, la durée de conservation et les mentions obligatoires.</p>
+      <p class="piege"><strong>Le piège</strong> — Les taux et surtout les seuils fournis sont des **points de départ à vérifier**, pas une certification. Ils changent, et Ohmnia ne les met pas à jour toute seule. C’est écrit dans le fichier et dans l’interface.</p>
     </div>
-  </section>
-
-  <section id="apercu" style="padding-top:0">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <h2>Aperçu</h2>
-        <p>Interface de l'application sur poste de travail.</p>
-      </div>
-      <div class="shots">
-        <figure class="shot wide reveal">
-          <div class="frame">
-            <div class="frame-bar"><i></i><i></i><i></i></div>
-            <img src="images/accueil.png" width="1584" height="1068" loading="lazy" decoding="async"
-                 alt="Tableau de bord d'Ohmnia : entrées, dépenses, bénéfice et valeur du stock du mois, factures à suivre et prochaines échéances.">
-          </div>
-          <figcaption>Tableau de bord : encours, échéances et activité récente.</figcaption>
-        </figure>
-        <figure class="shot reveal" style="--d:.08s">
-          <div class="frame">
-            <div class="frame-bar"><i></i><i></i><i></i></div>
-            <img src="images/facturation.png" width="1584" height="1068" loading="lazy" decoding="async"
-                 alt="Édition d'une facture dans Ohmnia : numéro, date, délai de paiement, lignes de prestation, remise et TVA.">
-          </div>
-          <figcaption>Édition d'une facture et export PDF.</figcaption>
-        </figure>
-        <figure class="shot reveal" style="--d:.16s">
-          <div class="frame">
-            <div class="frame-bar"><i></i><i></i><i></i></div>
-            <img src="images/inventaire.png" width="1584" height="1068" loading="lazy" decoding="async"
-                 alt="Inventaire d'Ohmnia : valeur totale du stock, références sous le seuil d'alerte et tableau des articles.">
-          </div>
-          <figcaption>Inventaire avec alertes de seuil.</figcaption>
-        </figure>
-      </div>
+    <div class="card reveal">
+      <h3>La case « assujetti à la TVA »</h3>
+      <p>Si vous n’êtes pas assujetti, décochez-la : aucun montant de taxe ne sera facturé, le taux est forcé à zéro, et la mention légale de non-assujettissement s’imprime automatiquement sur vos documents.</p>
+      <p class="piege"><strong>Le piège</strong> — Vos conditions générales sont modifiables, avec un modèle de départ. **Une clause ne peut pas exclure votre responsabilité en cas de faute grave ou intentionnelle** — article 100 CO en Suisse. Faites relire ce texte par un juriste : Ohmnia ne fournit qu’un point de départ.</p>
     </div>
-  </section>
 
-  <section id="telecharger" class="download" style="padding-top:0">
-    <div class="wrap">
-      <div class="inner reveal">
-        <h2>Télécharger Ohmnia</h2>
-        <p>La dernière version est publiée sur GitHub. Téléchargez l'installeur et lancez-le.</p>
-        <div class="systemes">
-          <a class="systeme" id="dl-win" href="https://github.com/ResonLab/ohmnia/releases/latest">
-            <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor">
-              <path d="M3 5.6l7.2-1v6.9H3V5.6zm0 12.8l7.2 1v-6.8H3v5.8zm8 1.1l10 1.4v-8.3H11v6.9zM11 4.1v7.2h10V2.7L11 4.1z"/>
-            </svg>
-            <b>Windows</b>
-            <span>Installeur .exe · 10 et 11</span>
-          </a>
-          <a class="systeme" id="dl-linux" href="https://github.com/ResonLab/ohmnia/releases/latest">
-            <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor">
-              <path d="M12 2c-2 0-3.2 1.6-3.2 3.7 0 1.2.2 1.9.2 2.8 0 .9-.9 1.7-1.7 3.1-.8 1.4-1.6 2.6-2.4 3.6-.5.6-.4 1.4.2 1.7.5.3.7.7.7 1.3 0 .9.7 1.5 2 1.5 1.1 0 1.8-.4 2.4-.4h3.6c.6 0 1.3.4 2.4.4 1.3 0 2-.6 2-1.5 0-.6.2-1 .7-1.3.6-.3.7-1.1.2-1.7-.8-1-1.6-2.2-2.4-3.6-.8-1.4-1.7-2.2-1.7-3.1 0-.9.2-1.6.2-2.8C15.2 3.6 14 2 12 2zm-1.5 3.1c.4 0 .7.4.7 1s-.3 1-.7 1-.7-.4-.7-1 .3-1 .7-1zm3 0c.4 0 .7.4.7 1s-.3 1-.7 1-.7-.4-.7-1 .3-1 .7-1zm-1.5 2.6c.8 0 1.6.5 1.6.9 0 .4-.8.9-1.6.9s-1.6-.5-1.6-.9c0-.4.8-.9 1.6-.9z"/>
-            </svg>
-            <b>Linux</b>
-            <span>AppImage et .deb · x64</span>
-          </a>
-        </div>
-        <p class="aide-install">
-          Jamais installé de programme sur Linux ?
-          <a href="installer-linux.html">Suivez le guide pas à pas</a>.
-        </p>
-        <p class="avertissement">
-          <b>Au premier lancement, Windows peut afficher un avertissement SmartScreen</b>
-          (« Windows a protégé votre ordinateur »). L'installeur n'est pas signé par un
-          certificat commercial, ce qui est courant pour une application indépendante.
-          Cliquez sur <b>Informations complémentaires</b>, puis <b>Exécuter quand même</b>.
-          Le code source est public si vous souhaitez le vérifier avant d'installer.
-        </p>
-        <p style="margin:0">
-          <a class="reseau" href="reseau.html">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/>
-              <path d="M7 7h.01M7 17h.01"/>
-            </svg>
-            Plusieurs postes ou un NAS ? Lisez ceci d'abord
-          </a>
-        </p>
-        <p class="lien-conditions">
-          En installant Ohmnia, vous acceptez les
-          <a href="conditions.html">conditions d'utilisation</a>.
-        </p>
-      </div>
+    <h2 class="titre reveal">2. Vos clients et vos prestations</h2>
+    <p class="intro reveal">Ce qu’on saisit une fois et qu’on réutilise cent fois. Cinq minutes ici en font gagner beaucoup à chaque facture.</p>
+    <div class="card reveal">
+      <h3>Les clients</h3>
+      <p>Écran Clients. Chaque fiche garde l’historique de ses factures : ce qui est payé, ce qui est en retard, ce qu’il vous doit au total.</p>
+    </div>
+    <div class="card reveal">
+      <h3>Les modèles de prestations</h3>
+      <p>Écran Modèles de prestations. Une désignation, un prix, une unité. Ensuite, une ligne de facture se remplit en un clic au lieu d’être retapée — et retapée, elle finit par varier d’une facture à l’autre.</p>
+      <p class="piege"><strong>Le piège</strong> — L’inventaire sert aussi de source pour les lignes : facturer un article le décrémente automatiquement. Un article absent de l’inventaire reste facturable — vous aurez seulement un avertissement, pas un refus. C’est délibéré : on ne bloque pas une facture parce qu’un stock n’est pas à jour.</p>
+    </div>
+
+    <h2 class="titre reveal">3. Devis, factures, rappels</h2>
+    <p class="intro reveal">Le cœur du métier. Un devis accepté devient une facture sans qu’on retape quoi que ce soit.</p>
+    <div class="card reveal">
+      <h3>Du devis à la facture</h3>
+      <p>Écran Devis pour établir, puis conversion en facture d’un bouton. La numérotation est continue et unique : c’est ce que contrôle le panneau de conformité.</p>
+      <p class="piege"><strong>Le piège</strong> — Le PDF ne contient **aucune information interne** : ni vos notes de travail, ni la case « à imprimer », ni vos marges. Ce que vous voyez à l’écran et ce que reçoit le client ne sont pas la même chose, et c’est voulu.</p>
+    </div>
+    <div class="card reveal">
+      <h3>Le suivi du temps</h3>
+      <p>Écran Suivi du temps. Un chronomètre par intervention, qui se transforme ensuite en lignes de facture. C’est ce qui évite de facturer de mémoire une semaine après.</p>
+    </div>
+    <div class="card reveal">
+      <h3>Les rappels</h3>
+      <p>Depuis une facture en retard, Ohmnia produit un rappel daté. Les modèles se dupliquent : une facture récurrente se refait en quelques secondes.</p>
+    </div>
+
+    <h2 class="titre reveal">4. La comptabilité, sans y passer ses soirées</h2>
+    <p class="intro reveal">Le journal, l’import bancaire et le résumé annuel. C’est la partie qu’on repousse, et celle qui coûte le plus cher quand on la repousse.</p>
+    <div class="card reveal">
+      <h3>Importer un relevé bancaire</h3>
+      <p>Écran Import/Export comptable. CSV ou CAMT.053. Ohmnia rapproche les mouvements de vos factures : ce qui correspond est pointé, le reste vous est présenté.</p>
+      <p class="piege"><strong>Le piège</strong> — Un import bancaire lisait autrefois la colonne **Solde** au lieu du **Montant** — bug réel, corrigé, et la leçon est restée : Ohmnia lit maintenant les en-têtes (Débit, Crédit, Montant, Solde). Vérifiez tout de même les premières lignes d’un relevé d’une banque que vous importez pour la première fois.</p>
+    </div>
+    <div class="card reveal">
+      <h3>Les justificatifs</h3>
+      <p>Chaque écriture du journal accepte une photo de justificatif. Prise au moment de l’achat, elle ne se perd pas — contrairement au ticket dans la poche.</p>
+    </div>
+    <div class="card reveal">
+      <h3>Clôturer un exercice</h3>
+      <p>Écran Audit &amp; clôtures. Le panneau de conformité contrôle les mentions obligatoires, la continuité et l’unicité de la numérotation. Une fois l’exercice clôturé, il est verrouillé.</p>
+      <p class="piege"><strong>Le piège</strong> — Le panneau de conformité **ne certifie rien**. Il vérifie ce qu’un programme peut vérifier — des mentions présentes, des numéros qui se suivent — et rien de ce qui relève du jugement. Votre comptable reste votre comptable.</p>
+    </div>
+
+    <h2 class="titre reveal">5. Protéger vos données</h2>
+    <p class="intro reveal">Tout est sur votre machine, et rien n’en sort. C’est la promesse d’Ohmnia — c’est aussi ce qui rend les sauvegardes entièrement votre affaire.</p>
+    <div class="card reveal">
+      <h3>Les sauvegardes</h3>
+      <p>Écran Paramètres de l’app. Sauvegardes locales horodatées avec rotation, et sauvegarde externe chiffrée en AES-256 pour ce qui sort de la machine.</p>
+      <p class="piege"><strong>Le piège</strong> — Le mot de passe d’une sauvegarde chiffrée n’est enregistré nulle part, **par choix**. Perdu, il rend la sauvegarde définitivement illisible : personne ne peut le retrouver pour vous, et c’est précisément ce qui la protège.</p>
+    </div>
+    <div class="card reveal">
+      <h3>Travailler à plusieurs</h3>
+      <p>Paramètres de l’app → Mode multi-postes. Les postes parlent alors à un serveur Nexika que vous installez vous-même, sur votre réseau. Le mode local reste le défaut : sans choix explicite, rien ne change.</p>
+      <p class="piege"><strong>Le piège</strong> — En multi-postes, quatre opérations sont refusées avec un message qui dit pourquoi : sauvegardes locales, export global, choix du logo, justificatifs. Elles écriraient sur votre poste alors que les données sont sur le serveur — et un justificatif qu’on croit rangé mais qui n’existe nulle part est pire que pas de justificatif.</p>
     </div>
   </section>
 </main>
