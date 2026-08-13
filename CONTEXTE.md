@@ -273,6 +273,55 @@ Tant qu'aucune release n'existe, l'auto-updater n'a rien à trouver.
 
 ---
 
+
+## Le guide de prise en main
+
+**Le site disait ce que fait l'application et ce qu'elle ne fait pas. Il ne
+disait nulle part par où commencer.** Quelqu'un qui télécharge se retrouve
+devant une application vide sans savoir quoi cliquer, et c'est là qu'on perd
+les gens — pas à la page d'accueil.
+
+`src/shared/guide.ts` porte le texte dans les deux langues et **nulle part ailleurs** :
+`scripts/publier-guide.mjs` en déduit `docs/guide.html` et `docs/en/guide.html`,
+`scripts/guide-pdf.mjs` en tire les deux PDF joints aux releases. Un guide
+recopié à la main divergerait au premier correctif — et c'est le document qu'on
+emporte, donc celui qu'on croit.
+
+**L'ordre des étapes n'est pas décoratif** : c'est celui dans lequel
+l'application ne refuse rien. `tests/coherence-guide.mjs` le vérifie, en plus de
+refuser qu'une page diverge de la source, qu'une traduction soit vide, ou qu'une
+étape perde son **piège**. Les pièges sont la moitié de la valeur : ce sont les
+choses qu'on ne devine pas et qui coûtent une soirée.
+
+```bash
+npm run guide:publier   # les deux pages
+npm run guide:pdf       # les deux PDF, dans release/
+```
+
+**Trois défauts de ce mécanisme, trouvés en le portant d'une application à
+l'autre**, et corrigés dans les quatre dépôts :
+
+· un seuil de longueur prenait « Receipts » et « Backups » — des titres anglais
+  parfaitement traduits — pour des traductions vides. On teste désormais le
+  vide, pas la longueur. **Un faux échec use un contrôle aussi sûrement qu'un
+  faux succès** ;
+· le caractère `&` s'écrit `&amp;` en HTML : le contrôle annonçait un texte
+  disparu alors que la page était juste ;
+· une liste figée d'ancres à réécrire laissait des ancres mortes sur le guide,
+  les sections d'une page d'accueil ne portant pas les mêmes noms d'une
+  application à l'autre. Toutes les ancres renvoient maintenant à l'accueil.
+
+**Le PDF a révélé un bug qui traînait dans la maison depuis des semaines** :
+« `fabriquer-icones.mjs` échoue au-delà de la première image ». Ce n'est ni le
+chemin ni le fichier temporaire — **créer une seconde `BrowserWindow` après
+avoir travaillé dans la première fait échouer son chargement** sur `ERR_FAILED`.
+Une seule fenêtre réutilisée, et les deux PDF sortent. *Une hypothèse a été
+suivie puis abandonnée, et elle est notée dans le code : `loadFile` produit bien
+sous Windows une adresse mêlant `file:///` et des antislashs. C'est vrai, c'est
+corrigé, et ça n'a rien changé.*
+
+---
+
 ## 9. État actuel
 
 - `npm run verifier` : typecheck + 14 suites de tests, **tout passe**.
