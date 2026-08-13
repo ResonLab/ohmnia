@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { DocumentImpression } from '../../../shared/types'
-import { ordinalFrancais } from '../../../shared/calculs'
 import { formaterMontant } from '../../../shared/pays'
-import { definirLangue, t, type CleTraduction, type Langue } from '../../../shared/i18n'
+import { definirLangue, ordinal, t, type CleTraduction, type Langue } from '../../../shared/i18n'
 
 function lireParametresHash(): {
   type: 'facture' | 'devis' | 'rappel'
@@ -69,7 +68,7 @@ export default function ImpressionDocument(): React.JSX.Element {
           <h2>{t(CLES_TITRE[donnees.typeDocument])}</h2>
           {donnees.typeDocument === 'rappel' && donnees.rappelNiveau !== undefined && (
             <p>
-              <strong>{ordinalFrancais(donnees.rappelNiveau)} {t('doc.rappelNiveau')}</strong>
+              <strong>{ordinal(donnees.rappelNiveau)} {t('doc.rappelNiveau')}</strong>
             </p>
           )}
           <p>

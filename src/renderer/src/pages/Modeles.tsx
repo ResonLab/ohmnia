@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ModeleLigne, ModelePrestation } from '../../../shared/types'
 import { calculerSousTotal } from '../../../shared/calculs'
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 
 function ligneVide(): ModeleLigne {
   return { id: -Date.now(), designation: '', referenceInventaire: null, quantite: 1, prixUnitaire: 0 }
@@ -25,7 +26,7 @@ export default function Modeles(): React.JSX.Element {
 
   function afficherErreur(erreur: unknown): void {
     setMessageSucces(null)
-    setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+    setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
   }
 
   function afficherSucces(message: string): void {
@@ -40,7 +41,7 @@ export default function Modeles(): React.JSX.Element {
       setNouveauNom('')
       await recharger()
       setSelection({ ...modele, lignes: [ligneVide()] })
-      afficherSucces('Modèle créé. Ajoute ses lignes puis enregistre.')
+      afficherSucces(t('modele.cree'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -52,18 +53,18 @@ export default function Modeles(): React.JSX.Element {
       const misAJour = await window.api.modeles.enregistrer(selection)
       setSelection({ ...misAJour, lignes: misAJour.lignes.length ? misAJour.lignes : [ligneVide()] })
       await recharger()
-      afficherSucces('Modèle enregistré.')
+      afficherSucces(t('modele.enregistre'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function supprimer(id: number): Promise<void> {
-    if (!window.confirm('Supprimer définitivement ce modèle ?')) return
+    if (!window.confirm(t('modele.confirmerSuppression'))) return
     await window.api.modeles.supprimer(id)
     if (selection?.id === id) setSelection(null)
     await recharger()
-    afficherSucces('Modèle supprimé.')
+    afficherSucces(t('modele.supprime'))
   }
 
   function modifierLigne(index: number, ligne: ModeleLigne): void {
@@ -79,12 +80,12 @@ export default function Modeles(): React.JSX.Element {
     setSelection({ ...selection, lignes: lignes.length ? lignes : [ligneVide()] })
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   return (
     <div className="clients-layout">
       <aside className="carte clients-liste">
-        <h2>Modèles</h2>
+        <h2>{t('modele.titre')}</h2>
         <ul className="liste-clients">
           {modeles.map((m) => (
             <li key={m.id}>
@@ -96,31 +97,32 @@ export default function Modeles(): React.JSX.Element {
               >
                 <span className="liste-clients-nom">{m.nom}</span>
                 <span className="liste-clients-meta">
-                  {m.lignes.length} ligne(s) · {formaterMontant(calculerSousTotal(m.lignes))}
+                  {t('modele.lignes', { nombre: m.lignes.length })}{' '}
+                  {formaterMontant(calculerSousTotal(m.lignes))}
                 </span>
               </button>
             </li>
           ))}
-          {modeles.length === 0 && <li className="liste-vide">Aucun modèle pour l'instant.</li>}
+          {modeles.length === 0 && <li className="liste-vide">{t('modele.aucun')}</li>}
         </ul>
 
         <label>
-          Nouveau modèle
+          {t('modele.nouveau')}
           <input
-            placeholder="ex. Diagnostic standard"
+            placeholder={t('modele.exemple')}
             value={nouveauNom}
             onChange={(e) => setNouveauNom(e.target.value)}
           />
         </label>
-        <button className="action-ecriture" onClick={creerModele}>Créer</button>
+        <button className="action-ecriture" onClick={creerModele}>{t('modele.creer')}</button>
       </aside>
 
       <section className="clients-detail">
         {selection ? (
           <div className="carte">
-            <h2>Modèle « {selection.nom} »</h2>
+            <h2>{t('modele.entete', { nom: selection.nom })}</h2>
             <label>
-              Nom
+              {t('modele.nom')}
               <input
                 value={selection.nom}
                 onChange={(e) => setSelection({ ...selection, nom: e.target.value })}
@@ -130,11 +132,11 @@ export default function Modeles(): React.JSX.Element {
             <table className="table-editable">
               <thead>
                 <tr>
-                  <th>Désignation</th>
-                  <th>Réf. inventaire</th>
-                  <th>Qté</th>
-                  <th>Prix unitaire</th>
-                  <th>Total</th>
+                  <th>{t('colonne.designation')}</th>
+                  <th>{t('modele.refInventaire')}</th>
+                  <th>{t('doc.quantite')}</th>
+                  <th>{t('doc.prixUnitaire')}</th>
+                  <th>{t('colonne.total')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -149,7 +151,7 @@ export default function Modeles(): React.JSX.Element {
                     </td>
                     <td>
                       <input
-                        placeholder="optionnel"
+                        placeholder={t('modele.optionnel')}
                         value={ligne.referenceInventaire ?? ''}
                         onChange={(e) =>
                           modifierLigne(index, { ...ligne, referenceInventaire: e.target.value || null })
@@ -177,7 +179,7 @@ export default function Modeles(): React.JSX.Element {
                     <td>{formaterMontant(ligne.quantite * ligne.prixUnitaire)}</td>
                     <td>
                       <button className="action-ecriture bouton-danger" onClick={() => retirerLigne(index)}>
-                        Retirer
+                        {t('modele.retirer')}
                       </button>
                     </td>
                   </tr>
@@ -188,28 +190,28 @@ export default function Modeles(): React.JSX.Element {
             <button
               onClick={() => setSelection({ ...selection, lignes: [...selection.lignes, ligneVide()] })}
             >
-              + Ajouter une ligne
+              {t('modele.ajouterLigne')}
             </button>
 
             <div className="resultats-calcules">
               <p>
-                Total du modèle : <strong>{formaterMontant(calculerSousTotal(selection.lignes))}</strong>{' '}
-                (hors remise et TVA)
+                {t('modele.total')}{' '}
+                <strong>{formaterMontant(calculerSousTotal(selection.lignes))}</strong>{' '}
+                {t('modele.horsRemise')}
               </p>
             </div>
 
             <div className="barre-boutons">
-              <button className="action-ecriture" onClick={enregistrer}>Enregistrer</button>
+              <button className="action-ecriture" onClick={enregistrer}>{t('action.enregistrer')}</button>
               <button className="action-ecriture bouton-danger" onClick={() => supprimer(selection.id)}>
-                Supprimer le modèle
+                {t('modele.supprimerModele')}
               </button>
             </div>
           </div>
         ) : (
           <div className="carte etat-vide">
             <p>
-              Un modèle est un panier de lignes réutilisable : sélectionne-en un à gauche, ou crée-en un
-              nouveau. Tu peux aussi en créer directement depuis une facture existante.
+              {t('modele.aide')}
             </p>
           </div>
         )}

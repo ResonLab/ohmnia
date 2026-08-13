@@ -10,12 +10,14 @@ import type {
 import {
   calculerEcheance,
   calculerPrixFactureImpression,
-  calculerTotalDocument,
-  ordinalFrancais
+  calculerTotalDocument
 } from '../../../shared/calculs'
 import ClientSelecteur from '../components/ClientSelecteur'
 import Modale from '../components/Modale'
 import { formaterMontant, symboleDevise } from '../lib/devise'
+import { ordinal, t } from '../../../shared/i18n'
+import { STATUTS_FACTURE } from '../../../shared/documents'
+import { NIVEAU_MAX_RELANCE, type RelanceProposee } from '../../../shared/calculs'
 
 /** Ligne vide temporaire (id négatif : elle n'existe pas encore en base). */
 function ligneVide(): FactureLigne {
@@ -41,13 +43,24 @@ export default function Facturation(): React.JSX.Element {
   const [modeleAEnregistrer, setModeleAEnregistrer] = useState(false)
   const [nomNouveauModele, setNomNouveauModele] = useState('')
 
+  const [relances, setRelances] = useState<RelanceProposee[]>([])
+
+  const [seuilRelance, setSeuilRelance] = useState(0)
+
+  /**
+   * L'historique et les relances sont rechargés ensemble, et c'est délibéré :
+   * émettre un rappel change les deux. Les recharger séparément laisserait la
+   * liste des relances proposer un rappel qu'on vient d'envoyer.
+   */
   async function rechargerHistorique(): Promise<void> {
     setHistorique(await window.api.factures.historique())
+    setRelances(await window.api.rappels.aFaire())
   }
 
   useEffect(() => {
     rechargerHistorique()
     window.api.parametresImpression.lire().then(setImpressionParams)
+    window.api.parametresApp.lire().then((p) => setSeuilRelance(p.seuilAlerteFactureJours))
     window.api.parametresApp.lire().then((p) => setSeuilAlerteJours(p.seuilAlerteFactureJours))
     window.api.modeles.lister().then(setModeles)
   }, [])
@@ -60,7 +73,7 @@ export default function Facturation(): React.JSX.Element {
   async function creerBrouillon(): Promise<void> {
     setMessageErreur(null)
     if (!clientIdNouveau) {
-      setMessageErreur('Choisissez d\'abord un client pour créer la facture.')
+      setMessageErreur(t('facture.choisirClient'))
       return
     }
     try {
@@ -88,7 +101,7 @@ export default function Facturation(): React.JSX.Element {
       setBrouillon({ ...misAJour, lignes: misAJour.lignes.length ? misAJour.lignes : [ligneVide()] })
       await rechargerHistorique()
       setMessageErreur(null)
-      setMessageInfo('Facture enregistrée.')
+      setMessageInfo(t('facture.enregistree'))
       return misAJour
     } catch (erreur) {
       afficherErreur(erreur)
@@ -103,22 +116,21 @@ export default function Facturation(): React.JSX.Element {
 
     try {
       const chemin = await window.api.pdf.generer('facture', misAJour.id)
-      setMessageInfo(`PDF exporté : ${chemin}`)
+      setMessageInfo(t('devis.pdfExporte', { chemin }))
 
-      const confirmer = window.confirm(
-        'Enregistrer cette facture dans l\'historique et dans le Journal ?\n' +
-          '(Si elle y est déjà, aucun doublon ne sera créé.)'
-      )
+      const confirmer = window.confirm(t('facture.confirmerHistorique'))
       if (confirmer) {
         const resultat = await window.api.factures.confirmerEnregistrementHistorique(misAJour.id)
         const messages: string[] = []
         if (resultat.dejaEnregistreeDansJournal) {
-          messages.push('Cette facture était déjà dans le Journal (aucun doublon créé).')
+          messages.push(t('facture.dejaAuJournal'))
         } else {
-          messages.push(`Écriture ajoutée au Journal : ${formaterMontant(resultat.total)}.`)
+          messages.push(
+            t('facture.ecritureAjoutee', { montant: formaterMontant(resultat.total) })
+          )
         }
         messages.push(...resultat.avertissements)
-        setMessageInfo(`PDF exporté : ${chemin}\n${messages.join('\n')}`)
+        setMessageInfo(`${t('devis.pdfExporte', { chemin })}\n${messages.join('\n')}`)
         await rechargerHistorique()
       }
     } catch (erreur) {
@@ -145,14 +157,16 @@ export default function Facturation(): React.JSX.Element {
     setBrouillon({ ...brouillon, lignes: [...lignesUtiles, ...nouvellesLignes] })
     setModeleAInserer(false)
     setMessageErreur(null)
-    setMessageInfo(`${nouvellesLignes.length} ligne(s) insérée(s) depuis « ${modele.nom} ».`)
+    setMessageInfo(
+      t('devis.lignesInserees', { nombre: nouvellesLignes.length, modele: modele.nom })
+    )
   }
 
   /** Enregistre les lignes de la facture ouverte comme nouveau modèle réutilisable. */
   async function enregistrerCommeModele(): Promise<void> {
     if (!brouillon) return
     if (!nomNouveauModele.trim()) {
-      afficherErreur(new Error('Donne un nom à ce modèle.'))
+      afficherErreur(new Error(t('facture.nomModele')))
       return
     }
     try {
@@ -163,7 +177,9 @@ export default function Facturation(): React.JSX.Element {
       setNomNouveauModele('')
       setModeleAEnregistrer(false)
       setMessageErreur(null)
-      setMessageInfo(`Modèle « ${modele.nom} » créé avec ${modele.lignes.length} ligne(s).`)
+      setMessageInfo(
+        t('facture.modeleCree', { nom: modele.nom, nombre: modele.lignes.length })
+      )
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -175,7 +191,7 @@ export default function Facturation(): React.JSX.Element {
       await rechargerHistorique()
       setBrouillon({ ...copie, lignes: copie.lignes.length ? copie.lignes : [ligneVide()] })
       setMessageErreur(null)
-      setMessageInfo(`Facture dupliquée sous le numéro ${copie.numero}.`)
+      setMessageInfo(t('facture.dupliquee', { numero: copie.numero }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -197,7 +213,7 @@ export default function Facturation(): React.JSX.Element {
     const { factureId, niveau, frais } = rappelEnCours
 
     if (!Number.isFinite(frais) || frais < 0) {
-      afficherErreur(new Error('Les frais de rappel doivent être un nombre positif ou zéro.'))
+      afficherErreur(new Error(t('facture.fraisRappelInvalides')))
       return
     }
 
@@ -207,7 +223,7 @@ export default function Facturation(): React.JSX.Element {
       setRappelEnCours(null)
       await rechargerHistorique()
       setMessageErreur(null)
-      setMessageInfo(`${ordinalFrancais(niveau)} rappel créé et exporté :\n${chemin}`)
+      setMessageInfo(t('facture.rappelCree', { rang: ordinal(niveau), chemin }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -219,7 +235,7 @@ export default function Facturation(): React.JSX.Element {
   }
 
   async function supprimerFacture(id: number): Promise<void> {
-    if (!window.confirm('Supprimer définitivement cette facture ?')) return
+    if (!window.confirm(t('facture.confirmerSuppression'))) return
     await window.api.factures.supprimer(id)
     if (brouillon?.id === id) setBrouillon(null)
     await rechargerHistorique()
@@ -248,14 +264,14 @@ export default function Facturation(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Nouvelle facture</h2>
+        <h2>{t('facture.nouvelle')}</h2>
         <div className="ligne-formulaire">
           <label>
-            Client
+            {t('colonne.client')}
             <ClientSelecteur clientId={clientIdNouveau} onChange={setClientIdNouveau} />
           </label>
         </div>
-        <button className="action-ecriture" onClick={creerBrouillon}>Créer un brouillon de facture</button>
+        <button className="action-ecriture" onClick={creerBrouillon}>{t('facture.creerBrouillon')}</button>
       </div>
 
       {brouillon && (
@@ -264,14 +280,14 @@ export default function Facturation(): React.JSX.Element {
 
           <div className="ligne-formulaire">
             <label>
-              Numéro
+              {t('devis.numero')}
               <input
                 value={brouillon.numero}
                 onChange={(e) => setBrouillon({ ...brouillon, numero: e.target.value })}
               />
             </label>
             <label>
-              Date
+              {t('colonne.date')}
               <input
                 type="date"
                 value={brouillon.date}
@@ -279,7 +295,7 @@ export default function Facturation(): React.JSX.Element {
               />
             </label>
             <label>
-              Délai de paiement (jours)
+              {t('facture.delaiPaiement')}
               <input
                 type="number"
                 step="1"
@@ -290,11 +306,11 @@ export default function Facturation(): React.JSX.Element {
               />
             </label>
             <label>
-              Échéance calculée
+              {t('facture.echeanceCalculee')}
               <input readOnly value={calculerEcheance(brouillon.date, brouillon.delaiPaiementJours)} />
             </label>
             <label>
-              Client
+              {t('colonne.client')}
               <ClientSelecteur
                 clientId={brouillon.clientId}
                 onChange={(clientId) => setBrouillon({ ...brouillon, clientId })}
@@ -305,11 +321,11 @@ export default function Facturation(): React.JSX.Element {
           <table className="table-editable">
             <thead>
               <tr>
-                <th>Désignation</th>
-                <th>Réf. inventaire</th>
-                <th>Qté</th>
-                <th>Prix unitaire</th>
-                <th>Total</th>
+                <th>{t('colonne.designation')}</th>
+                <th>{t('modele.refInventaire')}</th>
+                <th>{t('doc.quantite')}</th>
+                <th>{t('doc.prixUnitaire')}</th>
+                <th>{t('colonne.total')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -352,7 +368,7 @@ export default function Facturation(): React.JSX.Element {
                   <td>{formaterMontant(ligne.quantite * ligne.prixUnitaire)}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerLigne(index)}>
-                      Retirer
+                      {t('devis.retirer')}
                     </button>
                   </td>
                 </tr>
@@ -365,17 +381,17 @@ export default function Facturation(): React.JSX.Element {
             </button>
             {modeles.length > 0 && (
               <button className="action-ecriture bouton-secondaire" onClick={() => setModeleAInserer(true)}>
-                Insérer un modèle
+                {t('devis.insererModele')}
               </button>
             )}
             <button className="action-ecriture bouton-secondaire" onClick={() => setModeleAEnregistrer(true)}>
-              Enregistrer comme modèle
+              {t('facture.enregistrerCommeModele')}
             </button>
           </div>
 
           <div className="ligne-formulaire" style={{ marginTop: '1rem' }}>
             <label>
-              Remise (%)
+              {t('devis.remisePct')}
               <input
                 type="number"
                 step="1"
@@ -384,7 +400,7 @@ export default function Facturation(): React.JSX.Element {
               />
             </label>
             <label>
-              TVA (%)
+              {t('devis.tvaPct')}
               <input
                 type="number"
                 step="0.1"
@@ -398,23 +414,25 @@ export default function Facturation(): React.JSX.Element {
                 checked={brouillon.impressionIncluse}
                 onChange={(e) => setBrouillon({ ...brouillon, impressionIncluse: e.target.checked })}
               />
-              À imprimer / envoyer par courrier
+              {t('facture.aImprimer')}
             </label>
             <label>
-              Statut
+              {t('devis.statut')}
               <select
                 value={brouillon.statut}
                 onChange={(e) => setBrouillon({ ...brouillon, statut: e.target.value as StatutFacture })}
               >
-                <option value="En attente">En attente</option>
-                <option value="Payée">Payée</option>
-                <option value="Annulée">Annulée</option>
+                {STATUTS_FACTURE.map((statut) => (
+                  <option key={statut.valeur} value={statut.valeur}>
+                    {t(statut.cle)}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
 
           <label>
-            Notes internes (jamais imprimées sur le document client)
+            {t('facture.notesInternes')}
             <textarea
               value={brouillon.notesInternes}
               onChange={(e) => setBrouillon({ ...brouillon, notesInternes: e.target.value })}
@@ -423,37 +441,86 @@ export default function Facturation(): React.JSX.Element {
 
           {totaux && (
             <div className="resultats-calcules">
-              <p>Sous-total : {formaterMontant(totaux.sousTotal)}</p>
-              {brouillon.remisePct > 0 && <p>Remise : {brouillon.remisePct}%</p>}
+              <p>{t('devis.sousTotal', { montant: formaterMontant(totaux.sousTotal) })}</p>
+              {brouillon.remisePct > 0 && <p>{t('devis.remiseLigne', { pct: brouillon.remisePct })}</p>}
               {fraisImpression > 0 && (
-                <p>Frais d'impression / envoi : {formaterMontant(fraisImpression)}</p>
+                <p>{t('facture.fraisImpression', { montant: formaterMontant(fraisImpression) })}</p>
               )}
               <p>
-                TVA ({brouillon.tvaPct}%) : {formaterMontant(totaux.montantTva)}
+                {t('devis.tvaLigne', {
+                  pct: brouillon.tvaPct,
+                  montant: formaterMontant(totaux.montantTva)
+                })}
               </p>
               <p>
-                <strong>TOTAL À PAYER : {formaterMontant(totaux.total)}</strong>
+                <strong>{t('facture.totalAPayer', { montant: formaterMontant(totaux.total) })}</strong>
               </p>
             </div>
           )}
 
           <div className="barre-boutons">
-            <button className="action-ecriture" onClick={enregistrerBrouillon}>Enregistrer</button>
-            <button onClick={exporterPdf}>Exporter en PDF</button>
+            <button className="action-ecriture" onClick={enregistrerBrouillon}>{t('action.enregistrer')}</button>
+            <button onClick={exporterPdf}>{t('devis.exporterPdf')}</button>
           </div>
         </div>
       )}
 
       <div className="carte">
-        <h2>Historique des factures</h2>
+        <h2>{t('relance.titre')}</h2>
+        <p className="valeur-calculee">
+          {t('relance.aide', { seuil: seuilRelance })}
+        </p>
+        {relances.length === 0 ? (
+          <p className="graphique-vide">{t('relance.aucune')}</p>
+        ) : (
+          <table className="table-editable">
+            <tbody>
+              {relances.map((relance) => (
+                <tr key={relance.factureId}>
+                  <td className="colonne-etroite">{relance.numero}</td>
+                  <td>{relance.clientNom}</td>
+                  <td className="colonne-etroite texte-alerte">
+                    {t('relance.retard', { jours: relance.joursDeRetard })}
+                  </td>
+                  <td className="colonne-etroite">
+                    {relance.joursDepuisDernierRappel === null
+                      ? t('relance.jamaisRelancee')
+                      : t('relance.dernierRappel', { jours: relance.joursDepuisDernierRappel })}
+                  </td>
+                  <td>
+                    {/* Une facture épuisée reste affichée — elle est le vrai
+                        problème — mais sans bouton : proposer un quatrième
+                        rappel serait proposer ce qui ne marche pas. */}
+                    {relance.epuisee ? (
+                      <span className="discret">
+                        {t('relance.epuisee', { max: NIVEAU_MAX_RELANCE })}
+                      </span>
+                    ) : (
+                      <button
+                        className="action-ecriture"
+                        onClick={() => ouvrirModaleRappel(relance.factureId)}
+                      >
+                        {t('relance.emettre', { rang: ordinal(relance.niveau) })}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="carte">
+        <h2>{t('facture.historique')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Numéro</th>
-              <th>Date</th>
-              <th>Client</th>
-              <th>Statut</th>
-              <th>Montant (depuis le Journal)</th>
+              <th>{t('devis.numero')}</th>
+              <th>{t('colonne.date')}</th>
+              <th>{t('colonne.client')}</th>
+              <th>{t('devis.statut')}</th>
+              <th>{t('facture.montantJournal')}</th>
               <th></th>
             </tr>
           </thead>
@@ -470,9 +537,11 @@ export default function Facturation(): React.JSX.Element {
                       value={facture.statut}
                       onChange={(e) => changerStatut(facture.id, e.target.value as StatutFacture)}
                     >
-                      <option value="En attente">En attente</option>
-                      <option value="Payée">Payée</option>
-                      <option value="Annulée">Annulée</option>
+                      {STATUTS_FACTURE.map((statut) => (
+                        <option key={statut.valeur} value={statut.valeur}>
+                          {t(statut.cle)}
+                        </option>
+                      ))}
                     </select>
                     {enRetard && (
                       <span className="badge-alerte">En attente depuis {facture.joursEnAttente} jours</span>
@@ -480,13 +549,13 @@ export default function Facturation(): React.JSX.Element {
                   </td>
                   <td>{facture.montant === null ? '—' : `${formaterMontant(facture.montant)}`}</td>
                   <td className="cellule-actions">
-                    <button onClick={() => ouvrirBrouillon(facture.id)}>Ouvrir</button>
-                    <button className="action-ecriture" onClick={() => dupliquerFacture(facture.id)}>Dupliquer</button>
+                    <button onClick={() => ouvrirBrouillon(facture.id)}>{t('devis.ouvrir')}</button>
+                    <button className="action-ecriture" onClick={() => dupliquerFacture(facture.id)}>{t('devis.dupliquer')}</button>
                     {facture.statut === 'En attente' && (
-                      <button className="action-ecriture" onClick={() => ouvrirModaleRappel(facture.id)}>Rappel</button>
+                      <button className="action-ecriture" onClick={() => ouvrirModaleRappel(facture.id)}>{t('facture.rappel')}</button>
                     )}
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerFacture(facture.id)}>
-                      Supprimer
+                      {t('action.supprimer')}
                     </button>
                   </td>
                 </tr>
@@ -497,14 +566,16 @@ export default function Facturation(): React.JSX.Element {
       </div>
 
       {modeleAInserer && (
-        <Modale titre="Insérer un modèle de prestations" onFermer={() => setModeleAInserer(false)}>
-          <p>Les lignes du modèle seront ajoutées à la suite de celles déjà saisies.</p>
+        <Modale titre={t('devis.modaleModele')} onFermer={() => setModeleAInserer(false)}>
+          <p>{t('devis.modaleAide')}</p>
           <ul className="liste-modeles">
             {modeles.map((m) => (
               <li key={m.id}>
                 <button className="action-ecriture" onClick={() => insererModele(m.id)}>
                   <span className="liste-clients-nom">{m.nom}</span>
-                  <span className="liste-clients-meta">{m.lignes.length} ligne(s)</span>
+                  <span className="liste-clients-meta">
+                    {t('devis.lignesModele', { nombre: m.lignes.length })}
+                  </span>
                 </button>
               </li>
             ))}
@@ -514,20 +585,19 @@ export default function Facturation(): React.JSX.Element {
 
       {modeleAEnregistrer && (
         <Modale
-          titre="Enregistrer comme modèle"
+          titre={t('facture.modaleModeleTitre')}
           onFermer={() => setModeleAEnregistrer(false)}
           onValider={enregistrerCommeModele}
-          libelleValider="Créer le modèle"
+          libelleValider={t('facture.modaleModeleValider')}
         >
           <p>
-            Les lignes de cette facture seront enregistrées comme modèle réutilisable. La facture est
-            enregistrée au passage.
+            {t('facture.modaleModeleAide')}
           </p>
           <label>
-            Nom du modèle
+            {t('facture.nomDuModele')}
             <input
               autoFocus
-              placeholder="ex. Diagnostic standard"
+              placeholder={t('modele.exemple')}
               value={nomNouveauModele}
               onChange={(e) => setNomNouveauModele(e.target.value)}
             />
@@ -537,17 +607,16 @@ export default function Facturation(): React.JSX.Element {
 
       {rappelEnCours && (
         <Modale
-          titre={`Émettre le ${ordinalFrancais(rappelEnCours.niveau)} rappel`}
+          titre={t('facture.modaleRappelTitre', { rang: ordinal(rappelEnCours.niveau) })}
           onFermer={() => setRappelEnCours(null)}
           onValider={confirmerRappel}
-          libelleValider="Créer le rappel et exporter le PDF"
+          libelleValider={t('facture.modaleRappelValider')}
         >
           <p>
-            Le rappel reprend les lignes de la facture, y ajoute les frais ci-dessous et recalcule le
-            montant total dû.
+            {t('facture.modaleRappelAide')}
           </p>
           <label>
-            Frais de rappel à facturer ({symboleDevise()})
+            {t('facture.fraisRappel', { devise: symboleDevise() })}
             <input
               type="number"
               step="0.05"

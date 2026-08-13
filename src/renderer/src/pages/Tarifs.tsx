@@ -3,6 +3,7 @@ import type { TarifDeplacement, TarifMainOeuvre, TarifProduit } from '../../../s
 import { calculerPrixVenteProduit, calculerTotalLigne } from '../../../shared/calculs'
 import { chargerValeursSuggerees, type ValeursSuggerees } from '../lib/suggestions'
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 
 export default function Tarifs(): React.JSX.Element {
   const [produits, setProduits] = useState<TarifProduit[]>([])
@@ -29,13 +30,13 @@ export default function Tarifs(): React.JSX.Element {
   }, [])
 
   function afficherErreur(erreur: unknown): void {
-    setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+    setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
   }
 
   async function ajouterProduit(): Promise<void> {
     try {
       const nouveau = await window.api.tarifsProduits.ajouter({
-        designation: 'Nouveau produit',
+        designation: t('tarif.nouveauProduit'),
         prixAchat: 0,
         margePct: null,
         referenceInventaire: null
@@ -63,7 +64,7 @@ export default function Tarifs(): React.JSX.Element {
   async function ajouterMainOeuvre(): Promise<void> {
     try {
       const nouveau = await window.api.tarifsMainOeuvre.ajouter({
-        description: 'Nouvelle prestation',
+        description: t('tarif.nouvellePrestation'),
         heures: 0,
         tauxHoraire: null
       })
@@ -90,7 +91,7 @@ export default function Tarifs(): React.JSX.Element {
   async function ajouterDeplacement(): Promise<void> {
     try {
       const nouveau = await window.api.tarifsDeplacement.ajouter({
-        description: 'Nouveau déplacement',
+        description: t('tarif.nouveauDeplacement'),
         distanceKm: 0,
         prixKm: null
       })
@@ -114,21 +115,21 @@ export default function Tarifs(): React.JSX.Element {
     setDeplacements((precedent) => precedent.filter((t) => t.id !== id))
   }
 
-  if (chargement || !suggestions) return <p>Chargement…</p>
+  if (chargement || !suggestions) return <p>{t('etat.chargement')}</p>
 
   const margeSuggereePct = suggestions.margeSuggeree * 100
 
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Produits & prestations</h2>
+        <h2>{t('tarif.produitsTitre')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Désignation</th>
-              <th>Prix d'achat</th>
-              <th>Marge % (vide = suggérée {margeSuggereePct.toFixed(1)}%)</th>
-              <th>Prix de vente</th>
+              <th>{t('colonne.designation')}</th>
+              <th>{t('tarif.prixAchat')}</th>
+              <th>{t('tarif.margeSuggeree', { marge: margeSuggereePct.toFixed(1) })}</th>
+              <th>{t('tarif.prixVente')}</th>
               <th></th>
             </tr>
           </thead>
@@ -169,7 +170,7 @@ export default function Tarifs(): React.JSX.Element {
                   <td>{formaterMontant(prixVente)}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerProduit(produit.id)}>
-                      Supprimer
+                      {t('action.supprimer')}
                     </button>
                   </td>
                 </tr>
@@ -177,17 +178,17 @@ export default function Tarifs(): React.JSX.Element {
             })}
           </tbody>
         </table>
-        <button className="action-ecriture" onClick={ajouterProduit}>+ Ajouter un produit</button>
+        <button className="action-ecriture" onClick={ajouterProduit}>{t('tarif.ajouterProduit')}</button>
       </div>
 
       <div className="carte">
-        <h2>Heures / main d'œuvre</h2>
+        <h2>{t('tarif.mainOeuvreTitre')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Description</th>
-              <th>Heures</th>
-              <th>Taux horaire (vide = suggéré {formaterMontant(suggestions.tauxHoraireSuggere)})</th>
+              <th>{t('tarif.description')}</th>
+              <th>{t('tarif.heures')}</th>
+              <th>{t('tarif.tauxSuggere', { taux: formaterMontant(suggestions.tauxHoraireSuggere) })}</th>
               <th>Total</th>
               <th></th>
             </tr>
@@ -229,7 +230,7 @@ export default function Tarifs(): React.JSX.Element {
                   <td>{formaterMontant(total)}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerMainOeuvre(ligne.id)}>
-                      Supprimer
+                      {t('action.supprimer')}
                     </button>
                   </td>
                 </tr>
@@ -237,17 +238,17 @@ export default function Tarifs(): React.JSX.Element {
             })}
           </tbody>
         </table>
-        <button className="action-ecriture" onClick={ajouterMainOeuvre}>+ Ajouter une ligne</button>
+        <button className="action-ecriture" onClick={ajouterMainOeuvre}>{t('tarif.ajouterLigne')}</button>
       </div>
 
       <div className="carte">
-        <h2>Déplacement</h2>
+        <h2>{t('tarif.deplacementTitre')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Description</th>
-              <th>Distance (km)</th>
-              <th>Prix/km (vide = suggéré {formaterMontant(suggestions.prixVenteKmSuggere)})</th>
+              <th>{t('tarif.description')}</th>
+              <th>{t('tarif.distanceKm')}</th>
+              <th>{t('tarif.prixKmSuggere', { prix: formaterMontant(suggestions.prixVenteKmSuggere) })}</th>
               <th>Total</th>
               <th></th>
             </tr>
@@ -289,7 +290,7 @@ export default function Tarifs(): React.JSX.Element {
                   <td>{formaterMontant(total)}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerDeplacement(ligne.id)}>
-                      Supprimer
+                      {t('action.supprimer')}
                     </button>
                   </td>
                 </tr>
@@ -297,7 +298,7 @@ export default function Tarifs(): React.JSX.Element {
             })}
           </tbody>
         </table>
-        <button className="action-ecriture" onClick={ajouterDeplacement}>+ Ajouter un déplacement</button>
+        <button className="action-ecriture" onClick={ajouterDeplacement}>{t('tarif.ajouterDeplacement')}</button>
       </div>
 
       {messageErreur && <p className="erreur">{messageErreur}</p>}

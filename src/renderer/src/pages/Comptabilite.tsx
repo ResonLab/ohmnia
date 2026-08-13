@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CategorieJournal, MouvementBancaire, ResultatImport } from '../../../shared/types'
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 
 export default function Comptabilite(): React.JSX.Element {
   const [annees, setAnnees] = useState<number[]>([])
@@ -25,7 +26,7 @@ export default function Comptabilite(): React.JSX.Element {
 
   function afficherErreur(erreur: unknown): void {
     setMessageSucces(null)
-    setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+    setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
   }
 
   function afficherSucces(message: string): void {
@@ -36,7 +37,7 @@ export default function Comptabilite(): React.JSX.Element {
   async function exporter(): Promise<void> {
     try {
       const chemin = await window.api.comptabilite.exporterCsv(anneeExport === '' ? null : anneeExport)
-      if (chemin) afficherSucces(`Export terminé : ${chemin}`)
+      if (chemin) afficherSucces(t('compta.exportTermine', { chemin }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -75,7 +76,7 @@ export default function Comptabilite(): React.JSX.Element {
     if (!importEnCours) return
     const retenus = importEnCours.mouvements.filter((_, index) => selection.has(index))
     if (retenus.length === 0) {
-      afficherErreur(new Error('Aucun mouvement sélectionné.'))
+      afficherErreur(new Error(t('compta.aucunSelectionne')))
       return
     }
 
@@ -87,7 +88,7 @@ export default function Comptabilite(): React.JSX.Element {
       )
       setImportEnCours(null)
       setSelection(new Set())
-      afficherSucces(`${nb} écriture(s) ajoutée(s) au Journal.`)
+      afficherSucces(t('compta.ecrituresAjoutees', { nombre: nb }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -101,18 +102,17 @@ export default function Comptabilite(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Export comptable</h2>
+        <h2>{t('compta.exportTitre')}</h2>
         <p className="valeur-calculee">
-          Fichier CSV (séparateur point-virgule, UTF-8) avec le détail HT / TVA de chaque écriture —
-          format lisible par Excel et par la plupart des logiciels de fiduciaire.
+          {t('compta.exportAide')}
         </p>
         <label>
-          Période
+          {t('compta.periode')}
           <select
             value={anneeExport}
             onChange={(e) => setAnneeExport(e.target.value === '' ? '' : Number(e.target.value))}
           >
-            <option value="">Toutes les années</option>
+            <option value="">{t('compta.toutesAnnees')}</option>
             {annees.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -120,20 +120,18 @@ export default function Comptabilite(): React.JSX.Element {
             ))}
           </select>
         </label>
-        <button onClick={exporter}>Exporter en CSV</button>
+        <button onClick={exporter}>{t('compta.exporterCsv')}</button>
       </div>
 
       <div className="carte">
-        <h2>Import de relevé bancaire</h2>
+        <h2>{t('compta.importTitre')}</h2>
         <p className="valeur-calculee">
-          Formats acceptés : CSV exporté depuis l'e-banking, ou CAMT.053 (XML, standard suisse). Les
-          mouvements déjà présents dans le Journal (même date et même montant) sont repérés et
-          décochés automatiquement pour éviter les doublons.
+          {t('compta.importAide')}
         </p>
 
         <div className="ligne-formulaire">
           <label>
-            Catégorie des entrées
+            {t('compta.categorieEntrees')}
             <select
               value={categorieEntree}
               onChange={(e) => setCategorieEntree(e.target.value === '' ? '' : Number(e.target.value))}
@@ -147,7 +145,7 @@ export default function Comptabilite(): React.JSX.Element {
             </select>
           </label>
           <label>
-            Catégorie des dépenses
+            {t('compta.categorieDepenses')}
             <select
               value={categorieDepense}
               onChange={(e) => setCategorieDepense(e.target.value === '' ? '' : Number(e.target.value))}
@@ -162,13 +160,14 @@ export default function Comptabilite(): React.JSX.Element {
           </label>
         </div>
 
-        <button onClick={choisirReleve}>Choisir un relevé…</button>
+        <button onClick={choisirReleve}>{t('compta.choisirReleve')}</button>
 
         {importEnCours && (
           <>
             <p className="valeur-calculee">
-              <strong>{importEnCours.fichier}</strong> · format {importEnCours.format} ·{' '}
-              {mouvements.length} mouvement(s) lus · {selection.size} sélectionné(s) pour{' '}
+              <strong>{importEnCours.fichier}</strong> · {t('compta.format')}{' '}
+              {importEnCours.format} ·{' '}
+              {t('compta.resumeLecture', { lus: mouvements.length, choisis: selection.size })}{' '}
               <strong>{formaterMontant(totalSelection)}</strong>
             </p>
 
@@ -176,10 +175,10 @@ export default function Comptabilite(): React.JSX.Element {
               <thead>
                 <tr>
                   <th></th>
-                  <th>Date</th>
-                  <th>Libellé</th>
-                  <th>Montant</th>
-                  <th>État</th>
+                  <th>{t('colonne.date')}</th>
+                  <th>{t('compta.libelle')}</th>
+                  <th>{t('colonne.montant')}</th>
+                  <th>{t('compta.etat')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,7 +195,7 @@ export default function Comptabilite(): React.JSX.Element {
                     <td>{m.libelle}</td>
                     <td className={m.montant < 0 ? 'texte-alerte' : ''}>{formaterMontant(m.montant)}</td>
                     <td className="colonne-etroite">
-                      {m.dejaRapproche ? 'Déjà au Journal' : 'Nouveau'}
+                      {m.dejaRapproche ? t('compta.dejaAuJournal') : t('compta.nouveau')}
                     </td>
                   </tr>
                 ))}
@@ -204,9 +203,9 @@ export default function Comptabilite(): React.JSX.Element {
             </table>
 
             <div className="barre-boutons">
-              <button className="action-ecriture" onClick={importer}>Importer la sélection ({selection.size})</button>
+              <button className="action-ecriture" onClick={importer}>{t('compta.importerSelection', { nombre: selection.size })}</button>
               <button className="bouton-secondaire" onClick={() => setImportEnCours(null)}>
-                Abandonner
+                {t('compta.abandonner')}
               </button>
             </div>
           </>

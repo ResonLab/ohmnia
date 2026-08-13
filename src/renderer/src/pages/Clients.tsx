@@ -55,7 +55,7 @@ export default function Clients(): React.JSX.Element {
       await window.api.clients.modifier(brouillon)
       await rechargerListe()
       await selectionner(brouillon.id)
-      afficherSucces('Client mis à jour.')
+      afficherSucces(t('client.misAJour'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -68,7 +68,7 @@ export default function Clients(): React.JSX.Element {
       setNouveau(null)
       await rechargerListe()
       await selectionner(cree.id)
-      afficherSucces('Client créé.')
+      afficherSucces(t('client.cree'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -81,7 +81,7 @@ export default function Clients(): React.JSX.Element {
       setDetail(null)
       setBrouillon(null)
       await rechargerListe()
-      afficherSucces('Client supprimé.')
+      afficherSucces(t('client.supprime'))
     } catch (erreur) {
       afficherErreur(erreur)
     }

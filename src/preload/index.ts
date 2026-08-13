@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { RelanceProposee } from '../shared/calculs'
 import type {
   ArticleInventaire,
   CategorieJournal,
@@ -325,6 +326,7 @@ const api = {
 
   rappels: {
     lister: (factureId: number): Promise<Rappel[]> => ipcRenderer.invoke('rappels:lister', factureId),
+    aFaire: (): Promise<RelanceProposee[]> => ipcRenderer.invoke('rappels:aFaire'),
     prochainNiveau: (factureId: number): Promise<{ niveau: number; fraisSuggeres: number }> =>
       ipcRenderer.invoke('rappels:prochainNiveau', factureId),
     creer: (factureId: number, niveau: number, frais: number): Promise<Rappel> =>

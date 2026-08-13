@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react'
 import type { TableauDeBord } from '../../../shared/types'
 import { diviserSansErreur } from '../../../shared/calculs'
 import { formaterMontant } from '../lib/devise'
-import { langue as langueCourante, t } from '../../../shared/i18n'
+import { locale, t } from '../../../shared/i18n'
 
 /**
  * Le nom du mois suit la langue de l'interface, pas une locale figée.
  * Écrit « fr-CH » en dur, un anglophone lisait « août 2026 » au milieu d'un
  * écran anglais — le genre de détail qui trahit une traduction faite à moitié.
+ * Le choix de la locale vit dans `i18n.ts` : il servait à quatre écrans.
  */
 function nomDuMois(moisIso: string): string {
   const [annee, mois] = moisIso.split('-')
   const date = new Date(Number(annee), Number(mois) - 1, 1)
-  const locale = langueCourante() === 'en' ? 'en-GB' : 'fr-CH'
-  return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+  return date.toLocaleDateString(locale(), { month: 'long', year: 'numeric' })
 }
 
 interface Props {

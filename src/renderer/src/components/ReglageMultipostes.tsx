@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { EtatMultipostes } from '../../../shared/types'
+import { t } from '../../../shared/i18n'
 
 /**
  * Réglage du mode multi-postes, dans « Paramètres de l'app ».
@@ -32,8 +33,8 @@ export default function ReglageMultipostes(): React.JSX.Element {
       const reponse = await window.api.multipostes.tester(adresse)
       setMessage(
         reponse.installe
-          ? 'Serveur joignable, des comptes y existent déjà.'
-          : 'Serveur joignable, mais aucun compte : vous créerez le premier administrateur en vous connectant.'
+          ? t('multi.joignableAvecComptes')
+          : t('multi.joignableSansCompte')
       )
     } catch (e) {
       setErreur((e as Error).message)
@@ -62,26 +63,28 @@ export default function ReglageMultipostes(): React.JSX.Element {
 
   return (
     <div className="carte">
-      <h2>Mode multi-postes</h2>
+      <h2>{t('multi.titre')}</h2>
 
       <p className="discret">
-        Par défaut, Ohmnia travaille sur la base de <strong>cet ordinateur</strong>, hors ligne.
-        Le mode multi-postes fait travailler plusieurs postes sur les mêmes données, servies par un
-        serveur installé chez vous. Rien ne sort de votre réseau.
+        {t('multi.presentation', { cet: t('multi.cetOrdinateur') })}
       </p>
 
       <p>
-        Mode actuel : <strong>{enServeur ? `serveur (${etat.adresse})` : 'local'}</strong>
+        {t('multi.modeActuel')}{' '}
+        <strong>
+          {enServeur ? t('multi.serveurAdresse', { adresse: etat.adresse }) : t('multi.local')}
+        </strong>
         {etat.session && (
           <>
             {' '}
-            — connecté comme <strong>{etat.session.identifiant}</strong> ({etat.session.role})
+            — {t('multi.connecteComme')} <strong>{etat.session.identifiant}</strong>{' '}
+            ({etat.session.role})
           </>
         )}
       </p>
 
       <label>
-        Adresse du serveur
+        {t('multi.adresseServeur')}
         <input
           value={adresse}
           onChange={(e) => setAdresse(e.target.value)}
@@ -95,12 +98,12 @@ export default function ReglageMultipostes(): React.JSX.Element {
 
       <div className="ligne-boutons">
         <button onClick={tester} disabled={occupe || !adresse.trim()}>
-          Tester la connexion
+          {t('multi.testerConnexion')}
         </button>
 
         {enServeur ? (
           <button onClick={() => basculer('local')} disabled={occupe}>
-            Revenir au mode local
+            {t('multi.revenirLocal')}
           </button>
         ) : (
           <button
@@ -108,31 +111,26 @@ export default function ReglageMultipostes(): React.JSX.Element {
             onClick={() => basculer('serveur')}
             disabled={occupe || !adresse.trim()}
           >
-            Passer en mode multi-postes
+            {t('multi.passerServeur')}
           </button>
         )}
       </div>
 
       <p className="discret">
-        Le changement de mode <strong>redémarre l’affichage</strong> : c’est au démarrage qu’Ohmnia
-        décide s’il lit sa base locale ou celle du serveur. Vos données locales ne sont jamais
-        effacées — revenir au mode local les retrouve telles quelles.
+        {t('multi.redemarrage', { redemarre: t('multi.redemarreAffichage') })}
       </p>
 
       <p className="discret">
-        En multi-postes, les sauvegardes et l’export global sont l’affaire du serveur : ces
-        actions sont désactivées sur ce poste. Les justificatifs et le logo, eux, sont rangés
-        avec les données et restent accessibles depuis tous les postes.
+        {t('multi.sauvegardesServeur')}
       </p>
 
       <p className="discret">
-        Le thème, la langue et la couleur d’accent restent propres à ce poste : deux collègues
-        qui partagent la même base n’ont pas à partager leur affichage.
+        {t('multi.affichagePropre')}
       </p>
 
       <p className="discret">
-        <strong>Le serveur refuse d’écouter sur le réseau sans chiffrement.</strong> Fournissez-lui
-        un certificat et une clé privée, ou placez-le derrière un proxy HTTPS.
+        <strong>{t('multi.chiffrementObligatoire')}</strong>
+        {t('multi.chiffrementSuite')}
       </p>
     </div>
   )

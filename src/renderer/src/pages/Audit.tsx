@@ -1,27 +1,36 @@
 import { useEffect, useState } from 'react'
 import type { EntreeAudit, ExerciceCloture, PointConformite } from '../../../shared/types'
+import { locale, t, type CleTraduction } from '../../../shared/i18n'
 
 function formaterHorodatage(iso: string): string {
   // SQLite stocke en UTC au format "YYYY-MM-DD HH:MM:SS".
-  return new Date(iso.replace(' ', 'T') + 'Z').toLocaleString('fr-CH', {
+  return new Date(iso.replace(' ', 'T') + 'Z').toLocaleString(locale(), {
     dateStyle: 'short',
     timeStyle: 'medium'
   })
 }
 
-const LIBELLES_ACTION: Record<string, string> = {
-  creation: 'Création',
-  duplication: 'Duplication',
-  conversion: 'Conversion',
-  suppression: 'Suppression',
-  rappel: 'Rappel de paiement',
-  export: 'Export',
-  import: 'Import',
-  ajout: 'Ajout',
-  cloture: "Clôture d'exercice",
-  reouverture: "Réouverture d'exercice",
-  purge: 'Purge',
-  'facturation-temps': 'Facturation du temps'
+/**
+ * Le libellé de chaque action tracée.
+ *
+ * **La clé de gauche est ce qui vit en base** — `creation`, `cloture`… — et ne
+ * change jamais. Seul le libellé se traduit. Traduire la valeur enregistrée
+ * rendrait un journal d'audit illisible pour qui change de langue, et un
+ * journal qu'on ne peut plus relire ne trace plus rien.
+ */
+const LIBELLES_ACTION: Record<string, CleTraduction> = {
+  creation: 'audit.actionCreation',
+  duplication: 'audit.actionDuplication',
+  conversion: 'audit.actionConversion',
+  suppression: 'audit.actionSuppression',
+  rappel: 'audit.actionRappel',
+  export: 'audit.actionExport',
+  import: 'audit.actionImport',
+  ajout: 'audit.actionAjout',
+  cloture: 'audit.actionCloture',
+  reouverture: 'audit.actionReouverture',
+  purge: 'audit.actionPurge',
+  'facturation-temps': 'audit.actionFacturationTemps'
 }
 
 export default function Audit(): React.JSX.Element {
@@ -53,7 +62,7 @@ export default function Audit(): React.JSX.Element {
 
   function afficherErreur(erreur: unknown): void {
     setMessageSucces(null)
-    setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+    setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
   }
 
   function afficherSucces(message: string): void {
@@ -64,47 +73,41 @@ export default function Audit(): React.JSX.Element {
 
   async function cloturer(): Promise<void> {
     if (anneeACloturer === '') {
-      afficherErreur(new Error('Choisis une année à clôturer.'))
+      afficherErreur(new Error(t('audit.choisirAnnee')))
       return
     }
-    const confirme = window.confirm(
-      `Clôturer l'exercice ${anneeACloturer} ?\n\n` +
-        'Plus aucune écriture de cette année ne pourra être ajoutée, modifiée ou supprimée. ' +
-        'Tu pourras rouvrir l\'exercice si nécessaire.'
-    )
+    const confirme = window.confirm(t('audit.confirmerCloture', { annee: anneeACloturer }))
     if (!confirme) return
 
     try {
       const nb = await window.api.exercices.cloturer(anneeACloturer)
       await recharger()
-      afficherSucces(`Exercice ${anneeACloturer} clôturé : ${nb} écriture(s) verrouillée(s).`)
+      afficherSucces(t('audit.exerciceCloture', { annee: anneeACloturer, nombre: nb }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function reouvrir(annee: number): Promise<void> {
-    if (!window.confirm(`Rouvrir l'exercice ${annee} ? Les écritures redeviendront modifiables.`)) return
+    if (!window.confirm(t('audit.confirmerReouverture', { annee }))) return
     try {
       await window.api.exercices.reouvrir(annee)
       await recharger()
-      afficherSucces(`Exercice ${annee} rouvert.`)
+      afficherSucces(t('audit.exerciceRouvert', { annee }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function vider(): Promise<void> {
-    const confirme = window.confirm(
-      "Vider le journal d'audit ?\n\nL'historique des modifications sera perdu (la purge elle-même reste tracée)."
-    )
+    const confirme = window.confirm(t('audit.confirmerVidage'))
     if (!confirme) return
     await window.api.audit.vider()
     await recharger()
-    afficherSucces("Journal d'audit vidé.")
+    afficherSucces(t('audit.journalVide'))
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   const anneesCloturees = new Set(exercices.map((e) => e.annee))
 
@@ -117,12 +120,10 @@ export default function Audit(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Conformité de la facturation</h2>
+        <h2>{t('audit.conformiteTitre')}</h2>
         <p className="valeur-calculee">
-          Contrôles automatiques des mentions et de la numérotation.{' '}
-          <strong>
-            Cette liste ne certifie rien et ne remplace pas l'avis de votre fiduciaire.
-          </strong>
+          {t('audit.conformiteAide')}{' '}
+          <strong>{t('audit.conformiteReserve')}</strong>
         </p>
 
         <ul className="liste-conformite">
@@ -139,21 +140,19 @@ export default function Audit(): React.JSX.Element {
       </div>
 
       <div className="carte">
-        <h2>Exercices comptables</h2>
+        <h2>{t('audit.exercicesTitre')}</h2>
         <p className="valeur-calculee">
-          Clôturer une année la verrouille : plus aucune écriture du Journal ne peut y être ajoutée,
-          modifiée ou supprimée. Utile une fois la déclaration faite, pour éviter toute modification
-          accidentelle d'un exercice passé.
+          {t('audit.exercicesAide')}
         </p>
 
         <div className="ligne-formulaire">
           <label>
-            Année à clôturer
+            {t('audit.anneeACloturer')}
             <select
               value={anneeACloturer}
               onChange={(e) => setAnneeACloturer(e.target.value === '' ? '' : Number(e.target.value))}
             >
-              <option value="">— Choisir —</option>
+              <option value="">{t('audit.choisir')}</option>
               {annees
                 .filter((a) => !anneesCloturees.has(a))
                 .map((a) => (
@@ -164,14 +163,14 @@ export default function Audit(): React.JSX.Element {
             </select>
           </label>
         </div>
-        <button onClick={cloturer}>Clôturer l'exercice</button>
+        <button onClick={cloturer}>{t('audit.cloturerExercice')}</button>
 
         {exercices.length > 0 && (
           <table className="table-editable" style={{ marginTop: '1.2rem' }}>
             <thead>
               <tr>
-                <th>Année</th>
-                <th>Clôturée le</th>
+                <th>{t('resume.annee')}</th>
+                <th>{t('audit.clotureeLe')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -181,7 +180,7 @@ export default function Audit(): React.JSX.Element {
                   <td>{e.annee}</td>
                   <td className="colonne-etroite">{formaterHorodatage(e.clotureLe)}</td>
                   <td>
-                    <button onClick={() => reouvrir(e.annee)}>Rouvrir</button>
+                    <button onClick={() => reouvrir(e.annee)}>{t('audit.rouvrir')}</button>
                   </td>
                 </tr>
               ))}
@@ -191,30 +190,29 @@ export default function Audit(): React.JSX.Element {
       </div>
 
       <div className="carte">
-        <h2>Journal d'audit</h2>
+        <h2>{t('audit.journalTitre')}</h2>
         <p className="valeur-calculee">
-          Trace des opérations sensibles : créations, duplications, conversions, suppressions,
-          rappels, imports/exports et clôtures. {entrees.length} entrée(s) affichée(s).
+          {t('audit.journalAide', { nombre: entrees.length })}
         </p>
 
         {entrees.length === 0 ? (
-          <p className="graphique-vide">Aucune opération enregistrée pour l'instant.</p>
+          <p className="graphique-vide">{t('audit.aucuneOperation')}</p>
         ) : (
           <table className="table-editable">
             <thead>
               <tr>
-                <th>Date et heure</th>
-                <th>Action</th>
-                <th>Objet</th>
-                <th>Référence</th>
-                <th>Détails</th>
+                <th>{t('audit.dateEtHeure')}</th>
+                <th>{t('audit.action')}</th>
+                <th>{t('audit.objet')}</th>
+                <th>{t('colonne.reference')}</th>
+                <th>{t('audit.details')}</th>
               </tr>
             </thead>
             <tbody>
               {entrees.map((e) => (
                 <tr key={e.id}>
                   <td className="colonne-etroite">{formaterHorodatage(e.horodatage)}</td>
-                  <td>{LIBELLES_ACTION[e.action] ?? e.action}</td>
+                  <td>{LIBELLES_ACTION[e.action] ? t(LIBELLES_ACTION[e.action]) : e.action}</td>
                   <td>{e.entite}</td>
                   <td>{e.reference || '—'}</td>
                   <td>{e.details || '—'}</td>
@@ -226,7 +224,7 @@ export default function Audit(): React.JSX.Element {
 
         <div className="barre-boutons">
           <button className="bouton-danger" onClick={vider}>
-            Vider le journal d'audit
+            {t('audit.viderJournal')}
           </button>
         </div>
       </div>

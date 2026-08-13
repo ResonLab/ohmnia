@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ResumeAnnuel } from '../../../shared/types'
 import { diviserSansErreur } from '../../../shared/calculs'
 import { formaterMontant, symboleDevise } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 
 export default function ResumeAnnuelPage(): React.JSX.Element {
   const [resumes, setResumes] = useState<ResumeAnnuel[]>([])
@@ -32,14 +33,14 @@ export default function ResumeAnnuelPage(): React.JSX.Element {
     setMessageErreur(null)
     try {
       await window.api.resume.enregistrerObjectif(anneeSelectionnee, objectifCa)
-      setMessageSucces('Objectif enregistré.')
+      setMessageSucces(t('resume.objectifEnregistre'))
       setTimeout(() => setMessageSucces(null), 2500)
     } catch (erreur) {
-      setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+      setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
     }
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   const resumeAnnee = resumes.find((r) => r.annee === anneeSelectionnee)
   const caRealise = resumeAnnee?.entrees ?? 0
@@ -48,10 +49,10 @@ export default function ResumeAnnuelPage(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Objectif de chiffre d'affaires</h2>
+        <h2>{t('resume.objectifTitre')}</h2>
         <div className="ligne-formulaire">
           <label>
-            Année
+            {t('resume.annee')}
             <select value={anneeSelectionnee} onChange={(e) => setAnneeSelectionnee(Number(e.target.value))}>
               {resumes.length === 0 && <option value={anneeSelectionnee}>{anneeSelectionnee}</option>}
               {resumes.map((r) => (
@@ -62,7 +63,7 @@ export default function ResumeAnnuelPage(): React.JSX.Element {
             </select>
           </label>
           <label>
-            Objectif CA annuel ({symboleDevise()})
+            {t('resume.objectifAnnuel', { devise: symboleDevise() })}
             <input
               type="number"
               step="100"
@@ -71,35 +72,38 @@ export default function ResumeAnnuelPage(): React.JSX.Element {
             />
           </label>
         </div>
-        <button className="action-ecriture" onClick={enregistrerObjectif}>Enregistrer l'objectif</button>
+        <button className="action-ecriture" onClick={enregistrerObjectif}>{t('resume.enregistrerObjectif')}</button>
 
         <div className="barre-progression-zone">
           <div className="barre-progression">
             <div className="barre-progression-remplissage" style={{ width: `${progression}%` }} />
           </div>
           <p className="valeur-calculee">
-            {formaterMontant(caRealise)} réalisés sur {formaterMontant(objectifCa)} —{' '}
+            {t('resume.progression', {
+              fait: formaterMontant(caRealise),
+              objectif: formaterMontant(objectifCa)
+            })}{' '}
             <strong>{progression.toFixed(1)}%</strong>
-            {objectifCa <= 0 && ' (saisissez un objectif pour voir la progression)'}
+            {objectifCa <= 0 && t('resume.saisirObjectif')}
           </p>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Résumé par année</h2>
+        <h2>{t('resume.parAnnee')}</h2>
         {resumes.length === 0 ? (
-          <p className="graphique-vide">Aucun mouvement enregistré dans le Journal pour l'instant.</p>
+          <p className="graphique-vide">{t('resume.aucunMouvement')}</p>
         ) : (
           <table className="table-editable">
             <thead>
               <tr>
-                <th>Année</th>
-                <th>Entrées</th>
-                <th>Dépenses</th>
-                <th>Bénéfice net</th>
-                <th>TVA collectée</th>
-                <th>TVA déductible</th>
-                <th>TVA nette</th>
+                <th>{t('resume.annee')}</th>
+                <th>{t('resume.entrees')}</th>
+                <th>{t('resume.depenses')}</th>
+                <th>{t('resume.beneficeNet')}</th>
+                <th>{t('resume.tvaCollectee')}</th>
+                <th>{t('resume.tvaDeductible')}</th>
+                <th>{t('resume.tvaNette')}</th>
               </tr>
             </thead>
             <tbody>
@@ -115,7 +119,7 @@ export default function ResumeAnnuelPage(): React.JSX.Element {
                   <td>{formaterMontant(r.tvaDeductible)}</td>
                   <td>
                     {formaterMontant(Math.abs(r.tvaNette))}{' '}
-                    {r.tvaNette >= 0 ? '(à payer)' : '(à récupérer)'}
+                    {r.tvaNette >= 0 ? t('resume.aPayer') : t('resume.aRecuperer')}
                   </td>
                 </tr>
               ))}

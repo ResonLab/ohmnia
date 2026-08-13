@@ -4,6 +4,7 @@ import ClientSelecteur from '../components/ClientSelecteur'
 import Modale from '../components/Modale'
 import { chargerValeursSuggerees, type ValeursSuggerees } from '../lib/suggestions'
 import { formaterMontant } from '../lib/devise'
+import { locale, t } from '../../../shared/i18n'
 
 function formaterDuree(secondes: number): string {
   const heures = Math.floor(secondes / 3600)
@@ -15,7 +16,7 @@ function formaterDuree(secondes: number): string {
 function formaterDateHeure(iso: string): string {
   // SQLite renvoie "YYYY-MM-DD HH:MM:SS" en UTC.
   const date = new Date(iso.replace(' ', 'T') + 'Z')
-  return date.toLocaleString('fr-CH', { dateStyle: 'short', timeStyle: 'short' })
+  return date.toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
 }
 
 export default function SuiviTemps(): React.JSX.Element {
@@ -87,7 +88,9 @@ export default function SuiviTemps(): React.JSX.Element {
     try {
       const terminee = await window.api.suiviTemps.arreter(enCours.id)
       await recharger()
-      afficherSucces(`Intervention arrêtée : ${formaterDuree(terminee.secondesEcoulees)}.`)
+      afficherSucces(
+        t('temps.arretee', { duree: formaterDuree(terminee.secondesEcoulees) })
+      )
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -106,7 +109,7 @@ export default function SuiviTemps(): React.JSX.Element {
   }
 
   async function supprimer(id: number): Promise<void> {
-    if (!window.confirm('Supprimer cette intervention ?')) return
+    if (!window.confirm(t('temps.confirmerSuppression'))) return
     await window.api.suiviTemps.supprimer(id)
     await recharger()
   }
@@ -122,7 +125,7 @@ export default function SuiviTemps(): React.JSX.Element {
 
   async function ouvrirModaleFacturation(): Promise<void> {
     if (selection.size === 0) {
-      afficherErreur(new Error('Sélectionne au moins une intervention à facturer.'))
+      afficherErreur(new Error(t('temps.choisirIntervention')))
       return
     }
     setFactures(await window.api.factures.historique())
@@ -131,7 +134,7 @@ export default function SuiviTemps(): React.JSX.Element {
 
   async function facturer(): Promise<void> {
     if (factureCible === '') {
-      afficherErreur(new Error('Choisis la facture sur laquelle ajouter ces heures.'))
+      afficherErreur(new Error(t('temps.choisirFacture')))
       return
     }
     try {
@@ -143,13 +146,13 @@ export default function SuiviTemps(): React.JSX.Element {
       setSelection(new Set())
       setModaleFacturation(false)
       await recharger()
-      afficherSucces(`${nb} intervention(s) ajoutée(s) à la facture.`)
+      afficherSucces(t('temps.interventionsAjoutees', { nombre: nb }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   const tauxSuggere = suggestions?.tauxHoraireSuggere ?? 0
   const nonFacturees = interventions.filter((i) => i.fin && !i.factureId)
@@ -161,50 +164,52 @@ export default function SuiviTemps(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Chronomètre</h2>
+        <h2>{t('temps.chronometre')}</h2>
         {enCours ? (
           <>
             <div className="chrono">
               <span className="chrono-valeur">{formaterDuree(secondesAffichees)}</span>
               <span className="chrono-detail">
-                {enCours.description || 'Sans description'}
+                {enCours.description || t('temps.sansDescription')}
                 {enCours.clientNom ? ` · ${enCours.clientNom}` : ''}
               </span>
-              <span className="chrono-detail">Démarrée à {formaterDateHeure(enCours.debut)}</span>
+              <span className="chrono-detail">
+                {t('temps.demarreeA', { heure: formaterDateHeure(enCours.debut) })}
+              </span>
             </div>
             <div className="barre-boutons">
-              <button className="action-ecriture" onClick={arreter}>Arrêter l'intervention</button>
+              <button className="action-ecriture" onClick={arreter}>{t('temps.arreter')}</button>
             </div>
           </>
         ) : (
           <>
             <label>
-              Description de l'intervention
+              {t('temps.descriptionIntervention')}
               <input
-                placeholder="ex. Diagnostic ampli salon"
+                placeholder={t('temps.exemple')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </label>
             <label>
-              Client (optionnel)
+              {t('temps.clientOptionnel')}
               <ClientSelecteur clientId={clientId} onChange={setClientId} />
             </label>
-            <button className="action-ecriture" onClick={demarrer}>Démarrer le chronomètre</button>
+            <button className="action-ecriture" onClick={demarrer}>{t('temps.demarrer')}</button>
           </>
         )}
       </div>
 
       <div className="carte">
-        <h2>Interventions</h2>
+        <h2>{t('temps.interventions')}</h2>
         <div className="tuiles" style={{ marginBottom: '1.2rem' }}>
           <div className="tuile">
             <span className="tuile-valeur">{nonFacturees.length}</span>
-            <span className="tuile-libelle">Non facturées</span>
+            <span className="tuile-libelle">{t('temps.nonFacturees')}</span>
           </div>
           <div className="tuile">
             <span className="tuile-valeur">{formaterMontant(totalNonFacture)}</span>
-            <span className="tuile-libelle">À facturer</span>
+            <span className="tuile-libelle">{t('temps.aFacturer')}</span>
           </div>
         </div>
 
@@ -212,13 +217,13 @@ export default function SuiviTemps(): React.JSX.Element {
           <thead>
             <tr>
               <th></th>
-              <th>Début</th>
-              <th>Description</th>
-              <th>Client</th>
-              <th>Durée (h)</th>
-              <th>Taux (vide = {formaterMontant(tauxSuggere)})</th>
-              <th>Montant</th>
-              <th>Facturée</th>
+              <th>{t('temps.debut')}</th>
+              <th>{t('journal.description')}</th>
+              <th>{t('colonne.client')}</th>
+              <th>{t('temps.dureeH')}</th>
+              <th>{t('temps.tauxVide', { taux: formaterMontant(tauxSuggere) })}</th>
+              <th>{t('colonne.montant')}</th>
+              <th>{t('temps.facturee')}</th>
               <th></th>
             </tr>
           </thead>
@@ -257,7 +262,7 @@ export default function SuiviTemps(): React.JSX.Element {
                         }
                       />
                     ) : (
-                      <span className="colonne-etroite">en cours</span>
+                      <span className="colonne-etroite">{t('temps.enCours')}</span>
                     )}
                   </td>
                   <td>
@@ -275,10 +280,10 @@ export default function SuiviTemps(): React.JSX.Element {
                     />
                   </td>
                   <td>{i.fin ? `${formaterMontant(heures * taux)}` : '—'}</td>
-                  <td className="colonne-etroite">{i.factureId ? 'Oui' : 'Non'}</td>
+                  <td className="colonne-etroite">{i.factureId ? t('temps.oui') : t('temps.non')}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimer(i.id)}>
-                      Supprimer
+                      {t('action.supprimer')}
                     </button>
                   </td>
                 </tr>
@@ -287,7 +292,7 @@ export default function SuiviTemps(): React.JSX.Element {
             {interventions.length === 0 && (
               <tr>
                 <td colSpan={9} className="colonne-etroite">
-                  Aucune intervention enregistrée.
+                  {t('temps.aucuneIntervention')}
                 </td>
               </tr>
             )}
@@ -296,29 +301,28 @@ export default function SuiviTemps(): React.JSX.Element {
 
         <div className="barre-boutons">
           <button className="action-ecriture" onClick={ouvrirModaleFacturation}>
-            Facturer la sélection ({selection.size})
+            {t('temps.facturerSelection', { nombre: selection.size })}
           </button>
         </div>
       </div>
 
       {modaleFacturation && (
         <Modale
-          titre="Facturer les interventions sélectionnées"
+          titre={t('temps.modaleTitre')}
           onFermer={() => setModaleFacturation(false)}
           onValider={facturer}
-          libelleValider="Ajouter à la facture"
+          libelleValider={t('temps.modaleValider')}
         >
           <p>
-            Chaque intervention devient une ligne de main d'œuvre (heures × taux) sur la facture
-            choisie. Les interventions déjà facturées sont ignorées.
+            {t('temps.modaleAide')}
           </p>
           <label>
-            Facture
+            {t('temps.facture')}
             <select
               value={factureCible}
               onChange={(e) => setFactureCible(e.target.value === '' ? '' : Number(e.target.value))}
             >
-              <option value="">— Choisir —</option>
+              <option value="">{t('temps.choisir')}</option>
               {factures.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.numero} · {f.clientNom} · {f.statut}

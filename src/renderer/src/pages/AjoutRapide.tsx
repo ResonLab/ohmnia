@@ -3,6 +3,9 @@ import type { CategorieJournal, TypeMouvement } from '../../../shared/types'
 import { chargerValeursSuggerees, type ValeursSuggerees } from '../lib/suggestions'
 import ClientSelecteur from '../components/ClientSelecteur'
 import { symboleDevise } from '../lib/devise'
+import { t, type CleTraduction } from '../../../shared/i18n'
+import { TYPES_MOUVEMENT, TYPE_PAR_DEFAUT } from '../../../shared/journal'
+import { VALEURS_CATEGORIES } from '../../../shared/inventaire'
 
 type Destination =
   | 'journal'
@@ -14,15 +17,15 @@ type Destination =
   | 'tarifDeplacement'
   | 'inventaire'
 
-const DESTINATIONS: { id: Destination; titre: string }[] = [
-  { id: 'journal', titre: 'Journal — entrée / dépense' },
-  { id: 'facture', titre: 'Facture — nouveau brouillon' },
-  { id: 'devis', titre: 'Devis — nouveau brouillon' },
-  { id: 'client', titre: 'Client — nouvelle fiche' },
-  { id: 'tarifProduit', titre: 'Tarifs — produit / prestation' },
-  { id: 'tarifMainOeuvre', titre: "Tarifs — heures / main d'œuvre" },
-  { id: 'tarifDeplacement', titre: 'Tarifs — déplacement' },
-  { id: 'inventaire', titre: 'Inventaire — nouvel article' }
+const DESTINATIONS: { id: Destination; cle: CleTraduction }[] = [
+  { id: 'journal', cle: 'ajout.destJournal' },
+  { id: 'facture', cle: 'ajout.destFacture' },
+  { id: 'devis', cle: 'ajout.destDevis' },
+  { id: 'client', cle: 'ajout.destClient' },
+  { id: 'tarifProduit', cle: 'ajout.destTarifProduit' },
+  { id: 'tarifMainOeuvre', cle: 'ajout.destTarifMainOeuvre' },
+  { id: 'tarifDeplacement', cle: 'ajout.destTarifDeplacement' },
+  { id: 'inventaire', cle: 'ajout.destInventaire' }
 ]
 
 export default function AjoutRapide(): React.JSX.Element {
@@ -34,7 +37,7 @@ export default function AjoutRapide(): React.JSX.Element {
 
   // Champs (seuls les pertinents pour la destination choisie sont affichés).
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [type, setType] = useState<TypeMouvement>('Dépense')
+  const [type, setType] = useState<TypeMouvement>(TYPE_PAR_DEFAUT)
   const [categorieId, setCategorieId] = useState<number | ''>('')
   const [libelle, setLibelle] = useState('')
   const [montant, setMontant] = useState(0)
@@ -113,7 +116,7 @@ export default function AjoutRapide(): React.JSX.Element {
           notes,
           tvaPct: tvaPct === '' ? null : tvaPct
         })
-        afficherSucces('Écriture ajoutée au Journal.')
+        afficherSucces(t('ajout.ecritureAjoutee'))
       } else if (destination === 'tarifProduit') {
         await window.api.tarifsProduits.ajouter({
           designation: libelle,
@@ -121,32 +124,32 @@ export default function AjoutRapide(): React.JSX.Element {
           margePct: margePct === '' ? null : margePct,
           referenceInventaire: null
         })
-        afficherSucces('Produit ajouté aux tarifs.')
+        afficherSucces(t('ajout.produitAjoute'))
       } else if (destination === 'tarifMainOeuvre') {
         await window.api.tarifsMainOeuvre.ajouter({
           description: libelle,
           heures,
           tauxHoraire: tauxHoraire === '' ? null : tauxHoraire
         })
-        afficherSucces('Ligne de main d\'œuvre ajoutée aux tarifs.')
+        afficherSucces(t('ajout.mainOeuvreAjoutee'))
       } else if (destination === 'tarifDeplacement') {
         await window.api.tarifsDeplacement.ajouter({
           description: libelle,
           distanceKm,
           prixKm: prixKm === '' ? null : prixKm
         })
-        afficherSucces('Déplacement ajouté aux tarifs.')
+        afficherSucces(t('ajout.deplacementAjoute'))
       } else if (destination === 'facture') {
-        if (!clientId) throw new Error('Choisissez un client pour créer la facture.')
+        if (!clientId) throw new Error(t('ajout.choisirClientFacture'))
         const facture = await window.api.factures.creerBrouillon(clientId)
         afficherSucces(
-          `Brouillon de facture ${facture.numero} créé. Ouvre le module Facturation pour ajouter les lignes.`
+          t('ajout.brouillonFactureCree', { numero: facture.numero })
         )
       } else if (destination === 'devis') {
-        if (!clientId) throw new Error('Choisissez un client pour créer le devis.')
+        if (!clientId) throw new Error(t('ajout.choisirClientDevis'))
         const devis = await window.api.devis.creerBrouillon(clientId)
         afficherSucces(
-          `Brouillon de devis ${devis.numero} créé. Ouvre le module Devis pour ajouter les lignes.`
+          t('ajout.brouillonDevisCree', { numero: devis.numero })
         )
       } else if (destination === 'client') {
         const client = await window.api.clients.ajouter({
@@ -158,12 +161,12 @@ export default function AjoutRapide(): React.JSX.Element {
         setAdresseClient('')
         setEmailClient('')
         setTelephoneClient('')
-        afficherSucces(`Client « ${client.nom} » créé.`)
+        afficherSucces(t('ajout.clientCree', { nom: client.nom }))
       } else {
         await window.api.inventaire.ajouter({
           reference,
           designation: libelle,
-          categorie: 'Divers',
+          categorie: VALEURS_CATEGORIES[VALEURS_CATEGORIES.length - 1],
           quantiteStock,
           seuilAlerte,
           prixAchatUnitaire: prixAchat,
@@ -172,25 +175,25 @@ export default function AjoutRapide(): React.JSX.Element {
           emplacement,
           derniereMaj: ''
         })
-        afficherSucces('Article ajouté à l\'inventaire.')
+        afficherSucces(t('ajout.articleAjoute'))
       }
       reinitialiser()
     } catch (erreur) {
-      setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+      setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
     }
   }
 
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Ajout rapide</h2>
+        <h2>{t('ajout.titre')}</h2>
 
         <label>
-          Où voulez-vous enregistrer cette saisie ?
+          {t('ajout.ou')}
           <select value={destination} onChange={(e) => setDestination(e.target.value as Destination)}>
             {DESTINATIONS.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.titre}
+                {t(d.cle)}
               </option>
             ))}
           </select>
@@ -200,7 +203,7 @@ export default function AjoutRapide(): React.JSX.Element {
 
         {destination === 'inventaire' && (
           <label>
-            Référence
+            {t('colonne.reference')}
             <input value={reference} onChange={(e) => setReference(e.target.value)} />
           </label>
         )}
@@ -208,12 +211,11 @@ export default function AjoutRapide(): React.JSX.Element {
         {(destination === 'facture' || destination === 'devis') && (
           <>
             <label>
-              Client
+              {t('colonne.client')}
               <ClientSelecteur clientId={clientId} onChange={setClientId} />
             </label>
             <p className="valeur-calculee">
-              Le numéro, la date, le délai et la TVA sont remplis automatiquement depuis tes
-              paramètres. Tu ajoutes les lignes ensuite dans le module dédié.
+              {t('ajout.aideDocument')}
             </p>
           </>
         )}
@@ -221,10 +223,10 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination !== 'facture' && destination !== 'devis' && (
           <label>
             {destination === 'journal'
-              ? 'Description'
+              ? t('journal.description')
               : destination === 'client'
-                ? 'Nom du client'
-                : 'Désignation'}
+                ? t('ajout.nomClient')
+                : t('colonne.designation')}
             <input value={libelle} onChange={(e) => setLibelle(e.target.value)} />
           </label>
         )}
@@ -232,16 +234,16 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination === 'client' && (
           <>
             <label>
-              Adresse
+              {t('client.adresse')}
               <textarea value={adresseClient} onChange={(e) => setAdresseClient(e.target.value)} />
             </label>
             <div className="ligne-formulaire">
               <label>
-                Email
+                {t('client.email')}
                 <input type="email" value={emailClient} onChange={(e) => setEmailClient(e.target.value)} />
               </label>
               <label>
-                Téléphone
+                {t('client.telephone')}
                 <input value={telephoneClient} onChange={(e) => setTelephoneClient(e.target.value)} />
               </label>
             </div>
@@ -251,18 +253,21 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination === 'journal' && (
           <div className="ligne-formulaire">
             <label>
-              Date
+              {t('colonne.date')}
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </label>
             <label>
-              Type
+              {t('journal.type')}
               <select value={type} onChange={(e) => setType(e.target.value as TypeMouvement)}>
-                <option value="Entrée">Entrée</option>
-                <option value="Dépense">Dépense</option>
+                {TYPES_MOUVEMENT.map((mouvement) => (
+                  <option key={mouvement.valeur} value={mouvement.valeur}>
+                    {t(mouvement.cle)}
+                  </option>
+                ))}
               </select>
             </label>
             <label>
-              Catégorie
+              {t('journal.categorie')}
               <select
                 value={categorieId}
                 onChange={(e) => setCategorieId(e.target.value === '' ? '' : Number(e.target.value))}
@@ -280,7 +285,7 @@ export default function AjoutRapide(): React.JSX.Element {
               <input type="number" step="0.05" value={montant} onChange={(e) => setMontant(Number(e.target.value))} />
             </label>
             <label>
-              TVA %
+              {t('journal.tvaPct')}
               <input
                 type="number"
                 step="0.1"
@@ -289,7 +294,7 @@ export default function AjoutRapide(): React.JSX.Element {
               />
             </label>
             <label>
-              N° facture liée
+              {t('journal.numeroFactureLiee')}
               <input value={numeroFacture} onChange={(e) => setNumeroFacture(e.target.value)} />
             </label>
           </div>
@@ -298,12 +303,13 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination === 'tarifProduit' && (
           <div className="ligne-formulaire">
             <label>
-              Prix d'achat ({symboleDevise()})
+              {t('ajout.prixAchatDevise', { devise: symboleDevise() })}
               <input type="number" step="0.05" value={prixAchat} onChange={(e) => setPrixAchat(Number(e.target.value))} />
             </label>
             <label>
-              Marge %{' '}
-              {suggestions && `(vide = suggérée ${(suggestions.margeSuggeree * 100).toFixed(1)}%)`}
+              {t('ajout.marge')}{' '}
+              {suggestions &&
+                t('ajout.margeSuggeree', { marge: (suggestions.margeSuggeree * 100).toFixed(1) })}
               <input
                 type="number"
                 step="1"
@@ -317,12 +323,16 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination === 'tarifMainOeuvre' && (
           <div className="ligne-formulaire">
             <label>
-              Heures
+              {t('tarif.heures')}
               <input type="number" step="0.25" value={heures} onChange={(e) => setHeures(Number(e.target.value))} />
             </label>
             <label>
-              Taux horaire{' '}
-              {suggestions && `(vide = suggéré ${suggestions.tauxHoraireSuggere.toFixed(2)} ${symboleDevise()}/h)`}
+              {t('ajout.tauxHoraire')}{' '}
+              {suggestions &&
+                t('ajout.tauxSuggere', {
+                  taux: suggestions.tauxHoraireSuggere.toFixed(2),
+                  devise: symboleDevise()
+                })}
               <input
                 type="number"
                 step="1"
@@ -336,12 +346,16 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination === 'tarifDeplacement' && (
           <div className="ligne-formulaire">
             <label>
-              Distance (km)
+              {t('tarif.distanceKm')}
               <input type="number" step="1" value={distanceKm} onChange={(e) => setDistanceKm(Number(e.target.value))} />
             </label>
             <label>
-              Prix/km{' '}
-              {suggestions && `(vide = suggéré ${suggestions.prixVenteKmSuggere.toFixed(2)} ${symboleDevise()}/km)`}
+              {t('ajout.prixKm')}{' '}
+              {suggestions &&
+                t('ajout.prixKmSuggere', {
+                  prix: suggestions.prixVenteKmSuggere.toFixed(2),
+                  devise: symboleDevise()
+                })}
               <input
                 type="number"
                 step="0.05"
@@ -355,27 +369,27 @@ export default function AjoutRapide(): React.JSX.Element {
         {destination === 'inventaire' && (
           <div className="ligne-formulaire">
             <label>
-              Quantité en stock
+              {t('ajout.quantiteStock')}
               <input type="number" step="1" value={quantiteStock} onChange={(e) => setQuantiteStock(Number(e.target.value))} />
             </label>
             <label>
-              Seuil d'alerte
+              {t('inventaire.seuilAlerte')}
               <input type="number" step="1" value={seuilAlerte} onChange={(e) => setSeuilAlerte(Number(e.target.value))} />
             </label>
             <label>
-              Prix d'achat unitaire
+              {t('ajout.prixAchatUnitaire')}
               <input type="number" step="0.05" value={prixAchat} onChange={(e) => setPrixAchat(Number(e.target.value))} />
             </label>
             <label>
-              Prix de vente unitaire
+              {t('ajout.prixVenteUnitaire')}
               <input type="number" step="0.05" value={prixVente} onChange={(e) => setPrixVente(Number(e.target.value))} />
             </label>
             <label>
-              Fournisseur
+              {t('inventaire.fournisseur')}
               <input value={fournisseur} onChange={(e) => setFournisseur(e.target.value)} />
             </label>
             <label>
-              Emplacement
+              {t('inventaire.emplacement')}
               <input value={emplacement} onChange={(e) => setEmplacement(e.target.value)} />
             </label>
           </div>
@@ -383,17 +397,17 @@ export default function AjoutRapide(): React.JSX.Element {
 
         {destination === 'journal' && (
           <label>
-            Notes
+            {t('journal.notes')}
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </label>
         )}
 
         <button className="action-ecriture" onClick={enregistrer}>
           {destination === 'facture'
-            ? 'Créer le brouillon de facture'
+            ? t('ajout.creerBrouillonFacture')
             : destination === 'devis'
-              ? 'Créer le brouillon de devis'
-              : 'Enregistrer'}
+              ? t('ajout.creerBrouillonDevis')
+              : t('action.enregistrer')}
         </button>
 
         {messageErreur && <p className="erreur">{messageErreur}</p>}

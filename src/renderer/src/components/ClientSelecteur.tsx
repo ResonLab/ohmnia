@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Client } from '../../../shared/types'
+import { t } from '../../../shared/i18n'
 
 interface Props {
   clientId: number | null
@@ -51,11 +52,11 @@ export default function ClientSelecteur({ clientId, onChange }: Props): React.JS
         />
         <input placeholder="Email" value={nouvelEmail} onChange={(e) => setNouvelEmail(e.target.value)} />
         <input
-          placeholder="Téléphone"
+          placeholder={t('client.telephone')}
           value={nouveauTelephone}
           onChange={(e) => setNouveauTelephone(e.target.value)}
         />
-        <button onClick={ajouterClient}>Ajouter</button>
+        <button onClick={ajouterClient}>{t('selecteur.ajouter')}</button>
         <button className="bouton-secondaire" onClick={() => setModeAjout(false)}>
           Annuler
         </button>
@@ -67,7 +68,7 @@ export default function ClientSelecteur({ clientId, onChange }: Props): React.JS
   return (
     <div className="client-selecteur">
       <select value={clientId ?? ''} onChange={(e) => onChange(Number(e.target.value))}>
-        <option value="">— Choisir un client —</option>
+        <option value="">{t('selecteur.choisirClient')}</option>
         {clients.map((c) => (
           <option key={c.id} value={c.id}>
             {c.nom}

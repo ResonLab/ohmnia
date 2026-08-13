@@ -9,6 +9,7 @@ import {
   creerRappel,
   listerRappels,
   prochainNiveauRappel,
+  relancesAFaire,
   supprimerRappel
 } from '../main/domaines/rappels'
 import {
@@ -168,6 +169,7 @@ export const REGISTRE: Record<string, Operation> = {
   'rappels:creer': (factureId, niveau, frais) =>
     creerRappel(factureId as number, niveau as number, frais as number),
   'rappels:supprimer': (id) => supprimerRappel(id as number),
+  'rappels:aFaire': () => relancesAFaire(),
 
   'resume:parAnnee': () => resumeParAnnee(),
   'objectifAnnuel:lire': (annee) => lireObjectifAnnuel(annee as number),

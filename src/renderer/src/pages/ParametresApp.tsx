@@ -10,7 +10,7 @@ import type {
   Theme
 } from '../../../shared/types'
 import { appliquerTheme } from '../lib/theme'
-import { definirLangue, LANGUES, t, type Langue } from '../../../shared/i18n'
+import { definirLangue, LANGUES, locale, t, type Langue } from '../../../shared/i18n'
 import { CONDITIONS_UTILISATION } from '../../../shared/conditions'
 import ReglageMultipostes from '../components/ReglageMultipostes'
 import Modale from '../components/Modale'
@@ -25,7 +25,7 @@ function formaterTaille(octets: number): string {
 
 function formaterDate(dateIso: string): string {
   const d = new Date(dateIso)
-  return d.toLocaleString('fr-CH', { dateStyle: 'short', timeStyle: 'short' })
+  return d.toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
 }
 
 interface Props {
@@ -124,7 +124,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       setParams(misAJour)
       onThemeChange(misAJour.theme, misAJour.couleurAccent)
       await rechargerTout()
-      afficherSucces('Paramètres enregistrés.')
+      afficherSucces(t('papp.enregistres'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -135,7 +135,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       const dossier = await window.api.parametresApp.choisirDossierDocuments()
       if (!dossier) return
       await rechargerTout()
-      afficherSucces(`Les PDF seront rangés dans : ${dossier}`)
+      afficherSucces(t('papp.pdfRangesDans', { dossier }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -144,30 +144,26 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
   async function reinitialiserDossier(): Promise<void> {
     const chemin = await window.api.parametresApp.reinitialiserDossierDocuments()
     await rechargerTout()
-    afficherSucces(`Dossier par défaut rétabli : ${chemin}`)
+    afficherSucces(t('papp.dossierRetabli', { chemin }))
   }
 
   async function sauvegarderMaintenant(): Promise<void> {
     try {
       const chemin = await window.api.sauvegardes.creer()
       await rechargerTout()
-      afficherSucces(`Sauvegarde créée : ${chemin}`)
+      afficherSucces(t('papp.sauvegardeCreee', { chemin }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function restaurer(nom: string): Promise<void> {
-    const confirme = window.confirm(
-      `Restaurer la sauvegarde « ${nom} » ?\n\n` +
-        'Les données actuelles seront remplacées. Une sauvegarde de sécurité de l\'état actuel ' +
-        'est créée automatiquement avant la restauration.'
-    )
+    const confirme = window.confirm(t('papp.confirmerRestauration', { nom }))
     if (!confirme) return
     try {
       await window.api.sauvegardes.restaurer(nom)
       await rechargerTout()
-      afficherSucces('Sauvegarde restaurée. Change de module puis reviens pour voir les données reprises.')
+      afficherSucces(t('papp.sauvegardeRestauree'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -178,7 +174,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       const dossier = await window.api.sauvegardeExterne.choisirDossier()
       if (!dossier) return
       setDossierExterne(dossier)
-      afficherSucces(`Dossier de sauvegarde externe : ${dossier}`)
+      afficherSucces(t('papp.dossierExterneDefini', { dossier }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -187,18 +183,14 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
   async function sauvegarderExterne(): Promise<void> {
     try {
       const chemin = await window.api.sauvegardeExterne.sauvegarder(motDePasseExterne)
-      afficherSucces(`Sauvegarde chiffrée créée : ${chemin}`)
+      afficherSucces(t('papp.sauvegardeChiffreeCreee', { chemin }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function restaurerExterne(): Promise<void> {
-    const confirme = window.confirm(
-      'Restaurer depuis une sauvegarde chiffrée ?\n\n' +
-        "Les données actuelles seront remplacées. Une sauvegarde locale de l'état actuel est créée " +
-        'automatiquement avant la restauration.'
-    )
+    const confirme = window.confirm(t('papp.confirmerRestaurationChiffree'))
     if (!confirme) return
 
     try {
@@ -206,7 +198,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       if (!chemin) return
       await rechargerTout()
       afficherSucces(
-        `Sauvegarde restaurée depuis ${chemin}. Change de module puis reviens pour voir les données reprises.`
+        t('papp.restaureeDepuis', { chemin })
       )
     } catch (erreur) {
       afficherErreur(erreur)
@@ -219,9 +211,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       setConfigMaj(config)
       const source = config.source === 'github' ? config.depot : config.url
       afficherSucces(
-        source
-          ? `Source des mises à jour enregistrée : ${source}`
-          : 'Mises à jour désactivées : aucun accès réseau.'
+        source ? t('papp.sourceEnregistree', { source }) : t('papp.majDesactivees')
       )
     } catch (erreur) {
       afficherErreur(erreur)
@@ -245,7 +235,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
   }
 
   async function installerMaj(): Promise<void> {
-    if (!window.confirm("Installer la mise à jour ? L'application va se fermer et redémarrer.")) return
+    if (!window.confirm(t('papp.confirmerInstallation'))) return
     try {
       await window.api.maj.installer()
     } catch (erreur) {
@@ -257,10 +247,10 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
     try {
       const resultat = await window.api.parametresApp.verifierIntegrite()
       if (resultat === 'ok') {
-        afficherSucces('Base de données saine : aucune anomalie détectée.')
+        afficherSucces(t('papp.baseSaine'))
       } else {
         setMessageSucces(null)
-        setMessageErreur(`Anomalie détectée dans la base : ${resultat}`)
+        setMessageErreur(t('papp.anomalie', { detail: resultat }))
       }
     } catch (erreur) {
       afficherErreur(erreur)
@@ -270,7 +260,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
   async function exporterTout(): Promise<void> {
     try {
       const chemin = await window.api.donnees.exporterTout()
-      if (chemin) afficherSucces(`Export terminé : ${chemin}`)
+      if (chemin) afficherSucces(t('compta.exportTermine', { chemin }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -304,7 +294,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
     }
   }
 
-  if (chargement || !params || !infos) return <p>Chargement…</p>
+  if (chargement || !params || !infos) return <p>{t('etat.chargement')}</p>
 
   return (
     <div className="pile-cartes">
@@ -328,13 +318,13 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           <label>
             {t('param.theme')}
             <select value={params.theme} onChange={(e) => modifierApparence({ theme: e.target.value as Theme })}>
-              <option value="sombre">Sombre</option>
-              <option value="clair">Clair</option>
-              <option value="auto">Automatique (suit Windows)</option>
+              <option value="sombre">{t('papp.themeSombre')}</option>
+              <option value="clair">{t('papp.themeClair')}</option>
+              <option value="auto">{t('papp.themeAuto')}</option>
             </select>
           </label>
           <label>
-            Couleur d'accent
+            {t('papp.couleurAccent')}
             <input
               type="color"
               value={params.couleurAccent}
@@ -355,44 +345,44 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           ))}
         </div>
         <p className="valeur-calculee">
-          L'aperçu est immédiat. Clique sur <strong>Enregistrer</strong> en bas pour le conserver.
+          {t('papp.apercuImmediat', { bouton: t('action.enregistrer') })}
         </p>
       </div>
 
       <div className="carte">
-        <h2>Dossiers</h2>
+        <h2>{t('papp.dossiers')}</h2>
         <label>
-          Dossier des PDF (Factures / Devis)
+          {t('papp.dossierPdf')}
           <input readOnly value={infos.dossierDocumentsEffectif} />
         </label>
         <div className="barre-boutons">
-          <button onClick={choisirDossier}>Changer de dossier…</button>
+          <button onClick={choisirDossier}>{t('papp.changerDossier')}</button>
           <button className="bouton-secondaire" onClick={reinitialiserDossier}>
-            Remettre par défaut
+            {t('papp.remettreDefaut')}
           </button>
           <button className="bouton-secondaire" onClick={() => window.api.parametresApp.ouvrirDossier('documents')}>
-            Ouvrir
+            {t('papp.ouvrir')}
           </button>
         </div>
 
         <label style={{ marginTop: '1.4rem' }}>
-          Dossier des données (base SQLite)
+          {t('papp.dossierDonnees')}
           <input readOnly value={infos.dossierDonnees} />
         </label>
         <div className="barre-boutons">
           <button className="bouton-secondaire" onClick={() => window.api.parametresApp.ouvrirDossier('donnees')}>
-            Ouvrir le dossier des données
+            {t('papp.ouvrirDossierDonnees')}
           </button>
           <button className="bouton-secondaire" onClick={() => window.api.parametresApp.ouvrirDossier('sauvegardes')}>
-            Ouvrir les sauvegardes
+            {t('papp.ouvrirSauvegardes')}
           </button>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Sauvegardes</h2>
+        <h2>{t('papp.sauvegardes')}</h2>
         <label>
-          Nombre de sauvegardes conservées
+          {t('papp.nombreConservees')}
           <input
             type="number"
             min="1"
@@ -402,19 +392,19 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           />
         </label>
         <p className="valeur-calculee">
-          Une sauvegarde est créée automatiquement à chaque démarrage et avant chaque export PDF.
+          {t('papp.sauvegardeAuto')}
           Actuellement : <strong>{infos.nbSauvegardes}</strong> sauvegarde(s).
         </p>
         <div className="barre-boutons">
-          <button onClick={sauvegarderMaintenant}>Sauvegarder maintenant</button>
+          <button onClick={sauvegarderMaintenant}>{t('papp.sauvegarderMaintenant')}</button>
         </div>
 
         {sauvegardes.length > 0 && (
           <table className="table-editable" style={{ marginTop: '1.2rem' }}>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Taille</th>
+                <th>{t('colonne.date')}</th>
+                <th>{t('papp.taille')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -424,7 +414,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
                   <td>{formaterDate(s.dateIso)}</td>
                   <td>{formaterTaille(s.tailleOctets)}</td>
                   <td>
-                    <button onClick={() => restaurer(s.nom)}>Restaurer</button>
+                    <button onClick={() => restaurer(s.nom)}>{t('papp.restaurer')}</button>
                   </td>
                 </tr>
               ))}
@@ -434,21 +424,21 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       </div>
 
       <div className="carte">
-        <h2>Sauvegarde externe chiffrée</h2>
+        <h2>{t('papp.sauvegardeExterne')}</h2>
         <p className="valeur-calculee">
           Copie chiffrée de la base vers une clé USB ou un disque externe (AES-256-GCM, mot de passe
           jamais enregistré). Indispensable en cas de panne ou de vol de l'ordinateur.
         </p>
         <label>
-          Dossier externe
+          {t('papp.dossierExterne')}
           <input readOnly value={dossierExterne ?? 'Aucun dossier choisi'} />
         </label>
         <div className="barre-boutons">
-          <button onClick={choisirDossierExterne}>Choisir le dossier…</button>
+          <button onClick={choisirDossierExterne}>{t('papp.choisirDossier')}</button>
         </div>
 
         <label style={{ marginTop: '1.2rem' }}>
-          Mot de passe de chiffrement (8 caractères minimum)
+          {t('papp.motDePasse')}
           <input
             type="password"
             autoComplete="new-password"
@@ -457,22 +447,21 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           />
         </label>
         <p className="valeur-calculee texte-alerte">
-          Note ce mot de passe ailleurs : sans lui, la sauvegarde est définitivement illisible. Il
-          n'est stocké nulle part dans l'application.
+          {t('papp.avertissementMotDePasse')}
         </p>
         <div className="barre-boutons">
-          <button onClick={sauvegarderExterne}>Sauvegarder maintenant (chiffré)</button>
+          <button onClick={sauvegarderExterne}>{t('papp.sauvegarderChiffre')}</button>
           <button className="bouton-secondaire" onClick={restaurerExterne}>
-            Restaurer depuis un fichier chiffré…
+            {t('papp.restaurerChiffre')}
           </button>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Valeurs par défaut</h2>
+        <h2>{t('papp.valeursDefaut')}</h2>
         <div className="ligne-formulaire">
           <label>
-            Délai de paiement des factures (jours)
+            {t('papp.delaiFactures')}
             <input
               type="number"
               min="0"
@@ -482,7 +471,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
             />
           </label>
           <label>
-            Validité des devis (jours)
+            {t('papp.validiteDevis')}
             <input
               type="number"
               min="0"
@@ -492,7 +481,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
             />
           </label>
           <label>
-            Alerte « facture en attente » après (jours)
+            {t('papp.alerteFacture')}
             <input
               type="number"
               min="1"
@@ -505,11 +494,11 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       </div>
 
       <div className="carte">
-        <h2>Catégories du Journal</h2>
+        <h2>{t('papp.categoriesJournal')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Libellé</th>
+              <th>{t('charge.libelle')}</th>
               <th></th>
             </tr>
           </thead>
@@ -521,7 +510,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
                 </td>
                 <td>
                   <button className="bouton-danger" onClick={() => supprimerCategorie(c.id)}>
-                    Supprimer
+                    {t('action.supprimer')}
                   </button>
                 </td>
               </tr>
@@ -530,54 +519,51 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
         </table>
         <div className="client-ajout-rapide">
           <input
-            placeholder="Nouvelle catégorie"
+            placeholder={t('papp.nouvelleCategorie')}
             value={nouvelleCategorie}
             onChange={(e) => setNouvelleCategorie(e.target.value)}
           />
-          <button onClick={ajouterCategorie}>Ajouter</button>
+          <button onClick={ajouterCategorie}>{t('papp.ajouter')}</button>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Mises à jour</h2>
+        <h2>{t('papp.misesAJour')}</h2>
         <p className="valeur-calculee">
-          Permet de diffuser une nouvelle version à tous les postes qui utilisent Ohmnia. Laisse
-          l'adresse vide pour désactiver complètement : dans ce cas l'application ne fait aucun accès
-          réseau.
+          {t('papp.majAide')}
         </p>
         <label>
-          Source des mises à jour
+          {t('papp.sourceMaj')}
           <select
             value={configMaj.source}
             onChange={(e) =>
               setConfigMaj({ ...configMaj, source: e.target.value as ConfigurationMaj['source'] })
             }
           >
-            <option value="github">Dépôt GitHub (recommandé, diffusion publique)</option>
-            <option value="url">Dossier ou serveur HTTP (réseau local)</option>
+            <option value="github">{t('papp.sourceGithub')}</option>
+            <option value="url">{t('papp.sourceUrl')}</option>
           </select>
         </label>
 
         {configMaj.source === 'github' ? (
           <>
             <label>
-              Dépôt GitHub
+              {t('papp.depotGithub')}
               <input
-                placeholder="proprietaire/depot (vide = désactivé)"
+                placeholder={t('papp.depotExemple')}
                 value={configMaj.depot}
                 onChange={(e) => setConfigMaj({ ...configMaj, depot: e.target.value })}
               />
             </label>
             <p className="valeur-calculee">
-              L'application lira la dernière <em>release</em> publiée sur ce dépôt. Le dépôt doit être
-              public, ou les fichiers de version accessibles sans authentification.
+              {t('papp.depotAide', { release: 'release' })}
             </p>
           </>
         ) : (
           <label>
-            Adresse de publication
+            {t('papp.adressePublication')}
             <input
-              placeholder="http://192.168.1.20/ohmnia (vide = désactivé)"
+              placeholder={t('papp.adresseExemple')}
               value={configMaj.url ?? ''}
               onChange={(e) => setConfigMaj({ ...configMaj, url: e.target.value })}
             />
@@ -590,34 +576,35 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
             checked={configMaj.auto}
             onChange={(e) => setConfigMaj({ ...configMaj, auto: e.target.checked })}
           />
-          Vérifier automatiquement au démarrage
+          {t('papp.verifierDemarrage')}
         </label>
         <div className="barre-boutons">
-          <button onClick={enregistrerConfigurationMaj}>Enregistrer l'adresse</button>
+          <button onClick={enregistrerConfigurationMaj}>{t('papp.enregistrerAdresse')}</button>
           <button className="bouton-secondaire" onClick={verifierMaj}>
-            Vérifier maintenant
+            {t('papp.verifierMaintenant')}
           </button>
         </div>
 
         <div className="resultats-calcules">
           <p>
-            Version installée : <strong>{etatMaj?.versionActuelle ?? infos.version}</strong>
+            {t('papp.versionInstallee')}{' '}
+            <strong>{etatMaj?.versionActuelle ?? infos.version}</strong>
           </p>
-          {etatMaj?.statut === 'verification' && <p>Vérification en cours…</p>}
-          {etatMaj?.statut === 'aJour' && <p>Cette version est à jour.</p>}
+          {etatMaj?.statut === 'verification' && <p>{t('papp.verificationEnCours')}</p>}
+          {etatMaj?.statut === 'aJour' && <p>{t('papp.aJour')}</p>}
           {etatMaj?.statut === 'disponible' && (
             <>
               <p>
-                Nouvelle version disponible : <strong>{etatMaj.versionDisponible}</strong>
+                {t('papp.nouvelleVersion')} <strong>{etatMaj.versionDisponible}</strong>
               </p>
               <div className="barre-boutons">
-                <button onClick={telechargerMaj}>Télécharger</button>
+                <button onClick={telechargerMaj}>{t('papp.telecharger')}</button>
               </div>
             </>
           )}
           {etatMaj?.statut === 'telechargement' && (
             <>
-              <p>Téléchargement… {etatMaj.pourcentage ?? 0} %</p>
+              <p>{t('papp.telechargement', { pct: etatMaj.pourcentage ?? 0 })}</p>
               <div className="barre-progression">
                 <div
                   className="barre-progression-remplissage"
@@ -629,11 +616,10 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           {etatMaj?.statut === 'telechargee' && (
             <>
               <p>
-                Version <strong>{etatMaj.versionDisponible}</strong> téléchargée et prête à installer.
-                L'application va redémarrer.
+                <strong>{etatMaj.versionDisponible}</strong> {t('papp.prete')}
               </p>
               <div className="barre-boutons">
-                <button onClick={installerMaj}>Installer et redémarrer</button>
+                <button onClick={installerMaj}>{t('papp.installerRedemarrer')}</button>
               </div>
             </>
           )}
@@ -642,21 +628,21 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       </div>
 
       <div className="carte">
-        <h2>Informations & maintenance</h2>
+        <h2>{t('papp.infosTitre')}</h2>
         <table className="table-infos">
           <tbody>
             <tr>
-              <th>Version d'Ohmnia</th>
+              <th>{t('papp.versionOhmnia')}</th>
               <td>{infos.version}</td>
             </tr>
             <tr>
-              <th>Electron / Node</th>
+              <th>{t('papp.electronNode')}</th>
               <td>
                 {infos.versionElectron} / {infos.versionNode}
               </td>
             </tr>
             <tr>
-              <th>Base de données</th>
+              <th>{t('papp.baseDeDonnees')}</th>
               <td>
                 {infos.cheminBase} ({formaterTaille(infos.tailleBaseOctets)})
               </td>
@@ -664,42 +650,41 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           </tbody>
         </table>
         <div className="barre-boutons">
-          <button onClick={verifierIntegrite}>Vérifier l'intégrité de la base</button>
+          <button onClick={verifierIntegrite}>{t('papp.verifierIntegrite')}</button>
           <button className="bouton-secondaire" onClick={exporterTout}>
-            Exporter toutes les données (JSON)
+            {t('papp.exporterTout')}
           </button>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Conditions d'utilisation</h2>
+        <h2>{t('papp.conditionsTitre')}</h2>
         <p className="valeur-calculee">
-          Conditions de l'application elle-même — à ne pas confondre avec vos conditions générales
-          de vente, qui se saisissent dans « Mon entreprise » et s'impriment sur vos factures.
+          {t('papp.conditionsAide')}
         </p>
         {etatConditions && (
           <table className="table-infos">
             <tbody>
               <tr>
-                <th>Version acceptée</th>
+                <th>{t('papp.versionAcceptee')}</th>
                 <td>
                   {etatConditions.versionAcceptee || '—'}
                   {etatConditions.versionAcceptee &&
                     etatConditions.versionAcceptee !== etatConditions.versionCourante &&
-                    ` (version actuelle : ${etatConditions.versionCourante})`}
+                    t('papp.versionActuelle', { version: etatConditions.versionCourante })}
                 </td>
               </tr>
               <tr>
-                <th>Acceptées le</th>
+                <th>{t('papp.accepteesLe')}</th>
                 <td>{etatConditions.accepteeLe || '—'}</td>
               </tr>
             </tbody>
           </table>
         )}
         <div className="barre-boutons">
-          <button onClick={() => setConditionsOuvertes(true)}>Relire les conditions</button>
+          <button onClick={() => setConditionsOuvertes(true)}>{t('papp.relireConditions')}</button>
           <button className="bouton-secondaire" onClick={() => window.api.conditions.ouvrirPage()}>
-            Ouvrir la page en ligne
+            {t('papp.ouvrirPageEnLigne')}
           </button>
         </div>
       </div>
@@ -721,7 +706,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
 
       <div className="carte">
         <div className="barre-boutons" style={{ marginTop: 0 }}>
-          <button onClick={enregistrer}>Enregistrer les paramètres</button>
+          <button onClick={enregistrer}>{t('papp.enregistrerParametres')}</button>
         </div>
         {messageErreur && <p className="erreur">{messageErreur}</p>}
         {messageSucces && <p className="succes">{messageSucces}</p>}

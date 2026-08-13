@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ResultatRecherche, TypeResultatRecherche } from '../../../shared/types'
+import { t } from '../../../shared/i18n'
 
 const ICONES: Record<TypeResultatRecherche, string> = {
   client: '👤',
@@ -65,14 +66,14 @@ export default function RechercheGlobale({ onFermer, onNaviguer }: Props): React
         <input
           ref={champRef}
           className="palette-champ"
-          placeholder="Rechercher un client, une facture, un article…"
+          placeholder={t('recherche.placeholder')}
           value={terme}
           onChange={(e) => setTerme(e.target.value)}
         />
 
         {terme.trim().length < 2 ? (
           <p className="palette-aide">
-            Tape au moins 2 caractères. Flèches pour naviguer, Entrée pour ouvrir, Échap pour fermer.
+            {t('recherche.aide')}
           </p>
         ) : resultats.length === 0 ? (
           <p className="palette-aide">Aucun résultat pour « {terme} ».</p>

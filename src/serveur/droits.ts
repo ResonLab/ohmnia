@@ -39,6 +39,7 @@ export const DROITS: Record<string, Role> = {
   'rappels:prochainNiveau': 'lecture',
   'rappels:creer': 'ecriture',
   'rappels:supprimer': 'ecriture',
+  'rappels:aFaire': 'lecture',
 
   /* Résumé annuel */
   'resume:parAnnee': 'lecture',

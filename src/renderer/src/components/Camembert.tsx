@@ -1,4 +1,5 @@
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 const PALETTE = ['#2c6e49', '#2c3e50', '#c9963a', '#7b3f61', '#3a7ca5', '#b91c1c', '#5a7d5a', '#8a6d3b']
 
 interface Props {
@@ -14,7 +15,7 @@ export default function Camembert({ donnees }: Props): React.JSX.Element {
   const total = donnees.reduce((s, d) => s + d.valeur, 0)
 
   if (total <= 0) {
-    return <p className="graphique-vide">Aucune donnée à afficher pour cette sélection.</p>
+    return <p className="graphique-vide">{t('graphique.aucuneSelection')}</p>
   }
 
   const centre = 90

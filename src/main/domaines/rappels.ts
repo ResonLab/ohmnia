@@ -1,6 +1,8 @@
 import { getDb } from '../db/database'
 import { tracerAudit } from '../db/audit'
 import type { Rappel } from '../../shared/types'
+import { calculerRelances, type FacturePourRelance, type RelanceProposee } from '../../shared/calculs'
+import { lireParametresApp } from './parametresApp'
 
 /** Rappels de paiement. Aucune dépendance à Electron. */
 
@@ -71,4 +73,51 @@ export function creerRappel(factureId: number, niveau: number, frais: number): R
 
 export function supprimerRappel(id: number): void {
   getDb().prepare('DELETE FROM rappels WHERE id = ?').run(id)
+}
+
+/**
+ * Les factures qu'il faudrait relancer aujourd'hui.
+ *
+ * **Le SQL ne décide rien** : il rassemble ce qu'il faut savoir — statut,
+ * échéance, nombre de rappels, date du dernier — et `calculerRelances` tranche.
+ * La règle vit dans `shared/calculs.ts`, avec les autres formules, parce
+ * qu'elle doit pouvoir être éprouvée sans base ni fenêtre. Recopiée en SQL,
+ * elle finirait par contredire les tests qui la vérifient.
+ *
+ * Le seuil de première relance est celui que l'utilisateur a déjà choisi dans
+ * les paramètres : lui en demander un second serait lui demander de tenir deux
+ * réglages cohérents entre eux, ce que personne ne fait.
+ */
+export function relancesAFaire(): RelanceProposee[] {
+  const lignes = getDb()
+    .prepare(
+      `SELECT f.id, f.numero, f.date_echeance, f.statut,
+              COALESCE(c.nom, 'Client supprimé') AS client_nom,
+              (SELECT COUNT(*) FROM rappels r WHERE r.facture_id = f.id) AS nb_rappels,
+              (SELECT MAX(r.date) FROM rappels r WHERE r.facture_id = f.id) AS dernier_rappel
+       FROM factures f
+       LEFT JOIN clients c ON c.id = f.client_id`
+    )
+    .all() as unknown as {
+    id: number
+    numero: string
+    date_echeance: string
+    statut: string
+    client_nom: string
+    nb_rappels: number
+    dernier_rappel: string | null
+  }[]
+
+  const factures: FacturePourRelance[] = lignes.map((ligne) => ({
+    id: ligne.id,
+    numero: ligne.numero,
+    clientNom: ligne.client_nom,
+    statut: ligne.statut,
+    dateEcheance: ligne.date_echeance,
+    nombreRappels: ligne.nb_rappels,
+    dernierRappelLe: ligne.dernier_rappel
+  }))
+
+  const aujourdhui = new Date().toISOString().slice(0, 10)
+  return calculerRelances(factures, aujourdhui, lireParametresApp().seuilAlerteFactureJours)
 }

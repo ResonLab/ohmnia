@@ -11,11 +11,13 @@ import Camembert from '../components/Camembert'
 import BarresAnnuelles from '../components/BarresAnnuelles'
 import Justificatifs from '../components/Justificatifs'
 import { formaterMontant, symboleDevise } from '../lib/devise'
+import { t } from '../../../shared/i18n'
+import { TYPES_MOUVEMENT, TYPE_PAR_DEFAUT, cleTypeMouvement } from '../../../shared/journal'
 
 function ecritureVide(): Omit<EcritureJournal, 'id' | 'annee' | 'categorieLibelle' | 'montantTva'> {
   return {
     date: new Date().toISOString().slice(0, 10),
-    type: 'Dépense',
+    type: TYPE_PAR_DEFAUT,
     categorieId: null,
     description: '',
     montant: 0,
@@ -80,7 +82,7 @@ export default function Journal(): React.JSX.Element {
       setNouvelleEcriture(ecritureVide())
       await recharger()
     } catch (erreur) {
-      setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+      setMessageErreur(erreur instanceof Error ? erreur.message : t('erreur.inconnue'))
     }
   }
 
@@ -96,10 +98,10 @@ export default function Journal(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Ajout rapide</h2>
+        <h2>{t('journal.ajoutRapide')}</h2>
         <div className="ligne-formulaire">
           <label>
-            Date
+            {t('colonne.date')}
             <input
               type="date"
               value={nouvelleEcriture.date}
@@ -107,19 +109,22 @@ export default function Journal(): React.JSX.Element {
             />
           </label>
           <label>
-            Type
+            {t('journal.type')}
             <select
               value={nouvelleEcriture.type}
               onChange={(e) =>
                 setNouvelleEcriture({ ...nouvelleEcriture, type: e.target.value as TypeMouvement })
               }
             >
-              <option value="Entrée">Entrée</option>
-              <option value="Dépense">Dépense</option>
+              {TYPES_MOUVEMENT.map((type) => (
+                <option key={type.valeur} value={type.valeur}>
+                  {t(type.cle)}
+                </option>
+              ))}
             </select>
           </label>
           <label>
-            Catégorie
+            {t('journal.categorie')}
             <select
               value={nouvelleEcriture.categorieId ?? ''}
               onChange={(e) =>
@@ -138,14 +143,14 @@ export default function Journal(): React.JSX.Element {
             </select>
           </label>
           <label>
-            Description
+            {t('journal.description')}
             <input
               value={nouvelleEcriture.description}
               onChange={(e) => setNouvelleEcriture({ ...nouvelleEcriture, description: e.target.value })}
             />
           </label>
           <label>
-            Montant ({symboleDevise()})
+            {t('journal.montantDevise', { devise: symboleDevise() })}
             <input
               type="number"
               step="0.05"
@@ -156,7 +161,7 @@ export default function Journal(): React.JSX.Element {
             />
           </label>
           <label>
-            TVA %
+            {t('journal.tvaPct')}
             <input
               type="number"
               step="0.1"
@@ -170,7 +175,7 @@ export default function Journal(): React.JSX.Element {
             />
           </label>
           <label>
-            N° facture liée
+            {t('journal.numeroFactureLiee')}
             <input
               value={nouvelleEcriture.numeroFacture ?? ''}
               onChange={(e) =>
@@ -180,23 +185,23 @@ export default function Journal(): React.JSX.Element {
           </label>
         </div>
         <label>
-          Notes
+          {t('journal.notes')}
           <textarea
             value={nouvelleEcriture.notes}
             onChange={(e) => setNouvelleEcriture({ ...nouvelleEcriture, notes: e.target.value })}
           />
         </label>
-        <button className="action-ecriture" onClick={ajouterEcriture}>Ajouter au journal</button>
+        <button className="action-ecriture" onClick={ajouterEcriture}>{t('journal.ajouterAuJournal')}</button>
         {messageErreur && <p className="erreur">{messageErreur}</p>}
       </div>
 
       <div className="carte">
-        <h2>Tableau de bord</h2>
+        <h2>{t('journal.tableauDeBord')}</h2>
         <div className="ligne-formulaire">
           <label>
-            Année
+            {t('resume.annee')}
             <select value={filtreAnnee} onChange={(e) => setFiltreAnnee(e.target.value === '' ? '' : Number(e.target.value))}>
-              <option value="">Toutes</option>
+              <option value="">{t('journal.toutes')}</option>
               {anneesDisponibles.map((a) => (
                 <option key={a} value={a}>
                   {a}
@@ -205,20 +210,23 @@ export default function Journal(): React.JSX.Element {
             </select>
           </label>
           <label>
-            Type
+            {t('journal.type')}
             <select value={filtreType} onChange={(e) => setFiltreType(e.target.value as TypeMouvement | '')}>
-              <option value="">Tous</option>
-              <option value="Entrée">Entrée</option>
-              <option value="Dépense">Dépense</option>
+              <option value="">{t('journal.tous')}</option>
+              {TYPES_MOUVEMENT.map((type) => (
+                <option key={type.valeur} value={type.valeur}>
+                  {t(type.cle)}
+                </option>
+              ))}
             </select>
           </label>
           <label>
-            Catégorie
+            {t('journal.categorie')}
             <select
               value={filtreCategorieId}
               onChange={(e) => setFiltreCategorieId(e.target.value === '' ? '' : Number(e.target.value))}
             >
-              <option value="">Toutes</option>
+              <option value="">{t('journal.toutes')}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.libelle}
@@ -229,20 +237,21 @@ export default function Journal(): React.JSX.Element {
         </div>
 
         {chargement ? (
-          <p>Chargement…</p>
+          <p>{t('etat.chargement')}</p>
         ) : (
           <>
             <p className="valeur-calculee">
-              Total : <strong>{formaterMontant(total)}</strong> — {ecritures.length} ligne(s)
+              {t('colonne.total')} : <strong>{formaterMontant(total)}</strong> —{' '}
+              {t('journal.totalLignes', { nombre: ecritures.length })}
             </p>
 
             <div className="graphiques-cote-a-cote">
               <div>
-                <h3>Répartition par catégorie</h3>
+                <h3>{t('journal.repartition')}</h3>
                 <Camembert donnees={repartition.map((r) => ({ label: r.categorie, valeur: r.total }))} />
               </div>
               <div>
-                <h3>Évolution annuelle Entrées vs Dépenses</h3>
+                <h3>{t('journal.evolution')}</h3>
                 <BarresAnnuelles donnees={evolution} />
               </div>
             </div>
@@ -250,14 +259,14 @@ export default function Journal(): React.JSX.Element {
             <table className="table-editable">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Catégorie</th>
-                  <th>Description</th>
-                  <th>Montant</th>
-                  <th>TVA</th>
-                  <th>Facture</th>
-                  <th>Justif.</th>
+                  <th>{t('colonne.date')}</th>
+                  <th>{t('journal.type')}</th>
+                  <th>{t('journal.categorie')}</th>
+                  <th>{t('journal.description')}</th>
+                  <th>{t('colonne.montant')}</th>
+                  <th>{t('journal.tva')}</th>
+                  <th>{t('colonne.facture')}</th>
+                  <th>{t('journal.justif')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -265,7 +274,7 @@ export default function Journal(): React.JSX.Element {
                 {ecritures.map((e) => (
                   <tr key={e.id}>
                     <td>{e.date}</td>
-                    <td>{e.type}</td>
+                    <td>{t(cleTypeMouvement(e.type))}</td>
                     <td>{e.categorieLibelle ?? '—'}</td>
                     <td>{e.description}</td>
                     <td>{formaterMontant(e.montant)}</td>
@@ -278,7 +287,7 @@ export default function Journal(): React.JSX.Element {
                     </td>
                     <td>
                       <button className="action-ecriture bouton-danger" onClick={() => supprimerEcriture(e.id)}>
-                        Supprimer
+                        {t('action.supprimer')}
                       </button>
                     </td>
                   </tr>

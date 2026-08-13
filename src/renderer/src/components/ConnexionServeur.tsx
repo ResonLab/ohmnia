@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import LogoOhmnia from './LogoOhmnia'
 import type { EtatMultipostes, SessionMultipostes } from '../../../shared/types'
+import { t } from '../../../shared/i18n'
 
 /**
  * Écran de connexion au serveur multi-postes.
@@ -71,20 +72,21 @@ export default function ConnexionServeur({
         <div className="connexion-entete">
           <LogoOhmnia taille={48} />
           <div>
-            <h1>Ohmnia — mode multi-postes</h1>
+            <h1>{t('connexion.titre')}</h1>
             <p className="discret">{etat.adresse}</p>
           </div>
         </div>
 
         {premiereInstallation && (
           <p className="encadre-info">
-            Ce serveur est neuf : aucun compte n’existe encore. Le compte que vous créez ici sera
-            <strong> administrateur</strong> et pourra ensuite créer ceux de vos collègues.
+            {t('connexion.serveurNeuf')}
+            <strong>{t('connexion.administrateur')}</strong>
+            {t('connexion.serveurNeufSuite')}
           </p>
         )}
 
         <label>
-          Identifiant
+          {t('connexion.identifiant')}
           <input
             value={identifiant}
             onChange={(e) => setIdentifiant(e.target.value)}
@@ -95,13 +97,13 @@ export default function ConnexionServeur({
 
         {premiereInstallation && (
           <label>
-            Nom affiché (facultatif)
+            {t('connexion.nomAffiche')}
             <input value={nomAffiche} onChange={(e) => setNomAffiche(e.target.value)} />
           </label>
         )}
 
         <label>
-          Mot de passe
+          {t('connexion.motDePasse')}
           <input
             type="password"
             value={motDePasse}
@@ -111,7 +113,7 @@ export default function ConnexionServeur({
         </label>
 
         {premiereInstallation && (
-          <p className="discret">Au moins 10 caractères, avec une lettre et un chiffre.</p>
+          <p className="discret">{t('connexion.exigenceMotDePasse')}</p>
         )}
 
         {erreur && <p className="erreur">{erreur}</p>}
@@ -119,19 +121,18 @@ export default function ConnexionServeur({
         <div className="connexion-actions">
           <button type="submit" className="principal" disabled={occupe}>
             {occupe
-              ? 'Connexion…'
+              ? t('connexion.enCours')
               : premiereInstallation
-                ? 'Créer le compte administrateur'
-                : 'Se connecter'}
+                ? t('connexion.creerAdministrateur')
+                : t('connexion.seConnecter')}
           </button>
           <button type="button" onClick={onRetourLocal} disabled={occupe}>
-            Revenir au mode local
+            {t('multi.revenirLocal')}
           </button>
         </div>
 
         <p className="discret">
-          Le mot de passe n’est jamais enregistré sur ce poste : il est redemandé à chaque
-          ouverture.
+          {t('connexion.motDePasseNonEnregistre')}
         </p>
       </form>
     </div>

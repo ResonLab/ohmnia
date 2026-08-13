@@ -10,6 +10,8 @@ import { calculerDateValidite, calculerTotalDocument } from '../../../shared/cal
 import ClientSelecteur from '../components/ClientSelecteur'
 import Modale from '../components/Modale'
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
+import { STATUTS_DEVIS } from '../../../shared/documents'
 
 function ligneVide(): DevisLigne {
   return { id: -Date.now(), designation: '', quantite: 1, prixUnitaire: 0 }
@@ -41,7 +43,7 @@ export default function DevisPage(): React.JSX.Element {
   async function creerBrouillon(): Promise<void> {
     setMessageErreur(null)
     if (!clientIdNouveau) {
-      setMessageErreur('Choisissez d\'abord un client pour créer le devis.')
+      setMessageErreur(t('devis.choisirClient'))
       return
     }
     try {
@@ -69,7 +71,7 @@ export default function DevisPage(): React.JSX.Element {
       setBrouillon({ ...misAJour, lignes: misAJour.lignes.length ? misAJour.lignes : [ligneVide()] })
       await rechargerHistorique()
       setMessageErreur(null)
-      setMessageInfo('Devis enregistré.')
+      setMessageInfo(t('devis.enregistre'))
       return misAJour
     } catch (erreur) {
       afficherErreur(erreur)
@@ -83,7 +85,7 @@ export default function DevisPage(): React.JSX.Element {
     if (!misAJour) return
     try {
       const chemin = await window.api.pdf.generer('devis', misAJour.id)
-      setMessageInfo(`PDF exporté : ${chemin}`)
+      setMessageInfo(t('devis.pdfExporte', { chemin }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -106,7 +108,9 @@ export default function DevisPage(): React.JSX.Element {
     setBrouillon({ ...brouillon, lignes: [...lignesUtiles, ...nouvellesLignes] })
     setModeleAInserer(false)
     setMessageErreur(null)
-    setMessageInfo(`${nouvellesLignes.length} ligne(s) insérée(s) depuis « ${modele.nom} ».`)
+    setMessageInfo(
+      t('devis.lignesInserees', { nombre: nouvellesLignes.length, modele: modele.nom })
+    )
   }
 
   async function dupliquerDevis(id: number): Promise<void> {
@@ -115,7 +119,7 @@ export default function DevisPage(): React.JSX.Element {
       await rechargerHistorique()
       setBrouillon({ ...copie, lignes: copie.lignes.length ? copie.lignes : [ligneVide()] })
       setMessageErreur(null)
-      setMessageInfo(`Devis dupliqué sous le numéro ${copie.numero}.`)
+      setMessageInfo(t('devis.duplique', { numero: copie.numero }))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -127,7 +131,7 @@ export default function DevisPage(): React.JSX.Element {
       await rechargerHistorique()
       setMessageErreur(null)
       setMessageInfo(
-        `Facture ${facture.numero} créée depuis ce devis. Ouvre le module Facturation pour la compléter.`
+        t('devis.factureCreee', { numero: facture.numero })
       )
     } catch (erreur) {
       afficherErreur(erreur)
@@ -140,7 +144,7 @@ export default function DevisPage(): React.JSX.Element {
   }
 
   async function supprimerDevis(id: number): Promise<void> {
-    if (!window.confirm('Supprimer définitivement ce devis ?')) return
+    if (!window.confirm(t('devis.confirmerSuppression'))) return
     await window.api.devis.supprimer(id)
     if (brouillon?.id === id) setBrouillon(null)
     await rechargerHistorique()
@@ -166,14 +170,14 @@ export default function DevisPage(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Nouveau devis</h2>
+        <h2>{t('devis.nouveau')}</h2>
         <div className="ligne-formulaire">
           <label>
-            Client
+            {t('colonne.client')}
             <ClientSelecteur clientId={clientIdNouveau} onChange={setClientIdNouveau} />
           </label>
         </div>
-        <button className="action-ecriture" onClick={creerBrouillon}>Créer un brouillon de devis</button>
+        <button className="action-ecriture" onClick={creerBrouillon}>{t('devis.creerBrouillon')}</button>
       </div>
 
       {brouillon && (
@@ -182,14 +186,14 @@ export default function DevisPage(): React.JSX.Element {
 
           <div className="ligne-formulaire">
             <label>
-              Numéro
+              {t('devis.numero')}
               <input
                 value={brouillon.numero}
                 onChange={(e) => setBrouillon({ ...brouillon, numero: e.target.value })}
               />
             </label>
             <label>
-              Date
+              {t('colonne.date')}
               <input
                 type="date"
                 value={brouillon.date}
@@ -197,7 +201,7 @@ export default function DevisPage(): React.JSX.Element {
               />
             </label>
             <label>
-              Validité (jours)
+              {t('devis.validiteJours')}
               <input
                 type="number"
                 step="1"
@@ -206,11 +210,11 @@ export default function DevisPage(): React.JSX.Element {
               />
             </label>
             <label>
-              Valable jusqu'au
+              {t('doc.valableJusquau')}
               <input readOnly value={calculerDateValidite(brouillon.date, brouillon.validiteJours)} />
             </label>
             <label>
-              Client
+              {t('colonne.client')}
               <ClientSelecteur
                 clientId={brouillon.clientId}
                 onChange={(clientId) => setBrouillon({ ...brouillon, clientId })}
@@ -221,10 +225,10 @@ export default function DevisPage(): React.JSX.Element {
           <table className="table-editable">
             <thead>
               <tr>
-                <th>Désignation</th>
-                <th>Qté</th>
-                <th>Prix unitaire</th>
-                <th>Total</th>
+                <th>{t('colonne.designation')}</th>
+                <th>{t('doc.quantite')}</th>
+                <th>{t('doc.prixUnitaire')}</th>
+                <th>{t('colonne.total')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -258,7 +262,7 @@ export default function DevisPage(): React.JSX.Element {
                   <td>{formaterMontant(ligne.quantite * ligne.prixUnitaire)}</td>
                   <td>
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerLigne(index)}>
-                      Retirer
+                      {t('devis.retirer')}
                     </button>
                   </td>
                 </tr>
@@ -271,14 +275,14 @@ export default function DevisPage(): React.JSX.Element {
             </button>
             {modeles.length > 0 && (
               <button className="action-ecriture bouton-secondaire" onClick={() => setModeleAInserer(true)}>
-                Insérer un modèle
+                {t('devis.insererModele')}
               </button>
             )}
           </div>
 
           <div className="ligne-formulaire" style={{ marginTop: '1rem' }}>
             <label>
-              Remise (%)
+              {t('devis.remisePct')}
               <input
                 type="number"
                 step="1"
@@ -287,7 +291,7 @@ export default function DevisPage(): React.JSX.Element {
               />
             </label>
             <label>
-              TVA (%)
+              {t('devis.tvaPct')}
               <input
                 type="number"
                 step="0.1"
@@ -296,49 +300,54 @@ export default function DevisPage(): React.JSX.Element {
               />
             </label>
             <label>
-              Statut
+              {t('devis.statut')}
               <select
                 value={brouillon.statut}
                 onChange={(e) => setBrouillon({ ...brouillon, statut: e.target.value as StatutDevis })}
               >
-                <option value="En attente">En attente</option>
-                <option value="Accepté">Accepté</option>
-                <option value="Refusé">Refusé</option>
+                {STATUTS_DEVIS.map((statut) => (
+                  <option key={statut.valeur} value={statut.valeur}>
+                    {t(statut.cle)}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
 
           {totaux && (
             <div className="resultats-calcules">
-              <p>Sous-total : {formaterMontant(totaux.sousTotal)}</p>
-              {brouillon.remisePct > 0 && <p>Remise : {brouillon.remisePct}%</p>}
+              <p>{t('devis.sousTotal', { montant: formaterMontant(totaux.sousTotal) })}</p>
+              {brouillon.remisePct > 0 && <p>{t('devis.remiseLigne', { pct: brouillon.remisePct })}</p>}
               <p>
-                TVA ({brouillon.tvaPct}%) : {formaterMontant(totaux.montantTva)}
+                {t('devis.tvaLigne', {
+                  pct: brouillon.tvaPct,
+                  montant: formaterMontant(totaux.montantTva)
+                })}
               </p>
               <p>
-                <strong>TOTAL DEVIS : {formaterMontant(totaux.total)}</strong>
+                <strong>{t('devis.totalLigne', { montant: formaterMontant(totaux.total) })}</strong>
               </p>
             </div>
           )}
 
           <div className="barre-boutons">
-            <button className="action-ecriture" onClick={enregistrerBrouillon}>Enregistrer</button>
-            <button onClick={exporterPdf}>Exporter en PDF</button>
+            <button className="action-ecriture" onClick={enregistrerBrouillon}>{t('action.enregistrer')}</button>
+            <button onClick={exporterPdf}>{t('devis.exporterPdf')}</button>
           </div>
         </div>
       )}
 
       <div className="carte">
-        <h2>Historique des devis</h2>
+        <h2>{t('devis.historique')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Numéro</th>
-              <th>Date</th>
-              <th>Client</th>
-              <th>Statut</th>
+              <th>{t('devis.numero')}</th>
+              <th>{t('colonne.date')}</th>
+              <th>{t('colonne.client')}</th>
+              <th>{t('devis.statut')}</th>
               <th>Total</th>
-              <th>Facturé</th>
+              <th>{t('devis.facture')}</th>
               <th></th>
             </tr>
           </thead>
@@ -353,21 +362,23 @@ export default function DevisPage(): React.JSX.Element {
                     value={devis.statut}
                     onChange={(e) => changerStatut(devis.id, e.target.value as StatutDevis)}
                   >
-                    <option value="En attente">En attente</option>
-                    <option value="Accepté">Accepté</option>
-                    <option value="Refusé">Refusé</option>
+                    {STATUTS_DEVIS.map((statut) => (
+                      <option key={statut.valeur} value={statut.valeur}>
+                        {t(statut.cle)}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td>{formaterMontant(devis.total)}</td>
                 <td className="colonne-etroite">{devis.factureLiee ?? '—'}</td>
                 <td className="cellule-actions">
-                  <button onClick={() => ouvrirBrouillon(devis.id)}>Ouvrir</button>
-                  <button className="action-ecriture" onClick={() => dupliquerDevis(devis.id)}>Dupliquer</button>
+                  <button onClick={() => ouvrirBrouillon(devis.id)}>{t('devis.ouvrir')}</button>
+                  <button className="action-ecriture" onClick={() => dupliquerDevis(devis.id)}>{t('devis.dupliquer')}</button>
                   {!devis.factureLiee && (
-                    <button className="action-ecriture" onClick={() => convertirEnFacture(devis.id)}>→ Facture</button>
+                    <button className="action-ecriture" onClick={() => convertirEnFacture(devis.id)}>{t('devis.versFacture')}</button>
                   )}
                   <button className="action-ecriture bouton-danger" onClick={() => supprimerDevis(devis.id)}>
-                    Supprimer
+                    {t('action.supprimer')}
                   </button>
                 </td>
               </tr>
@@ -377,14 +388,16 @@ export default function DevisPage(): React.JSX.Element {
       </div>
 
       {modeleAInserer && (
-        <Modale titre="Insérer un modèle de prestations" onFermer={() => setModeleAInserer(false)}>
-          <p>Les lignes du modèle seront ajoutées à la suite de celles déjà saisies.</p>
+        <Modale titre={t('devis.modaleModele')} onFermer={() => setModeleAInserer(false)}>
+          <p>{t('devis.modaleAide')}</p>
           <ul className="liste-modeles">
             {modeles.map((m) => (
               <li key={m.id}>
                 <button className="action-ecriture" onClick={() => insererModele(m.id)}>
                   <span className="liste-clients-nom">{m.nom}</span>
-                  <span className="liste-clients-meta">{m.lignes.length} ligne(s)</span>
+                  <span className="liste-clients-meta">
+                    {t('devis.lignesModele', { nombre: m.lignes.length })}
+                  </span>
                 </button>
               </li>
             ))}

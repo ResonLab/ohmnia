@@ -44,7 +44,31 @@ const ECRANS_TRADUITS = [
   'src/renderer/src/App.tsx',
   'src/renderer/src/pages/Accueil.tsx',
   'src/renderer/src/pages/Inventaire.tsx',
-  'src/renderer/src/pages/Clients.tsx'
+  'src/renderer/src/pages/Clients.tsx',
+  'src/renderer/src/pages/ResumeAnnuelPage.tsx',
+  'src/renderer/src/pages/Comptabilite.tsx',
+  'src/renderer/src/pages/Modeles.tsx',
+  'src/renderer/src/pages/Audit.tsx',
+  'src/renderer/src/pages/ImpressionDocument.tsx',
+  'src/renderer/src/pages/Tarifs.tsx',
+  'src/renderer/src/pages/Journal.tsx',
+  'src/renderer/src/pages/SuiviTemps.tsx',
+  'src/renderer/src/pages/ChargesMarge.tsx',
+  'src/renderer/src/pages/AjoutRapide.tsx',
+  'src/renderer/src/pages/DevisPage.tsx',
+  'src/renderer/src/pages/Facturation.tsx',
+  'src/renderer/src/pages/ParametresApp.tsx',
+  // Les composants partagés. Ils ne sont pas des « écrans » — le compte affiché
+  // plus bas ne les inclut pas — mais ils portent du texte que l'utilisateur
+  // lit, et rien ne protégerait ce texte sans les inscrire ici.
+  'src/renderer/src/components/RechercheGlobale.tsx',
+  'src/renderer/src/components/BarresAnnuelles.tsx',
+  'src/renderer/src/components/Camembert.tsx',
+  'src/renderer/src/components/ClientSelecteur.tsx',
+  'src/renderer/src/components/Justificatifs.tsx',
+  'src/renderer/src/components/ConditionsUtilisation.tsx',
+  'src/renderer/src/components/ReglageMultipostes.tsx',
+  'src/renderer/src/components/ConnexionServeur.tsx'
 ]
 
 /**
@@ -140,7 +164,12 @@ for (const relatif of ECRANS_TRADUITS) {
   let dansCommentaire = false
   contenu.split('\n').forEach((ligne, index) => {
     const nue = ligne.trim()
-    if (nue.startsWith('/*')) dansCommentaire = true
+    // `{/*` ouvre un commentaire JSX. Ne reconnaître que `/*` laissait passer
+    // tout le bloc : les apostrophes du texte y formaient de fausses chaînes,
+    // et le contrôle accusait un commentaire d'être du français en dur. **Un
+    // faux échec use un contrôle aussi sûrement qu'un faux succès** — on
+    // apprend à ignorer sa sortie, puis on le supprime.
+    if (nue.startsWith('/*') || nue.startsWith('{/*')) dansCommentaire = true
     if (dansCommentaire) {
       if (nue.includes('*/')) dansCommentaire = false
       return
@@ -154,14 +183,110 @@ for (const relatif of ECRANS_TRADUITS) {
         echec(`${etiquette}:${index + 1} — texte français en dur : « ${texte.trim()} »`)
       }
     }
+
+    /**
+     * **Et les chaînes littérales**, qui sont l'essentiel de ce qui échappait.
+     *
+     * Le contrôle ci-dessus ne regardait que le texte entre balises. Il ne
+     * pouvait donc pas voir un `placeholder="Rechercher un client…"`, un
+     * `alert('Client créé.')`, un `title=`, ni un ternaire
+     * `{paye ? 'Payée' : 'En attente'}` — c'est-à-dire une bonne part du texte
+     * qu'un utilisateur lit vraiment.
+     *
+     * **Ce n'était pas un contrôle incapable d'échouer** : il échouait très
+     * bien sur ce qu'il regardait. C'est la troisième forme, plus sournoise —
+     * une vérification dont on a étendu la confiance au-delà de son champ. Le
+     * symptôme est le même : on ne cherche plus à la main ce qu'on croit
+     * couvert. Et il a laissé passer, sous une suite verte, trois messages
+     * français en dur dans `Clients.tsx` et la liste des catégories
+     * d'`Inventaire.tsx`, deux écrans **déclarés traduits**.
+     *
+     * Toute chaîne accentuée est refusée, sans exception de commodité : dans un
+     * écran déclaré traduit, il n'y a aucune raison légitime d'en écrire une.
+     * Une exception serait la porte par laquelle le contrôle recommencerait à
+     * ne plus rien regarder.
+     */
+    // Les trois sortes de délimiteur, l'accent grave compris : `${nb} écritures`
+    // est du texte affiché autant que 'Client créé.'. Le gabarit manquait, et
+    // quatre messages français y dormaient dans `ParametresApp.tsx`.
+    const litteraux = [...ligne.matchAll(/(['"`])((?:[^\\\n]|\\.)*?)\1/g)].map((m) => m[2])
+    for (const texte of litteraux) {
+      if (ACCENTS.test(texte)) {
+        echec(`${etiquette}:${index + 1} — chaîne française en dur : « ${texte.trim()} »`)
+      }
+    }
+
+    /**
+     * **Et le texte seul sur sa ligne**, entre deux balises écrites sur des
+     * lignes différentes :
+     *
+     * ```jsx
+     * <label>
+     *   Entretien/usure véhicule ({symboleDevise()}/km)
+     *   <input … />
+     * </label>
+     * ```
+     *
+     * Ni entre `>` et `<` sur la même ligne, ni entre guillemets : les deux
+     * contrôles ci-dessus passaient à côté. C'est pourtant la mise en forme la
+     * plus courante d'un libellé de champ dans ce projet — donc le cas le plus
+     * fréquent, pas un cas tordu.
+     *
+     * **Trouvé par ricochet** : une clé déclarée et jamais employée a signalé
+     * que le libellé n'était pas passé par `t()`. Sans ce troisième contrôle,
+     * un libellé oublié qui n'aurait pas laissé de clé morte serait resté
+     * français sous une suite verte.
+     *
+     * On écarte ce qui n'est pas du texte affiché : une ligne d'attribut, une
+     * accolade JSX, une balise. Ce qui reste est du texte lu par l'utilisateur.
+     */
+    const estDuCode =
+      nue.startsWith('<') ||
+      nue.startsWith('{') ||
+      nue.startsWith('}') ||
+      nue.endsWith(',') ||
+      nue.endsWith(';') ||
+      nue.endsWith('=>') ||
+      /^[\w$]+[=:]/.test(nue) ||
+      // Un appel de fonction — `afficherSucces(…)`, `window.confirm(…)`. Le
+      // contenu, lui, est déjà couvert par le relevé des littéraux ci-dessus :
+      // le laisser passer ici donnerait deux messages pour un seul défaut.
+      /^[\w$.]+\(/.test(nue) ||
+      /[=;{}()[\]]/.test(nue.replace(/\([^)]*\)/g, ''))
+
+    if (!estDuCode && ACCENTS.test(nue) && nue.length >= 3) {
+      echec(`${etiquette}:${index + 1} — texte français seul sur sa ligne : « ${nue} »`)
+    }
   })
 }
 
+/**
+ * Le compte affiché distingue les écrans des composants.
+ *
+ * **Il a annoncé « 25 écrans sur 18 » le jour où les composants ont rejoint la
+ * liste protégée**, parce qu'il comptait toute la liste contre le seul nombre
+ * d'écrans. Un compte absurde décrédibilise une sortie aussi sûrement qu'un
+ * faux échec : on cesse de la lire, et le jour où elle dit quelque chose de
+ * vrai, personne ne le voit.
+ *
+ * Les deux familles sont donc comptées séparément, chacune contre son propre
+ * total, et les totaux sont relevés sur le disque plutôt qu'écrits à la main.
+ */
+const estUnEcran = (relatif) =>
+  relatif.includes('/pages/') || relatif.endsWith('/App.tsx')
+
+const ecransTraduits = ECRANS_TRADUITS.filter(estUnEcran).length
+const composantsTraduits = ECRANS_TRADUITS.length - ecransTraduits
+
 const totalEcrans = fichiersTs(join(RACINE, 'src/renderer/src/pages')).length + 1
+// Deux composants ne portent aucun texte — le logo et la modale générique — et
+// n'ont donc rien à traduire. On compte ce qui existe, pas ce qu'on croit.
+const totalComposants = fichiersTs(join(RACINE, 'src/renderer/src/components')).length
 
 console.log(
   echecs === 0
-    ? `TRADUCTIONS : ${entrees.length} clés · ${ECRANS_TRADUITS.length} écran(s) sur ${totalEcrans} entièrement traduits`
+    ? `TRADUCTIONS : ${entrees.length} clés · ${ecransTraduits} écran(s) sur ${totalEcrans} · ` +
+        `${composantsTraduits} composant(s) sur ${totalComposants}`
     : `${echecs} PROBLÈME(S) DE TRADUCTION`
 )
 process.exit(echecs === 0 ? 0 : 1)

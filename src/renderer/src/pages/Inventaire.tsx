@@ -2,21 +2,13 @@ import { useEffect, useState } from 'react'
 import type { ArticleInventaire, ResumeInventaire } from '../../../shared/types'
 import { formaterMontant } from '../lib/devise'
 import { t } from '../../../shared/i18n'
-
-const CATEGORIES = [
-  'Composants',
-  'Câbles/Connectique',
-  'Outillage',
-  'Consommables',
-  'Appareils',
-  'Divers'
-]
+import { CATEGORIES_INVENTAIRE, VALEURS_CATEGORIES } from '../../../shared/inventaire'
 
 function articleVide(reference: string): ArticleInventaire {
   return {
     reference,
     designation: '',
-    categorie: CATEGORIES[0],
+    categorie: VALEURS_CATEGORIES[0],
     quantiteStock: 0,
     seuilAlerte: 0,
     prixAchatUnitaire: 0,
@@ -150,12 +142,12 @@ export default function Inventaire(): React.JSX.Element {
                         modifierArticle(article.reference, { ...article, categorie: e.target.value })
                       }
                     >
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      {CATEGORIES_INVENTAIRE.map((c) => (
+                        <option key={c.valeur} value={c.valeur}>
+                          {t(c.cle)}
                         </option>
                       ))}
-                      {!CATEGORIES.includes(article.categorie) && (
+                      {!VALEURS_CATEGORIES.includes(article.categorie) && (
                         <option value={article.categorie}>{article.categorie}</option>
                       )}
                     </select>
@@ -259,9 +251,9 @@ export default function Inventaire(): React.JSX.Element {
                 value={nouvelArticle.categorie}
                 onChange={(e) => setNouvelArticle({ ...nouvelArticle, categorie: e.target.value })}
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {CATEGORIES_INVENTAIRE.map((c) => (
+                  <option key={c.valeur} value={c.valeur}>
+                    {t(c.cle)}
                   </option>
                 ))}
               </select>

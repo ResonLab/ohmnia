@@ -89,6 +89,51 @@ if (!existsSync(pageEn)) {
   }
 }
 
+/* ── 2 bis. L'écran d'acceptation dit lequel des deux textes fait foi ───── */
+
+/**
+ * **Le site le disait ; l'application ne le disait pas.**
+ *
+ * La page anglaise annonce que la version française fait foi — le contrôle
+ * ci-dessus l'exige. Mais c'est dans l'**application** qu'on accepte : un
+ * anglophone y voit une interface anglaise, un texte juridique français, et
+ * aucune explication. Il accepte un document qu'il ne peut pas lire, sans
+ * savoir qu'une traduction existe ni qu'elle ne prévaut pas.
+ *
+ * Trouvé le 13 août 2026 en vérifiant une hypothèse fausse : je croyais que
+ * `conditions.ts` aurait dû être bilingue comme dans les quatre autres
+ * applications. Il ne devait pas l'être — deux textes également contraignants
+ * seraient pires qu'un seul — mais la vérification a montré le vrai manque, à
+ * côté de celui que je cherchais.
+ *
+ * Le contrôle porte sur l'écran, pas sur la page : c'est là que le geste
+ * d'acceptation a lieu.
+ */
+{
+  const ecran = readFileSync(
+    join(RACINE, 'src/renderer/src/components/ConditionsUtilisation.tsx'),
+    'utf-8'
+  )
+  if (!ecran.includes("t('cond.texteFaitFoi')")) {
+    echec(
+      "l'écran d'acceptation ne dit plus lequel des deux textes fait foi — " +
+        'un anglophone accepterait un texte français sans le savoir'
+    )
+  }
+
+  // Et la clé doit encore porter les deux versions : la retirer de `i18n.ts`
+  // ferait afficher la clé brute, ce que le typecheck ne voit pas.
+  const i18n = readFileSync(join(RACINE, 'src/shared/i18n.ts'), 'utf-8')
+  if (!i18n.includes("'cond.texteFaitFoi'")) {
+    echec("la clé « cond.texteFaitFoi » a disparu de i18n.ts")
+  }
+  for (const mot of ['fait foi', 'authoritative']) {
+    if (!i18n.includes(mot)) {
+      echec(`le texte de « cond.texteFaitFoi » ne dit plus « ${mot} »`)
+    }
+  }
+}
+
 /* ── 3. Aucun lien mort, aucune ressource externe ────────────────────────── */
 
 const pages = [

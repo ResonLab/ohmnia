@@ -1,5 +1,6 @@
 import type { EvolutionAnnuelle } from '../../../shared/types'
 import { formaterMontant } from '../lib/devise'
+import { t } from '../../../shared/i18n'
 
 interface Props {
   donnees: EvolutionAnnuelle[]
@@ -7,7 +8,7 @@ interface Props {
 
 export default function BarresAnnuelles({ donnees }: Props): React.JSX.Element {
   if (donnees.length === 0) {
-    return <p className="graphique-vide">Aucune donnée disponible.</p>
+    return <p className="graphique-vide">{t('graphique.aucuneDonnee')}</p>
   }
 
   const maxValeur = Math.max(...donnees.map((d) => Math.max(d.entrees, d.depenses)), 1)
@@ -30,12 +31,12 @@ export default function BarresAnnuelles({ donnees }: Props): React.JSX.Element {
               <div
                 className="barre entrees"
                 style={{ height: `${(d.entrees / maxValeur) * hauteurZone}px` }}
-                title={`Entrées ${formaterMontant(d.entrees)}`}
+                title={`${t('journal.entree')} ${formaterMontant(d.entrees)}`}
               />
               <div
                 className="barre depenses"
                 style={{ height: `${(d.depenses / maxValeur) * hauteurZone}px` }}
-                title={`Dépenses ${formaterMontant(d.depenses)}`}
+                title={`${t('journal.depense')} ${formaterMontant(d.depenses)}`}
               />
             </div>
             <span className="barre-annee">{d.annee}</span>

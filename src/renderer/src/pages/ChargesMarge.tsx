@@ -16,16 +16,9 @@ import {
   calculerTauxHoraireSuggere
 } from '../../../shared/calculs'
 import { formaterMontant, symboleDevise } from '../lib/devise'
+import { t } from '../../../shared/i18n'
+import { CATEGORIES_CHARGES, VALEURS_CATEGORIES_CHARGES } from '../../../shared/charges'
 
-const CATEGORIES_CHARGES = [
-  'Loyer',
-  'Assurances',
-  'Matériel/Amortissement',
-  'Véhicule',
-  'Abonnements',
-  'Comptabilité',
-  'Divers'
-]
 
 export default function ChargesMarge(): React.JSX.Element {
   const [charges, setCharges] = useState<ChargeFixe[]>([])
@@ -86,9 +79,9 @@ export default function ChargesMarge(): React.JSX.Element {
   async function ajouterCharge(): Promise<void> {
     try {
       const nouvelle = await window.api.chargesFixes.ajouter({
-        libelle: 'Nouvelle charge',
+        libelle: t('charge.nouvelle'),
         montantMensuel: 0,
-        categorie: CATEGORIES_CHARGES[0],
+        categorie: VALEURS_CATEGORIES_CHARGES[0],
         actif: true
       })
       setCharges((precedent) => [...precedent, nouvelle])
@@ -115,7 +108,7 @@ export default function ChargesMarge(): React.JSX.Element {
     try {
       const misAJour = await window.api.parametresMarge.enregistrer(margeParams)
       setMargeParams(misAJour)
-      afficherSucces('Paramètres de marge enregistrés.')
+      afficherSucces(t('charge.margeEnregistree'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -125,7 +118,7 @@ export default function ChargesMarge(): React.JSX.Element {
     try {
       const misAJour = await window.api.parametresDeplacement.enregistrer(deplacementParams)
       setDeplacementParams(misAJour)
-      afficherSucces('Paramètres de déplacement enregistrés.')
+      afficherSucces(t('charge.deplacementEnregistre'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -135,13 +128,13 @@ export default function ChargesMarge(): React.JSX.Element {
     try {
       const misAJour = await window.api.parametresImpression.enregistrer(impressionParams)
       setImpressionParams(misAJour)
-      afficherSucces("Paramètres d'impression enregistrés.")
+      afficherSucces(t('charge.impressionEnregistree'))
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('etat.chargement')}</p>
 
   const chargesFixesTotalMensuel = charges
     .filter((c) => c.actif)
@@ -167,14 +160,14 @@ export default function ChargesMarge(): React.JSX.Element {
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Charges fixes mensuelles</h2>
+        <h2>{t('charge.titre')}</h2>
         <table className="table-editable">
           <thead>
             <tr>
-              <th>Libellé</th>
-              <th>Catégorie</th>
-              <th>Montant/mois ({symboleDevise()})</th>
-              <th>Actif</th>
+              <th>{t('charge.libelle')}</th>
+              <th>{t('charge.categorie')}</th>
+              <th>{t('charge.montantMois', { devise: symboleDevise() })}</th>
+              <th>{t('charge.actif')}</th>
               <th></th>
             </tr>
           </thead>
@@ -193,8 +186,8 @@ export default function ChargesMarge(): React.JSX.Element {
                     onChange={(e) => modifierCharge({ ...charge, categorie: e.target.value })}
                   >
                     {CATEGORIES_CHARGES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                      <option key={cat.valeur} value={cat.valeur}>
+                        {t(cat.cle)}
                       </option>
                     ))}
                   </select>
@@ -218,23 +211,24 @@ export default function ChargesMarge(): React.JSX.Element {
                 </td>
                 <td>
                   <button className="action-administration bouton-danger" onClick={() => supprimerCharge(charge.id)}>
-                    Supprimer
+                    {t('action.supprimer')}
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button className="action-administration" onClick={ajouterCharge}>+ Ajouter une charge</button>
+        <button className="action-administration" onClick={ajouterCharge}>{t('charge.ajouter')}</button>
         <p className="valeur-calculee">
-          Total charges fixes actives : <strong>{formaterMontant(chargesFixesTotalMensuel)}/mois</strong>
+          {t('charge.totalActives')}{' '}
+          <strong>{t('charge.parMois', { montant: formaterMontant(chargesFixesTotalMensuel) })}</strong>
         </p>
       </div>
 
       <div className="carte">
-        <h2>Marge & taux horaire</h2>
+        <h2>{t('charge.margeTitre')}</h2>
         <label>
-          Heures facturables par mois
+          {t('charge.heuresFacturables')}
           <input
             type="number"
             step="1"
@@ -245,7 +239,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Chiffre d'affaires mensuel estimé ({symboleDevise()})
+          {t('charge.caEstime', { devise: symboleDevise() })}
           <input
             type="number"
             step="10"
@@ -253,26 +247,28 @@ export default function ChargesMarge(): React.JSX.Element {
             onChange={(e) => setMargeParams({ ...margeParams, caEstimeMensuel: Number(e.target.value) })}
           />
         </label>
-        <button className="action-administration" onClick={enregistrerMarge}>Enregistrer</button>
+        <button className="action-administration" onClick={enregistrerMarge}>{t('action.enregistrer')}</button>
 
         <div className="resultats-calcules">
           <p>
-            Coût horaire de revient : <strong>{formaterMontant(coutHoraireRevient)}/h</strong>
+            {t('charge.coutHoraire')}{' '}
+            <strong>{t('charge.parHeure', { montant: formaterMontant(coutHoraireRevient) })}</strong>
           </p>
           <p>
-            Marge suggérée : <strong>{(margeSuggeree * 100).toFixed(1)} %</strong>
-            {chargesFixesTotalMensuel <= 0 && ' (valeur par défaut, aucune charge saisie)'}
+            {t('charge.margeSuggeree')} <strong>{(margeSuggeree * 100).toFixed(1)} %</strong>
+            {chargesFixesTotalMensuel <= 0 && t('charge.margeDefaut')}
           </p>
           <p>
-            Taux horaire suggéré : <strong>{formaterMontant(tauxHoraireSuggere)}/h</strong>
+            {t('charge.tauxSuggere')}{' '}
+            <strong>{t('charge.parHeure', { montant: formaterMontant(tauxHoraireSuggere) })}</strong>
           </p>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Déplacement</h2>
+        <h2>{t('charge.deplacementTitre')}</h2>
         <label>
-          Consommation (L/100km)
+          {t('charge.consommation')}
           <input
             type="number"
             step="0.1"
@@ -283,7 +279,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Prix essence ({symboleDevise()}/L)
+          {t('charge.prixEssence', { devise: symboleDevise() })}
           <input
             type="number"
             step="0.01"
@@ -294,7 +290,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Entretien/usure véhicule ({symboleDevise()}/km)
+          {t('charge.entretienKm', { devise: symboleDevise() })}
           <input
             type="number"
             step="0.01"
@@ -305,7 +301,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Marge livraison (%)
+          {t('charge.margeLivraison')}
           <input
             type="number"
             step="1"
@@ -315,25 +311,28 @@ export default function ChargesMarge(): React.JSX.Element {
             }
           />
         </label>
-        <button className="action-administration" onClick={enregistrerDeplacement}>Enregistrer</button>
+        <button className="action-administration" onClick={enregistrerDeplacement}>{t('action.enregistrer')}</button>
 
         <div className="resultats-calcules">
           <p>
-            Coût carburant/km : <strong>{formaterMontant(coutCarburantKm)}/km</strong>
+            {t('charge.coutCarburantKm')}{' '}
+            <strong>{t('charge.parKm', { montant: formaterMontant(coutCarburantKm) })}</strong>
           </p>
           <p>
-            Coût de revient/km : <strong>{formaterMontant(coutRevientKm)}/km</strong>
+            {t('charge.coutRevientKm')}{' '}
+            <strong>{t('charge.parKm', { montant: formaterMontant(coutRevientKm) })}</strong>
           </p>
           <p>
-            Prix de vente suggéré/km : <strong>{formaterMontant(prixVenteKm)}/km</strong>
+            {t('charge.prixVenteKm')}{' '}
+            <strong>{t('charge.parKm', { montant: formaterMontant(prixVenteKm) })}</strong>
           </p>
         </div>
       </div>
 
       <div className="carte">
-        <h2>Coût d'impression / envoi par facture</h2>
+        <h2>{t('charge.impressionTitre')}</h2>
         <label>
-          Prix sachet A4
+          {t('charge.prixSachetA4')}
           <input
             type="number"
             step="0.1"
@@ -344,7 +343,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Feuilles par sachet
+          {t('charge.feuillesParSachet')}
           <input
             type="number"
             step="1"
@@ -355,7 +354,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Feuilles par facture
+          {t('charge.feuillesParFacture')}
           <input
             type="number"
             step="1"
@@ -366,7 +365,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Prix imprimante
+          {t('charge.prixImprimante')}
           <input
             type="number"
             step="1"
@@ -377,7 +376,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Nombre de factures avant remplacement
+          {t('charge.facturesAvantRemplacement')}
           <input
             type="number"
             step="1"
@@ -391,7 +390,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Prix cartouche d'encre
+          {t('charge.prixCartouche')}
           <input
             type="number"
             step="0.1"
@@ -400,7 +399,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Feuilles par cartouche
+          {t('charge.feuillesParCartouche')}
           <input
             type="number"
             step="1"
@@ -411,7 +410,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Prix timbre
+          {t('charge.prixTimbre')}
           <input
             type="number"
             step="0.05"
@@ -420,7 +419,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Prix sachet enveloppes
+          {t('charge.prixSachetEnveloppes')}
           <input
             type="number"
             step="0.1"
@@ -431,7 +430,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Enveloppes par sachet
+          {t('charge.enveloppesParSachet')}
           <input
             type="number"
             step="1"
@@ -442,7 +441,7 @@ export default function ChargesMarge(): React.JSX.Element {
           />
         </label>
         <label>
-          Marge impression (%)
+          {t('charge.margeImpression')}
           <input
             type="number"
             step="1"
@@ -452,14 +451,14 @@ export default function ChargesMarge(): React.JSX.Element {
             }
           />
         </label>
-        <button className="action-administration" onClick={enregistrerImpression}>Enregistrer</button>
+        <button className="action-administration" onClick={enregistrerImpression}>{t('action.enregistrer')}</button>
 
         <div className="resultats-calcules">
           <p>
-            Coût de revient par facture : <strong>{formaterMontant(coutRevientFacture)}</strong>
+            {t('charge.coutRevientFacture')} <strong>{formaterMontant(coutRevientFacture)}</strong>
           </p>
           <p>
-            Prix facturé au client : <strong>{formaterMontant(prixFactureImpression)}</strong>
+            {t('charge.prixFactureClient')} <strong>{formaterMontant(prixFactureImpression)}</strong>
           </p>
         </div>
       </div>

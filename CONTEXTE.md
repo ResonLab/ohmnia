@@ -119,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  14 suites — `npm run verifier`
+tests/                  16 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -172,6 +172,35 @@ graphiques) · Inventaire (alertes de seuil, décrément auto) · Modèles de pr
 - **Panneau de conformité** (module Audit) : contrôle les mentions obligatoires,
   la continuité et l'unicité de la numérotation. Il ne certifie rien.
 
+### Le texte français fait foi, et l'écran le dit — 13 août 2026
+
+**`src/shared/conditions.ts` est monolingue, et c'est délibéré.** Les quatre
+autres applications de la maison ont leurs conditions dans les deux langues ;
+Ohmnia non, et il ne faut pas « corriger » cela. *Deux textes également
+contraignants seraient pires qu'un seul* : le jour où les deux versions ne
+disent pas exactement la même chose, personne ne sait laquelle engage.
+
+La page anglaise `docs/en/terms.html` est une **traduction qui ne prévaut pas**,
+et elle l'annonce — `tests/coherence-site.mjs` exige d'ailleurs qu'elle contienne
+le mot `authoritative`.
+
+**Ce qui manquait était ailleurs, et c'est le point qui compte** : le site le
+disait, l'application ne le disait pas. Or c'est dans l'application qu'on
+accepte. Un anglophone y voyait une interface anglaise, un texte juridique
+français, et aucune explication — il acceptait un document qu'il ne pouvait pas
+lire, sans savoir qu'une traduction existait ni qu'elle ne prévalait pas.
+
+L'écran d'acceptation porte maintenant la phrase, dans les deux langues, et
+`tests/coherence-site.mjs` refuse qu'elle disparaisse. *Un premier jet la
+réservait à l'anglais avec une version française vide : `tests/traductions.mjs`
+l'a refusée à juste titre — une chaîne vide sort à l'écran sans qu'on la voie.
+Et elle a sa valeur en français aussi, puisqu'elle dit lequel des deux textes
+prévaut.*
+
+**Trouvé en vérifiant une hypothèse fausse.** Je croyais que `conditions.ts`
+aurait dû être bilingue comme ailleurs. Il ne devait pas l'être — mais aller
+vérifier a montré le vrai manque, à côté de celui que je cherchais.
+
 ### Deux textes juridiques distincts — ne pas les confondre
 
 | | Conditions **de vente** | Conditions **d'utilisation** |
@@ -208,7 +237,102 @@ change d'une langue à l'autre.
 La locale suit désormais la langue de l'interface — chercher les autres
 `toLocaleDateString` en traduisant les écrans restants.
 
-**À faire** : le corps des 16 autres écrans est encore en français en dur.
+**Au 13 août 2026 : 17 écrans sur 18 et 8 composants sur 10**, 578 clés. Tous
+sauf « Mon entreprise » ; les deux composants restants ne portent aucun texte.
+
+**Trois choses trouvées en traduisant, et aucune n'était visible en lisant.**
+
+**1. Deux écrans déclarés traduits ne l'étaient pas.** Le contrôle du texte en
+dur ne regardait que le texte **entre balises** — `> Bonjour <`. Il ne pouvait
+donc pas voir un `placeholder=`, un `alert('Client créé.')`, un `title=`, ni un
+ternaire `{paye ? 'Payée' : 'En attente'}`, c'est-à-dire une bonne part de ce
+qu'un utilisateur lit. Trois messages français en dur dormaient dans
+`Clients.tsx` et la liste des catégories dans `Inventaire.tsx`, **sous une suite
+verte**.
+
+Ce n'était pas un contrôle incapable d'échouer : il échouait très bien sur ce
+qu'il regardait. C'est la troisième forme, plus sournoise — *une vérification
+dont on a étendu la confiance au-delà de son champ*. Il refuse maintenant toute
+chaîne accentuée, sans exception de commodité : une exception serait la porte
+par laquelle il recommencerait à ne plus rien regarder.
+
+*Et il a produit un faux échec au premier essai* : `{/*` ouvre un commentaire
+JSX, que le détecteur ne reconnaissait pas, si bien que les apostrophes du
+commentaire formaient de fausses chaînes. Corrigé avant d'être cru — **un faux
+échec use un contrôle aussi sûrement qu'un faux succès**.
+
+**2. La langue enregistrée n'était jamais appliquée au démarrage.** Signalé par
+l'utilisateur, qui n'arrivait pas à changer de langue. L'effet qui lit les
+paramètres est gardé par `if (multipostes === null) return` — la valeur au
+montage, toujours — avec une **liste de dépendances vide**. Il sortait aussitôt
+et ne repassait jamais. L'effet voisin, celui de la devise, porte la bonne
+liste : c'est la comparaison des deux qui l'a montré.
+
+Aucune suite ne le voyait. `tests/effets-react.mjs` a donc été écrite **avant**
+le correctif : un `useEffect` qui sort sur une valeur doit la déclarer en
+dépendance. Volontairement étroite — elle ne remplace pas
+`react-hooks/exhaustive-deps`, et ajouter ESLint ici coûterait plus qu'il ne
+rapporte.
+
+**3. Deux détails qui trahissent une traduction à moitié**, de la même famille
+que `toLocaleDateString('fr-CH')` en dur :
+· la locale des dates vivait à **quatre endroits**, dont trois en dur. Elle est
+  maintenant dans `locale()`, dans `i18n.ts` ;
+· le document imprimé était entièrement traduit sauf l'ordinal : un anglophone
+  recevait un « 2e reminder ». `ordinal()` suit la langue.
+
+**Ce qui est enregistré en base ne se traduit jamais** — seul le libellé se
+traduit. Les catégories d'inventaire (`src/shared/inventaire.ts`) et les actions
+du journal d'audit portent une valeur canonique invariable et une clé
+d'affichage. Traduire la valeur répartirait les mêmes articles dans deux
+catégories selon la langue du jour où on les a saisis, et rendrait un journal
+d'audit illisible à qui change de langue.
+
+**Reste à faire** : « Mon entreprise » seulement.
+
+**Les composants sont inscrits dans la liste protégée**, séparément des écrans.
+Le compte affiché les distingue — il a annoncé « 25 écrans sur 18 » le jour où
+ils l'ont rejointe, et **un compte absurde décrédibilise une sortie aussi
+sûrement qu'un faux échec** : on cesse de la lire, et le jour où elle dit
+quelque chose de vrai, personne ne le voit.
+
+**Un quatrième trou dans le contrôle du texte en dur**, trouvé en traduisant les
+derniers écrans : le relevé des chaînes littérales ne connaissait que
+l'apostrophe et le guillemet, **pas l'accent grave**. Or un gabarit
+`` `${nb} écritures ajoutées` `` est du texte affiché autant qu'une chaîne
+ordinaire. Six messages y dormaient — dont deux dans `SuiviTemps.tsx` et
+`Facturation.tsx`, **deux écrans que je venais de déclarer traduits**.
+
+C'est la quatrième passe sur une seule question — « ce texte est-il traduit ? » —
+et chacune semblait complète. **Quand un contrôle trouve un défaut, se demander
+ce qu'il ne regarde toujours pas.**
+
+**Mon entreprise demande une décision avant d'être traduite**, et elle n'est pas
+technique. L'écran tire ses libellés de `src/shared/pays.ts` — nom de la taxe,
+libellé de l'identifiant fiscal, seuil, mention de non-assujettissement. Or ces
+chaînes ne sont pas toutes de la même nature :
+
+· le **nom de la taxe**, le **libellé de l'identifiant** et les **aides** sont du
+  texte d'écran : ils doivent suivre la langue de l'interface ;
+· la **mention de non-assujettissement** est une **mention légale imprimée sur
+  la facture**. Elle doit rester dans la langue du pays d'émission, quelle que
+  soit la langue de l'interface. La traduire parce que l'écran est en anglais
+  produirait une facture française portant une mention en anglais.
+
+Le modèle de conditions générales pose la même question : c'est un texte
+juridique qu'un juriste doit relire, et le traduire n'est pas une opération
+mécanique.
+
+**Ne pas expédier cet écran.** Il vaut mieux qu'il reste français et honnête que
+traduit à moitié et faux — une facture qui porte une mention légale dans la
+mauvaise langue est un défaut qui se découvre chez le client, pas ici.
+
+**Un point laissé tel quel, et il est délibéré** : `domaines/documents.ts`
+fabrique la désignation « Frais de rappel (2e rappel) » avec l'ordinal français.
+C'est une **donnée écrite en base au moment de la création**, pas du texte
+d'interface : la retraduire après coup changerait une ligne de facture déjà
+émise. À traiter avec les messages du processus principal, qui doivent devenir
+des clés.
 
 **`tests/traductions.mjs` mesure l'avancement et l'affiche à chaque exécution.**
 Il vérifie trois choses : aucune clé sans version anglaise **ni** française
@@ -235,6 +359,45 @@ Méthode, écran par écran :
 
 Les messages d'erreur du main process (`src/main/ipc/*.ts`) sont aussi en français ;
 ils devront recevoir le même traitement, ou être renvoyés sous forme de clé.
+
+### Les relances à envoyer — faites le 13 août 2026
+
+**Les rappels existaient, mais il fallait y penser.** Ouvrir la Facturation,
+parcourir l'historique, se souvenir de qui avait reçu quoi et quand. *Une
+fonction dont il faut se souvenir n'est pas une fonction, c'est une intention.*
+
+Une carte en tête de la Facturation liste ce qui devrait partir aujourd'hui. Le
+calcul n'a rien de neuf — c'est celui qu'on faisait à la main — mais il est fait
+**pour** l'utilisateur au lieu d'être attendu **de** lui.
+
+`calculerRelances()` vit dans `src/shared/calculs.ts`, avec les autres formules,
+et `tests/relances.mjs` l'éprouve sans base ni fenêtre. **Le SQL ne décide
+rien** : il rassemble statut, échéance, nombre de rappels et date du dernier ;
+la règle tranche. Recopiée en SQL, elle finirait par contredire les tests qui la
+vérifient — et `tests/relances.mjs` refuse d'ailleurs que l'écran recalcule un
+retard de son côté.
+
+Trois décisions, et chacune se défend :
+
+- **le seuil de première relance est celui des paramètres**, pas un second
+  réglage. Demander deux valeurs, c'est demander de tenir deux réglages
+  cohérents entre eux — ce que personne ne fait ;
+- **un délai de 14 jours entre deux relances.** Relancer un client deux jours de
+  suite ne fait pas payer plus vite, ça fâche ;
+- **au-delà de trois rappels, on cesse de proposer.** Un quatrième ne devient pas
+  efficace ; c'est le moment d'un appel, d'une mise en demeure ou d'un abandon de
+  créance. La facture reste affichée — elle est le vrai problème — mais **sans
+  bouton** : proposer ce qui ne marche pas est pire que de ne rien proposer.
+
+**Rien n'est envoyé automatiquement.** C'est une liste, pas un automatisme : un
+logiciel qui écrit tout seul à un client au nom de quelqu'un est un logiciel
+qu'on n'ose plus laisser tourner. *Le nom « relances automatiques » décrivait mal
+ce qu'il fallait faire.*
+
+Quinze cas, **six sabotages, six échecs**. Les cas sont choisis pour
+discriminer : une facture payée avec 300 jours de retard, une facture relancée
+hier mais très en retard, et la borne exacte du délai — chacun échouerait sous la
+règle inverse.
 
 ### Autres pistes évoquées et non faites
 
@@ -324,7 +487,7 @@ corrigé, et ça n'a rien changé.*
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 14 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 16 suites de tests, **tout passe**.
 - Version `0.1.3`. Construite par GitHub Actions pour Windows et Linux.
   Elle apporte le **mode multi-postes**, le passage à l'organisation ResonLab et
   les premiers écrans traduits. La `0.1.2` n'a jamais été publiée : son

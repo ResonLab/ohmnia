@@ -3,6 +3,7 @@ import {
   creerRappel,
   listerRappels,
   prochainNiveauRappel,
+  relancesAFaire,
   supprimerRappel
 } from '../domaines/rappels'
 
@@ -19,4 +20,6 @@ export function enregistrerHandlersRappels(): void {
   )
 
   ipcMain.handle('rappels:supprimer', (_e, id: number) => supprimerRappel(id))
+
+  ipcMain.handle('rappels:aFaire', () => relancesAFaire())
 }

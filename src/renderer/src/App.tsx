@@ -87,7 +87,20 @@ export default function App(): React.JSX.Element {
   const enAttenteDeConnexion =
     multipostes !== null && multipostes.mode === 'serveur' && !multipostes.connecte
 
-  // Applique l'apparence et la langue enregistrées au démarrage.
+  /**
+   * Applique l'apparence et la langue enregistrées au démarrage.
+   *
+   * **La liste de dépendances doit contenir ce que le garde-fou lit.** Elle
+   * était vide, et l'effet sortait aussitôt sur `multipostes === null` — la
+   * valeur au montage, toujours. Il ne repassait jamais : la langue et le thème
+   * enregistrés n'étaient **jamais appliqués au lancement**, et l'application
+   * retombait sur le français et le thème sombre à chaque démarrage.
+   *
+   * Le défaut ne se voyait pas en lisant : l'effet est écrit correctement, il
+   * n'est simplement jamais rejoué. L'effet voisin, celui de la devise, porte
+   * la bonne liste — c'est la comparaison des deux qui l'a montré. **Signalé
+   * par l'utilisateur, qui ne parvenait pas à changer la langue.**
+   */
   useEffect(() => {
     if (enAttenteDeConnexion || multipostes === null) return
     window.api.parametresApp.lire().then((p) => {
@@ -97,7 +110,7 @@ export default function App(): React.JSX.Element {
       definirLangue(p.langue as Langue)
       setLangueActive(p.langue as Langue)
     })
-  }, [])
+  }, [enAttenteDeConnexion, multipostes])
 
   // La devise de l'interface suit le pays de l'entreprise. Elle est relue à
   // chaque changement de module pour refléter un changement de pays immédiatement.
@@ -228,8 +241,8 @@ export default function App(): React.JSX.Element {
       <main className="contenu">
         {lectureSeule && (
           <p className="bandeau-lecture-seule">
-            Vous êtes connecté en <strong>lecture seule</strong> : la consultation est libre, mais
-            toute modification sera refusée par le serveur.
+            {t('lectureSeule.avant')} <strong>{t('lectureSeule.mot')}</strong>{' '}
+            {t('lectureSeule.apres')}
           </p>
         )}
         {moduleActif === 'accueil' && (

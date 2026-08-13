@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Justificatif } from '../../../shared/types'
 import Modale from './Modale'
+import { t } from '../../../shared/i18n'
 
 interface Props {
   journalId: number
@@ -48,21 +49,23 @@ export default function Justificatifs({
   }
 
   async function supprimer(id: number): Promise<void> {
-    if (!window.confirm('Supprimer ce justificatif ? Le fichier sera effacé du disque.')) return
+    if (!window.confirm(t('justif.confirmerSuppression'))) return
     await window.api.justificatifs.supprimer(id)
     await recharger()
     onChangement()
   }
 
   return (
-    <Modale titre={`Justificatifs — ${description || 'écriture du Journal'}`} onFermer={onFermer}>
+    <Modale
+      titre={t('justif.titre', { description: description || t('justif.ecritureJournal') })}
+      onFermer={onFermer}
+    >
       <p>
-        Photos de tickets, scans de factures d'achat ou PDF. Les fichiers sont copiés dans le dossier
-        de données de l'app, donc inclus dans les sauvegardes.
+        {t('justif.aide')}
       </p>
 
       {fichiers.length === 0 ? (
-        <p className="graphique-vide">Aucun justificatif pour cette écriture.</p>
+        <p className="graphique-vide">{t('justif.aucun')}</p>
       ) : (
         <div className="grille-justificatifs">
           {fichiers.map((fichier) => {
@@ -91,7 +94,7 @@ export default function Justificatifs({
       )}
 
       <div className="barre-boutons">
-        <button onClick={ajouter}>Ajouter un justificatif…</button>
+        <button onClick={ajouter}>{t('justif.ajouter')}</button>
       </div>
 
       {messageErreur && <p className="erreur">{messageErreur}</p>}

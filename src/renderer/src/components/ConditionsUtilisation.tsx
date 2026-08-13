@@ -5,6 +5,7 @@ import {
   RESUME_CONDITIONS,
   VERSION_CONDITIONS
 } from '../../../shared/conditions'
+import { t } from '../../../shared/i18n'
 
 interface Props {
   onAccepter: () => void
@@ -30,7 +31,7 @@ export default function ConditionsUtilisation({ onAccepter }: Props): React.JSX.
 
   async function accepter(): Promise<void> {
     if (!caseCochee) {
-      setMessageErreur('Cochez la case pour confirmer que vous avez lu et accepté les conditions.')
+      setMessageErreur(t('cond.cocher'))
       return
     }
     try {
@@ -47,8 +48,8 @@ export default function ConditionsUtilisation({ onAccepter }: Props): React.JSX.
         <header className="conditions-entete">
           <LogoOhmnia taille={40} />
           <div>
-            <h1>Conditions d'utilisation</h1>
-            <p>Version {VERSION_CONDITIONS} — à lire avant la première utilisation</p>
+            <h1>{t('cond.titre')}</h1>
+            <p>{t('cond.sousTitre', { version: VERSION_CONDITIONS })}</p>
           </div>
         </header>
 
@@ -76,20 +77,32 @@ export default function ConditionsUtilisation({ onAccepter }: Props): React.JSX.
                 setMessageErreur(null)
               }}
             />
-            J'ai lu et j'accepte ces conditions. Je comprends que la conformité légale et fiscale de
-            mon activité reste ma responsabilité.
+            {t('cond.acceptation')}
           </label>
 
           {!luJusquEnBas && (
-            <p className="conditions-indication">Faites défiler le texte jusqu'en bas pour continuer.</p>
+            <p className="conditions-indication">{t('cond.defiler')}</p>
           )}
+
+          {/* **Le texte accepté est le texte français, et il fait foi.**
+              Un anglophone voit une interface anglaise et un texte juridique
+              français : sans cette phrase, il accepte un document qu'il ne peut
+              pas lire, sans savoir qu'une traduction existe ni qu'elle ne
+              prévaut pas.
+
+              La phrase est dite dans les deux langues. Un premier jet la
+              réservait à l'anglais, avec une version française vide — ce que
+              `tests/traductions.mjs` refuse, à juste titre : une chaîne vide
+              sort à l'écran sans qu'on la voie. Et elle a sa valeur en
+              français aussi, puisqu'elle dit lequel des deux textes prévaut. */}
+          <p className="conditions-indication">{t('cond.texteFaitFoi')}</p>
 
           <div className="barre-boutons">
             <button onClick={accepter} disabled={!caseCochee}>
-              Accepter et démarrer
+              {t('cond.accepter')}
             </button>
             <button className="bouton-secondaire" onClick={() => window.api.conditions.ouvrirPage()}>
-              Lire sur le site
+              {t('cond.lireSurLeSite')}
             </button>
           </div>
 
