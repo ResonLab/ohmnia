@@ -122,6 +122,19 @@ Ce n'est pas un service d'assistance : une seule personne développe Ohmnia, sur
 
 ---
 
+## Les applications de la maison
+
+Cinq programmes, cinq publics, une seule façon de travailler : vos données
+restent sur votre machine.
+
+- **Ohmnia** — gestion pour indépendant : facturation, devis, suivi du temps, inventaire *(vous y êtes)*
+- [Scenika](https://github.com/ResonLab/scenika) — parc son et lumière, locations, puissance, adressage DMX
+- [Acustika](https://github.com/ResonLab/acustika) — simulation acoustique : couverture d'enceintes dans une salle
+- [Lumika](https://github.com/ResonLab/lumika) — plan de feu de théâtre : perches, patch, feuille imprimable
+- [Nexika](https://github.com/ResonLab/nexika) — le serveur multi-postes, commun à Ohmnia et Scenika
+
+Tout est présenté sur [resonlab.github.io](https://resonlab.github.io).
+
 ## Licence
 
 [MIT](LICENSE) — fais-en ce que tu veux, sans garantie.
