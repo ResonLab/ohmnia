@@ -1,3 +1,5 @@
+import { langue } from './i18n'
+
 /**
  * Profils par pays.
  *
@@ -17,6 +19,31 @@ export type CodePays = 'CH' | 'FR' | 'BE' | 'LU' | 'DE'
 export interface TauxTva {
   libelle: string
   taux: number
+}
+
+/**
+ * Ce qui suit la langue de l'interface — et **rien d'autre**.
+ *
+ * **La ligne de partage n'est pas le confort, c'est la destination.** Un texte
+ * qui finit sur une facture appartient au pays d'émission ; un texte qui reste
+ * à l'écran appartient au lecteur. `documents.ts` recopie `nomTaxe`,
+ * `libelleIdentifiant` et `mentionNonAssujetti` dans le document imprimé : les
+ * traduire produirait une facture allemande dont la taxe s'appellerait « VAT »,
+ * ou une facture française portant une mention légale en anglais. Un défaut
+ * pareil ne se découvre pas ici, il se découvre chez le client.
+ *
+ * Les champs ci-dessous ne partent nulle part : ils expliquent, ils situent, et
+ * ils doivent suivre la langue de celui qui les lit.
+ */
+export interface EcranPays {
+  /** Le nom du pays, tel qu'affiché dans la liste. */
+  nom: string
+  /** L'aide de saisie sous le champ d'identifiant. */
+  aideIdentifiant: string
+  /** Le seuil indicatif d'assujettissement, affiché à titre d'information. */
+  seuilAssujettissement: string
+  /** Les libellés des taux — « Taux normal », « Exonéré »… */
+  libellesTaux: string[]
 }
 
 export interface ProfilPays {
@@ -48,6 +75,16 @@ export interface ProfilPays {
   conservationAnnees: number
   /** Délai de paiement usuel, en jours. */
   delaiPaiementUsuel: number
+
+  /**
+   * La version anglaise de ce qui reste à l'écran.
+   *
+   * **Il n'y a délibérément pas d'entrée pour `nomTaxe`, `libelleIdentifiant`
+   * ni `mentionNonAssujetti`.** Ce n'est pas un oubli à combler : ces trois-là
+   * partent sur le document et appartiennent au pays. `tests/pays.mjs` refuse
+   * qu'on en ajoute une.
+   */
+  anglais: EcranPays
 }
 
 const PROFILS: Record<CodePays, ProfilPays> = {
@@ -72,7 +109,13 @@ const PROFILS: Record<CodePays, ProfilPays> = {
     mentionNonAssujetti: "Non assujetti à la TVA (art. 10 al. 2 LTVA).",
     seuilAssujettissement: "100 000 CHF de chiffre d'affaires annuel",
     conservationAnnees: 10,
-    delaiPaiementUsuel: 30
+    delaiPaiementUsuel: 30,
+    anglais: {
+      nom: 'Switzerland',
+      aideIdentifiant: 'Format CHE- followed by 9 digits, optionally VAT/MWST/IVA.',
+      seuilAssujettissement: 'CHF 100,000 in annual turnover',
+      libellesTaux: ['Standard rate', 'Reduced rate', 'Accommodation rate', 'Exempt']
+    }
   },
 
   FR: {
@@ -97,7 +140,13 @@ const PROFILS: Record<CodePays, ProfilPays> = {
     mentionNonAssujetti: 'TVA non applicable, art. 293 B du CGI.',
     seuilAssujettissement: "seuils de franchise en base variables selon l'activité, à vérifier",
     conservationAnnees: 10,
-    delaiPaiementUsuel: 30
+    delaiPaiementUsuel: 30,
+    anglais: {
+      nom: 'France',
+      aideIdentifiant: '14 digits, in groups of 3, 3, 3 and 5.',
+      seuilAssujettissement: 'base exemption thresholds vary by activity — check them',
+      libellesTaux: ['Standard rate', 'Intermediate rate', 'Reduced rate', 'Special rate', 'Exempt']
+    }
   },
 
   BE: {
@@ -121,7 +170,13 @@ const PROFILS: Record<CodePays, ProfilPays> = {
     mentionNonAssujetti: "Régime de la franchise de taxe. TVA non applicable (art. 56bis du Code de la TVA).",
     seuilAssujettissement: "25 000 € de chiffre d'affaires annuel",
     conservationAnnees: 10,
-    delaiPaiementUsuel: 30
+    delaiPaiementUsuel: 30,
+    anglais: {
+      nom: 'Belgium',
+      aideIdentifiant: 'Format BE followed by 10 digits, starting with 0 or 1.',
+      seuilAssujettissement: 'EUR 25,000 in annual turnover',
+      libellesTaux: ['Standard rate', 'Intermediate rate', 'Reduced rate', 'Exempt']
+    }
   },
 
   LU: {
@@ -146,7 +201,13 @@ const PROFILS: Record<CodePays, ProfilPays> = {
     mentionNonAssujetti: 'Régime de franchise pour petites entreprises. TVA non applicable.',
     seuilAssujettissement: "35 000 € de chiffre d'affaires annuel",
     conservationAnnees: 10,
-    delaiPaiementUsuel: 30
+    delaiPaiementUsuel: 30,
+    anglais: {
+      nom: 'Luxembourg',
+      aideIdentifiant: 'Format LU followed by 8 digits.',
+      seuilAssujettissement: 'EUR 35,000 in annual turnover',
+      libellesTaux: ['Standard rate', 'Intermediate rate', 'Reduced rate', 'Super-reduced rate', 'Exempt']
+    }
   },
 
   DE: {
@@ -166,11 +227,24 @@ const PROFILS: Record<CodePays, ProfilPays> = {
     exempleIdentifiant: 'DE123456789',
     formatIdentifiant: /^DE\s?\d{9}$/,
     aideIdentifiant: 'Format DE suivi de 9 chiffres.',
-    mentionNonAssujetti:
-      'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (régime des petites entreprises).',
+    /**
+     * **Cette mention part sur la facture, elle est donc en allemand — et rien
+     * qu'en allemand.** Elle portait « (régime des petites entreprises) » en
+     * français : une glose utile à qui règle l'application, imprimée telle
+     * quelle sur un document destiné à un client allemand et à son
+     * administration fiscale. L'explication a sa place à l'écran, pas sur la
+     * facture.
+     */
+    mentionNonAssujetti: 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.',
     seuilAssujettissement: "22 000 € de chiffre d'affaires l'année précédente",
     conservationAnnees: 10,
-    delaiPaiementUsuel: 14
+    delaiPaiementUsuel: 14,
+    anglais: {
+      nom: 'Germany',
+      aideIdentifiant: 'Format DE followed by 9 digits.',
+      seuilAssujettissement: 'EUR 22,000 in turnover in the previous year',
+      libellesTaux: ['Standard rate', 'Reduced rate', 'Exempt']
+    }
   }
 }
 
@@ -184,6 +258,25 @@ export function profilPays(code: string | null | undefined): ProfilPays {
 
 export function listePays(): ProfilPays[] {
   return Object.values(PROFILS)
+}
+
+/**
+ * Ce qui s'affiche à l'écran pour un pays, dans la langue de l'interface.
+ *
+ * **Le seul point de passage, et il ne donne accès qu'à ce qui a le droit de
+ * changer de langue.** Un appelant qui voudrait traduire `nomTaxe` ou
+ * `mentionNonAssujetti` ne trouvera pas où : ces champs ne sont pas dans
+ * `EcranPays`, et c'est le type qui le refuse, pas une consigne.
+ */
+export function ecranPays(profil: ProfilPays): EcranPays {
+  return langue() === 'en'
+    ? profil.anglais
+    : {
+        nom: profil.nom,
+        aideIdentifiant: profil.aideIdentifiant,
+        seuilAssujettissement: profil.seuilAssujettissement,
+        libellesTaux: profil.tauxTva.map((t) => t.libelle)
+      }
 }
 
 /** Formate un montant avec la devise du pays, sans jamais produire « NaN ». */

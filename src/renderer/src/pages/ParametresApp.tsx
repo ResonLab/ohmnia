@@ -392,8 +392,8 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
           />
         </label>
         <p className="valeur-calculee">
-          {t('papp.sauvegardeAuto')}
-          Actuellement : <strong>{infos.nbSauvegardes}</strong> sauvegarde(s).
+          {t('papp.sauvegardeAuto')}{' '}
+          {t('papp.nbSauvegardes', { nombre: infos.nbSauvegardes })}
         </p>
         <div className="barre-boutons">
           <button onClick={sauvegarderMaintenant}>{t('papp.sauvegarderMaintenant')}</button>
@@ -426,8 +426,7 @@ export default function ParametresApp({ onThemeChange, onLangueChange }: Props):
       <div className="carte">
         <h2>{t('papp.sauvegardeExterne')}</h2>
         <p className="valeur-calculee">
-          Copie chiffrée de la base vers une clé USB ou un disque externe (AES-256-GCM, mot de passe
-          jamais enregistré). Indispensable en cas de panne ou de vol de l'ordinateur.
+          {t('papp.sauvegardeExterneAide')}
         </p>
         <label>
           {t('papp.dossierExterne')}

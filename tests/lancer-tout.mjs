@@ -20,6 +20,7 @@ const SUITES = [
   ['Cohérence du guide', 'coherence-guide.mjs'],
   ['Relances à envoyer', 'relances.mjs'],
   ['Traductions', 'traductions.mjs'],
+  ['Pays, écran et documents', 'pays-et-documents.mjs'],
   ['Effets React et leurs dépendances', 'effets-react.mjs'],
   ['Serveur multi-postes (étape 1)', 'serveur-multipostes.mjs'],
   ['Comptes, droits et authentification (étape 2)', 'serveur-authentification.mjs'],

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Entreprise } from '../../../shared/types'
-import { listePays, profilPays, PAYS_PAR_DEFAUT } from '../../../shared/pays'
+import { modeleConditions } from '../../../shared/modeleConditions'
+import { t } from '../../../shared/i18n'
+import { ecranPays, listePays, profilPays, PAYS_PAR_DEFAUT } from '../../../shared/pays'
 
 const ENTREPRISE_VIDE: Entreprise = {
   nom: '',
@@ -18,41 +20,6 @@ const ENTREPRISE_VIDE: Entreprise = {
   conditionsGenerales: '',
   mentionsPied: '',
   pays: PAYS_PAR_DEFAUT
-}
-
-/**
- * Modèle de conditions générales fourni comme point de départ.
- * Volontairement générique : il doit être adapté à l'activité réelle et
- * relu par un juriste avant d'être utilisé sur de vraies factures.
- */
-function modeleConditions(nomEntreprise: string): string {
-  const nom = nomEntreprise.trim() || "L'entreprise"
-  return `1. Champ d'application
-Les présentes conditions s'appliquent à toutes les prestations et livraisons de ${nom}, sauf accord écrit contraire.
-
-2. Devis et commandes
-Les devis sont valables durant la durée indiquée sur le document. Toute commande implique l'acceptation des présentes conditions.
-
-3. Prix et paiement
-Les prix s'entendent dans la devise indiquée sur la facture. Le paiement est dû dans le délai mentionné, sans escompte. Passé ce délai, un intérêt moratoire au taux légal peut être appliqué, ainsi que des frais de rappel.
-
-4. Réserve de propriété
-Les marchandises livrées restent la propriété de ${nom} jusqu'au paiement intégral.
-
-5. Délais
-Les délais annoncés sont indicatifs. Un retard ne donne pas droit à une réduction de prix ni à des dommages-intérêts, sauf accord écrit.
-
-6. Garantie
-Les défauts doivent être signalés par écrit dans les 8 jours suivant la livraison ou la fin de l'intervention. La garantie se limite à la réparation ou au remplacement des éléments défectueux. Sont exclus l'usure normale, les dommages consécutifs à une mauvaise utilisation, à une intervention d'un tiers, à une surtension ou à un défaut d'entretien.
-
-7. Responsabilité
-La responsabilité de ${nom} est limitée au montant de la prestation concernée. Elle ne couvre pas les dommages indirects tels que perte de données, perte d'exploitation ou manque à gagner. Il appartient au client de sauvegarder ses données avant toute intervention. Les limitations ci-dessus ne s'appliquent pas en cas de faute grave ou intentionnelle, ni dans les cas où la loi impose une responsabilité.
-
-8. Données du client
-Les données auxquelles ${nom} pourrait accéder dans le cadre d'une intervention sont traitées de manière confidentielle et ne sont pas conservées au-delà de ce qui est nécessaire.
-
-9. Droit applicable et for
-Le droit applicable et le for sont ceux du siège de ${nom}, sous réserve des dispositions impératives protégeant les consommateurs.`
 }
 
 export default function Parametres(): React.JSX.Element {
@@ -127,7 +94,7 @@ export default function Parametres(): React.JSX.Element {
   function insererModeleConditions(): void {
     if (
       valeurs.conditionsGenerales.trim() &&
-      !window.confirm('Remplacer les conditions générales actuelles par le modèle ?')
+      !window.confirm(t('ent.remplacerConditions'))
     ) {
       return
     }
@@ -140,43 +107,42 @@ export default function Parametres(): React.JSX.Element {
     try {
       const misAJour = await window.api.entreprise.enregistrer(valeurs)
       setValeurs(misAJour)
-      setMessageSucces('Paramètres enregistrés.')
+      setMessageSucces(t('ent.enregistre'))
     } catch (erreur) {
       setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
     }
   }
 
-  if (chargement) return <p>Chargement…</p>
+  if (chargement) return <p>{t('action.chargement')}</p>
 
   const profil = profilPays(valeurs.pays)
 
   return (
     <div className="pile-cartes">
       <div className="carte">
-        <h2>Identité de l'entreprise</h2>
+        <h2>{t('ent.identite')}</h2>
 
       <label>
-        Pays
+        {t('ent.pays')}
         <select value={valeurs.pays} onChange={(e) => changerPays(e.target.value)}>
           {listePays().map((p) => (
             <option key={p.code} value={p.code}>
-              {p.nom}
+              {ecranPays(p).nom}
             </option>
           ))}
         </select>
       </label>
       <p className="valeur-calculee">
-        Le pays détermine la devise ({profil.symboleDevise}), les taux de {profil.nomTaxe}, le format
-        de l'identifiant fiscal et les mentions légales imprimées sur les documents.
+        {t('ent.paysAide', { devise: profil.symboleDevise, taxe: profil.nomTaxe })}
       </p>
 
       <label>
-        Nom de l'entreprise
+        {t('ent.nom')}
         <input value={valeurs.nom} onChange={(e) => modifierChamp('nom', e.target.value)} />
       </label>
 
       <label>
-        Adresse
+        {t('ent.adresse')}
         <textarea
           value={valeurs.adresse}
           onChange={(e) => modifierChamp('adresse', e.target.value)}
@@ -184,12 +150,12 @@ export default function Parametres(): React.JSX.Element {
       </label>
 
       <label>
-        Email
+        {t('ent.email')}
         <input value={valeurs.email} onChange={(e) => modifierChamp('email', e.target.value)} />
       </label>
 
       <label>
-        Téléphone
+        {t('ent.telephone')}
         <input
           value={valeurs.telephone}
           onChange={(e) => modifierChamp('telephone', e.target.value)}
@@ -197,12 +163,12 @@ export default function Parametres(): React.JSX.Element {
       </label>
 
       <label>
-        IBAN
+        {t('ent.iban')}
         <input value={valeurs.iban} onChange={(e) => modifierChamp('iban', e.target.value)} />
       </label>
 
       <label>
-        Titulaire du compte
+        {t('ent.titulaire')}
         <input
           value={valeurs.titulaireCompte}
           onChange={(e) => modifierChamp('titulaireCompte', e.target.value)}
@@ -210,7 +176,7 @@ export default function Parametres(): React.JSX.Element {
       </label>
 
       <label>
-        Préfixe numéro de facture
+        {t('ent.prefixeFacture')}
         <input
           value={valeurs.prefixeFacture}
           onChange={(e) => modifierChamp('prefixeFacture', e.target.value)}
@@ -218,22 +184,22 @@ export default function Parametres(): React.JSX.Element {
       </label>
 
       <label>
-        Logo
+        {t('ent.logo')}
         <div className="logo-selecteur">
-          {logoDataUrl && <img src={logoDataUrl} alt="Logo de l'entreprise" className="logo-apercu" />}
+          {logoDataUrl && <img src={logoDataUrl} alt={t('ent.logoAlt')} className="logo-apercu" />}
           <button type="button" onClick={choisirLogo}>
-            Choisir un logo…
+            {t('ent.choisirLogo')}
           </button>
           {logoDataUrl && (
             <button type="button" onClick={retirerLogo}>
-              Retirer
+              {t('ent.retirer')}
             </button>
           )}
         </div>
       </label>
 
       <label>
-        Préfixe numéro de devis
+        {t('ent.prefixeDevis')}
         <input
           value={valeurs.prefixeDevis}
           onChange={(e) => modifierChamp('prefixeDevis', e.target.value)}
@@ -242,7 +208,7 @@ export default function Parametres(): React.JSX.Element {
       </div>
 
       <div className="carte">
-        <h2>{profil.nomTaxe} et identifiant fiscal</h2>
+        <h2>{t('ent.taxeEtIdentifiant', { taxe: profil.nomTaxe })}</h2>
 
         <label className="case-a-cocher">
           <input
@@ -250,15 +216,23 @@ export default function Parametres(): React.JSX.Element {
             checked={valeurs.assujettiTva}
             onChange={(e) => changerAssujettissement(e.target.checked)}
           />
-          Je suis assujetti à la {profil.nomTaxe}
+          {t('ent.assujetti', { taxe: profil.nomTaxe })}
         </label>
         <p className="valeur-calculee">
           {valeurs.assujettiTva
-            ? `La ${profil.nomTaxe} est facturée et détaillée sur les documents.`
-            : `Aucune ${profil.nomTaxe} n'est facturée. La mention « ${profil.mentionNonAssujetti} » est imprimée sur les documents.`}
+            ? t('ent.assujettiOui', { taxe: profil.nomTaxe })
+            : t('ent.assujettiNon', {
+                taxe: profil.nomTaxe,
+                // La mention est reprise telle quelle : elle part sur la
+                // facture et appartient au pays, pas au lecteur.
+                mention: profil.mentionNonAssujetti
+              })}
           <br />
-          Seuil indicatif d'assujettissement en {profil.nom} : {profil.seuilAssujettissement}.{' '}
-          <strong>À vérifier auprès de l'administration fiscale.</strong>
+          {t('ent.seuil', {
+            pays: ecranPays(profil).nom,
+            seuil: ecranPays(profil).seuilAssujettissement
+          })}{' '}
+          <strong>{t('ent.seuilVerifier')}</strong>
         </p>
 
         <label>
@@ -269,44 +243,40 @@ export default function Parametres(): React.JSX.Element {
             onChange={(e) => modifierChamp('numeroIde', e.target.value)}
           />
         </label>
-        <p className="valeur-calculee">{profil.aideIdentifiant}</p>
+        <p className="valeur-calculee">{ecranPays(profil).aideIdentifiant}</p>
 
         {valeurs.assujettiTva && (
           <>
             <label>
-              Taux de {profil.nomTaxe} par défaut
+              {t('ent.tauxParDefaut', { taxe: profil.nomTaxe })}
               <select
                 value={valeurs.tvaDefautPct}
                 onChange={(e) => modifierChamp('tvaDefautPct', Number(e.target.value))}
               >
-                {profil.tauxTva.map((t) => (
-                  <option key={t.taux} value={t.taux}>
-                    {t.libelle} — {t.taux}%
+                {profil.tauxTva.map((taux, index) => (
+                  <option key={taux.taux} value={taux.taux}>
+                    {ecranPays(profil).libellesTaux[index]} — {taux.taux}%
                   </option>
                 ))}
               </select>
             </label>
             <p className="valeur-calculee">
-              Taux en vigueur en {profil.nom} au moment de la rédaction de l'application.{' '}
-              <strong>Vérifiez qu'ils sont toujours d'actualité.</strong>
+              {t('ent.tauxEnVigueur', { pays: ecranPays(profil).nom })}{' '}
+              <strong>{t('ent.tauxVerifier')}</strong>
             </p>
           </>
         )}
       </div>
 
       <div className="carte">
-        <h2>Conditions générales et mentions</h2>
+        <h2>{t('ent.conditionsTitre')}</h2>
         <p className="valeur-calculee">
-          Ce texte est imprimé au bas de vos factures et devis. Il encadre notamment la garantie et
-          votre responsabilité.{' '}
-          <strong>
-            Attention : une clause ne peut pas exclure la responsabilité en cas de faute grave ou
-            intentionnelle. Faites relire ce texte par un juriste avant de l'utiliser.
-          </strong>
+          {t('ent.conditionsAide')}{' '}
+          <strong>{t('ent.conditionsAvertissement')}</strong>
         </p>
 
         <label>
-          Conditions générales
+          {t('ent.conditions')}
           <textarea
             rows={12}
             value={valeurs.conditionsGenerales}
@@ -315,15 +285,23 @@ export default function Parametres(): React.JSX.Element {
         </label>
         <div className="barre-boutons" style={{ marginTop: 0, marginBottom: '1rem' }}>
           <button className="bouton-secondaire" onClick={insererModeleConditions}>
-            Insérer un modèle de départ
+            {t('ent.insererModele')}
           </button>
+          {/*
+            **Le modèle reste en français, et on le dit.** C'est un texte
+            juridique inséré au bas de vraies factures : le traduire
+            mécaniquement produirait un contrat que personne n'a relu. Plutôt
+            que de le traduire ou de le cacher, on annonce sa langue et son
+            cadre — l'utilisateur décide en connaissance de cause.
+          */}
+          <span className="valeur-calculee">{t('ent.modeleEnFrancais')}</span>
         </div>
 
         <label>
-          Mentions de pied de page
+          {t('ent.mentionsPied')}
           <textarea
             rows={3}
-            placeholder="Ex. : numéro de TVA intracommunautaire, assurance RC professionnelle, inscription au registre du commerce…"
+            placeholder={t('ent.mentionsPiedExemple')}
             value={valeurs.mentionsPied}
             onChange={(e) => modifierChamp('mentionsPied', e.target.value)}
           />
@@ -331,7 +309,7 @@ export default function Parametres(): React.JSX.Element {
       </div>
 
       <div className="carte">
-        <button onClick={enregistrer}>Enregistrer</button>
+        <button onClick={enregistrer}>{t('action.enregistrer')}</button>
         {messageErreur && <p className="erreur">{messageErreur}</p>}
         {messageSucces && <p className="succes">{messageSucces}</p>}
       </div>

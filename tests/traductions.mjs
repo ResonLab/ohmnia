@@ -43,6 +43,7 @@ const echec = (message) => {
 const ECRANS_TRADUITS = [
   'src/renderer/src/App.tsx',
   'src/renderer/src/pages/Accueil.tsx',
+  'src/renderer/src/pages/Parametres.tsx',
   'src/renderer/src/pages/Inventaire.tsx',
   'src/renderer/src/pages/Clients.tsx',
   'src/renderer/src/pages/ResumeAnnuelPage.tsx',
@@ -154,6 +155,19 @@ if (inutilisees.length > 0) {
 // On ne cherche pas « du français » — indécidable. On cherche ce qui le trahit
 // à coup sûr dans du code écrit en français : un mot accentué, hors chaîne
 // technique, dans du texte que React affichera.
+/**
+ * **Ce que ce relevé ne verra jamais, et il faut le savoir.**
+ *
+ * Il repose sur l'accent, qui est le seul indice sûr de français dans du code
+ * écrit en français. Une phrase française **sans aucun accent** lui échappe par
+ * construction — et ce n'est pas théorique : « Actuellement : … sauvegarde(s). »
+ * s'affichait au milieu d'un écran anglais, dans un fichier déclaré traduit, et
+ * aucune des cinq passes de ce contrôle ne pouvait le voir.
+ *
+ * Il a été trouvé **en lançant l'application en anglais**, comme les autres
+ * défauts que la relecture ne montre pas. C'est la parade, et la seule : passer
+ * chaque écran dans les deux langues avant de le déclarer traduit.
+ */
 const ACCENTS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]/
 
 for (const relatif of ECRANS_TRADUITS) {
@@ -254,8 +268,65 @@ for (const relatif of ECRANS_TRADUITS) {
       /^[\w$.]+\(/.test(nue) ||
       /[=;{}()[\]]/.test(nue.replace(/\([^)]*\)/g, ''))
 
-    if (!estDuCode && ACCENTS.test(nue) && nue.length >= 3) {
+    /**
+     * **Une phrase reste une phrase, même avec une parenthèse ouverte.**
+     *
+     * La règle ci-dessus retire les parenthèses **appariées** avant de chercher
+     * de la ponctuation de code. Quand une phrase est coupée en deux lignes au
+     * milieu d'une parenthèse — « … externe (AES-256-GCM, mot de passe » —, la
+     * parenthèse reste ouverte, ne peut pas être retirée, et toute la ligne
+     * passe pour du code. Deux phrases françaises s'affichaient ainsi au milieu
+     * d'un écran anglais **déclaré traduit**, sous une suite verte.
+     *
+     * On récupère donc ce que la prose a de reconnaissable : plusieurs mots,
+     * un accent, et aucune ponctuation de programmation. Un identifiant ou un
+     * appel de fonction n'a jamais quatre mots séparés par des espaces.
+     */
+    const estDeLaProse =
+      nue.split(/\s+/).length >= 4 &&
+      ACCENTS.test(nue) &&
+      !/[=;{}[\]]/.test(nue) &&
+      !nue.includes('=>') &&
+      !/^[\w$.]+\(/.test(nue)
+
+    if ((!estDuCode || estDeLaProse) && ACCENTS.test(nue) && nue.length >= 3) {
       echec(`${etiquette}:${index + 1} — texte français seul sur sa ligne : « ${nue} »`)
+    }
+
+    /**
+     * **Cinquième forme : le texte qui ouvre la ligne et qu'une balise suit.**
+     *
+     * ```jsx
+     * >
+     *   Actuellement : <strong>{nb}</strong> sauvegarde(s).
+     * ```
+     *
+     * « Actuellement : » n'est ni entre `>` et `<` sur la même ligne — le `>`
+     * est à la ligne d'avant —, ni seul sur sa ligne, ni entre guillemets. Les
+     * quatre relevés précédents passaient tous à côté, et la règle « une ligne
+     * qui contient une accolade est du code » l'écartait explicitement.
+     *
+     * **Trouvé en lançant l'application en anglais**, pas en la relisant : deux
+     * phrases françaises s'affichaient au milieu d'un écran anglais **déclaré
+     * traduit**. C'est la cinquième passe sur la même question — « ce texte
+     * est-il traduit ? » — et chacune des quatre précédentes semblait complète.
+     */
+    const avantBalise = ligne.split(/[<{]/)[0].trim()
+    const estUnDebutDeTexte =
+      avantBalise.length >= 3 &&
+      avantBalise !== nue &&
+      ACCENTS.test(avantBalise) &&
+      // De la prose contient des espaces ; un identifiant, non.
+      avantBalise.includes(' ') &&
+      // **Les parenthèses ne sont pas exclues ici**, contrairement au relevé
+      // précédent : une phrase en contient légitimement — « (AES-256-GCM, mot
+      // de passe jamais enregistré) ». Les exclure faisait rater la moitié de
+      // ce que cette règle existe pour trouver.
+      !/[=;{}[\]]/.test(avantBalise) &&
+      !/^[\w$.]+\(/.test(avantBalise)
+
+    if (estUnDebutDeTexte) {
+      echec(`${etiquette}:${index + 1} — texte français avant une balise : « ${avantBalise} »`)
     }
   })
 }

@@ -119,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  16 suites — `npm run verifier`
+tests/                  17 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -487,7 +487,7 @@ corrigé, et ça n'a rien changé.*
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 16 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 17 suites de tests, **tout passe**.
 - Version `0.1.3`. Construite par GitHub Actions pour Windows et Linux.
   Elle apporte le **mode multi-postes**, le passage à l'organisation ResonLab et
   les premiers écrans traduits. La `0.1.2` n'a jamais été publiée : son

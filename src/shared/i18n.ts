@@ -1185,6 +1185,93 @@ const TEXTES = {
   },
   'param.apparence': { fr: 'Apparence', en: 'Appearance' },
   'param.theme': { fr: 'Thème', en: 'Theme' },
+
+  // --- Mon entreprise ---
+  //
+  // **Ce bloc ne contient que du texte d'écran.** Le nom de la taxe, le libellé
+  // de l'identifiant fiscal et la mention de non-assujettissement viennent de
+  // `pays.ts` et n'ont **pas** de clé ici : ils partent sur la facture et
+  // appartiennent au pays d'émission. `tests/pays-et-documents.mjs` refuse
+  // qu'on leur en donne une.
+  'action.chargement': { fr: 'Chargement…', en: 'Loading…' },
+  'ent.identite': { fr: "Identité de l'entreprise", en: 'Business identity' },
+  'papp.nbSauvegardes': {
+    fr: 'Actuellement : {nombre} sauvegarde(s).',
+    en: 'Currently: {nombre} backup(s).'
+  },
+  'papp.sauvegardeExterneAide': {
+    fr: "Copie chiffrée de la base vers une clé USB ou un disque externe (AES-256-GCM, mot de passe jamais enregistré). Indispensable en cas de panne ou de vol de l'ordinateur.",
+    en: 'An encrypted copy of the database onto a USB stick or an external drive (AES-256-GCM, the password is never stored). Essential if the computer fails or is stolen.'
+  },
+  'ent.pays': { fr: 'Pays', en: 'Country' },
+  'ent.remplacerConditions': {
+    fr: 'Remplacer les conditions générales actuelles par le modèle ?',
+    en: 'Replace the current terms and conditions with the template?'
+  },
+  'ent.enregistre': { fr: 'Paramètres enregistrés.', en: 'Settings saved.' },
+  'ent.paysAide': {
+    fr: "Le pays détermine la devise ({devise}), les taux de {taxe}, le format de l'identifiant fiscal et les mentions légales imprimées sur les documents.",
+    en: 'The country sets the currency ({devise}), the {taxe} rates, the tax identifier format and the legal notices printed on documents.'
+  },
+  'ent.nom': { fr: "Nom de l'entreprise", en: 'Business name' },
+  'ent.adresse': { fr: 'Adresse', en: 'Address' },
+  'ent.email': { fr: 'Email', en: 'Email' },
+  'ent.telephone': { fr: 'Téléphone', en: 'Phone' },
+  'ent.iban': { fr: 'IBAN', en: 'IBAN' },
+  'ent.titulaire': { fr: 'Titulaire du compte', en: 'Account holder' },
+  'ent.prefixeFacture': { fr: 'Préfixe numéro de facture', en: 'Invoice number prefix' },
+  'ent.prefixeDevis': { fr: 'Préfixe numéro de devis', en: 'Quote number prefix' },
+  'ent.logo': { fr: 'Logo', en: 'Logo' },
+  'ent.logoAlt': { fr: "Logo de l'entreprise", en: 'Business logo' },
+  'ent.choisirLogo': { fr: 'Choisir un logo…', en: 'Choose a logo…' },
+  'ent.retirer': { fr: 'Retirer', en: 'Remove' },
+  'ent.taxeEtIdentifiant': { fr: '{taxe} et identifiant fiscal', en: '{taxe} and tax identifier' },
+  'ent.assujetti': { fr: 'Je suis assujetti à la {taxe}', en: 'I am registered for {taxe}' },
+  'ent.assujettiOui': {
+    fr: 'La {taxe} est facturée et détaillée sur les documents.',
+    en: '{taxe} is charged and itemised on documents.'
+  },
+  'ent.assujettiNon': {
+    fr: "Aucune {taxe} n'est facturée. La mention « {mention} » est imprimée sur les documents.",
+    en: 'No {taxe} is charged. The notice “{mention}” is printed on documents.'
+  },
+  'ent.seuil': {
+    fr: "Seuil indicatif d'assujettissement en {pays} : {seuil}.",
+    en: 'Indicative registration threshold in {pays}: {seuil}.'
+  },
+  'ent.seuilVerifier': {
+    fr: "À vérifier auprès de l'administration fiscale.",
+    en: 'Check this with the tax authority.'
+  },
+  'ent.tauxParDefaut': { fr: 'Taux de {taxe} par défaut', en: 'Default {taxe} rate' },
+  'ent.tauxEnVigueur': {
+    fr: "Taux en vigueur en {pays} au moment de la rédaction de l'application.",
+    en: 'Rates in force in {pays} when the application was written.'
+  },
+  'ent.tauxVerifier': {
+    fr: "Vérifiez qu'ils sont toujours d'actualité.",
+    en: 'Check that they are still current.'
+  },
+  'ent.conditionsTitre': { fr: 'Conditions générales et mentions', en: 'Terms and notices' },
+  'ent.conditionsAide': {
+    fr: 'Ce texte est imprimé au bas de vos factures et devis. Il encadre notamment la garantie et votre responsabilité.',
+    en: 'This text is printed at the bottom of your invoices and quotes. It covers your warranty and your liability.',
+  },
+  'ent.conditionsAvertissement': {
+    fr: "Attention : une clause ne peut pas exclure la responsabilité en cas de faute grave ou intentionnelle. Faites relire ce texte par un juriste avant de l'utiliser.",
+    en: 'Careful: a clause cannot exclude liability for gross negligence or wilful misconduct. Have this text reviewed by a lawyer before using it.'
+  },
+  'ent.conditions': { fr: 'Conditions générales', en: 'Terms and conditions' },
+  'ent.insererModele': { fr: 'Insérer un modèle de départ', en: 'Insert a starting template' },
+  'ent.modeleEnFrancais': {
+    fr: 'Le modèle est rédigé en français et suit les usages francophones.',
+    en: 'The template is written in French and follows French-speaking practice.'
+  },
+  'ent.mentionsPied': { fr: 'Mentions de pied de page', en: 'Footer notices' },
+  'ent.mentionsPiedExemple': {
+    fr: 'Ex. : numéro de TVA intracommunautaire, assurance RC professionnelle, inscription au registre du commerce…',
+    en: 'E.g. intra-EU VAT number, professional liability insurance, trade register entry…'
+  },
 } satisfies Record<string, Traduction>
 
 export type CleTraduction = keyof typeof TEXTES
