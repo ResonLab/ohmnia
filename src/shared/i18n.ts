@@ -34,6 +34,11 @@ const TEXTES = {
   'menu.parametres': { fr: 'Mon entreprise', en: 'My company' },
   'menu.parametresApp': { fr: "Paramètres de l'app", en: 'App settings' },
   'menu.rechercher': { fr: 'pour rechercher', en: 'to search' },
+  'menu.deconnecter': { fr: 'Se déconnecter', en: 'Sign out' },
+  'menu.deconnecterConfirme': {
+    fr: 'Fermer la session sur ce poste ? Les données restent sur le serveur.',
+    en: 'Close the session on this workstation? The data stays on the server.'
+  },
   'menu.sousTitre': { fr: 'Gestion', en: 'Management' },
 
   // --- Actions communes ---

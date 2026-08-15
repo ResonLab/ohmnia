@@ -585,6 +585,48 @@ button {
   flex-shrink: 0;
 }
 
+/* ── Trois classes trouvées sans aucune règle ─────────────────────────────
+   Toutes les trois vivent sur des écrans arrivés tard — la connexion au
+   serveur, le réglage multi-postes, le graphique annuel — dont le CSS n'a
+   jamais été écrit. Elles étaient posées sur des éléments et rien ne les
+   visait. Trouvées par un contrôle d'atteignabilité, pas à l'œil. */
+
+/*
+  Le texte atténué. **Dix éléments le portaient, dans quatre fichiers, et il
+  n'existait que dans un commentaire de cette feuille** : les explications de
+  l'écran de connexion sortaient dans la même encre que le reste, ce qui est
+  exactement l'inverse de leur rôle.
+*/
+.discret {
+  color: var(--texte-doux);
+  font-size: 0.85rem;
+}
+
+/*
+  Le bouton principal d'un formulaire, quand il n'est ni dans une `.carte` ni
+  dans une `.barre-boutons` — c'est le cas des deux écrans multi-postes, où le
+  bouton de validation se retrouvait au ras du texte.
+*/
+button.principal {
+  background: var(--degrade-accent);
+  color: var(--accent-sombre);
+  border: none;
+  padding: 0.6rem 1.3rem;
+  border-radius: var(--rayon-petit);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.principal:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Le cadre du graphique annuel : sa légende avait ses règles, lui non. */
+.barres-annuelles {
+  margin-top: 0.6rem;
+}
+
 .barres-legende {
   display: flex;
   gap: 1.2rem;

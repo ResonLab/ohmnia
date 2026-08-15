@@ -230,6 +230,28 @@ export default function App(): React.JSX.Element {
             <span className="pastille-serveur">Serveur</span>
             {multipostes.session.nomAffiche || multipostes.session.identifiant}
             <em>{multipostes.session.role}</em>
+            {/*
+              **Il n'y avait aucun moyen de se déconnecter.**
+              `multipostes:deconnecter` existait dans le pont, dans l'IPC et
+              dans le client, et rien ne l'appelait : une session ouverte le
+              restait jusqu'à la fermeture de l'application. Sur un poste
+              partagé, le suivant reprenait la session du précédent — avec ses
+              droits. Le jeton ne vit qu'en mémoire, ce qui limite la portée,
+              mais ne remplace pas une porte de sortie.
+
+              Défaut trouvé par `tests/atteignable.mjs`, pas à la relecture :
+              le code était juste, les suites vertes, et la fonction n'existait
+              pas pour l'utilisateur.
+            */}
+            <button
+              className="discret"
+              onClick={async () => {
+                if (!confirm(t('menu.deconnecterConfirme'))) return
+                setMultipostes(await window.api.multipostes.deconnecter())
+              }}
+            >
+              {t('menu.deconnecter')}
+            </button>
           </p>
         )}
 
