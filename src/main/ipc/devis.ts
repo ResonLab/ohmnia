@@ -6,14 +6,12 @@ import {
   dupliquerDevis,
   enregistrerDevis,
   historiqueDevis,
-  prochainNumeroDevis,
   supprimerDevis
 } from '../domaines/devis'
 import type { Devis, DevisDetail } from '../../shared/types'
 
 /** Branchement des devis sur la fenêtre. Logique : `../domaines/devis.ts`. */
 export function enregistrerHandlersDevis(): void {
-  ipcMain.handle('devis:prochainNumero', () => prochainNumeroDevis())
 
   ipcMain.handle('devis:creerBrouillon', (_e, clientId: number) => creerBrouillonDevis(clientId))
 

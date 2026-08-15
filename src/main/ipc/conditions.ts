@@ -1,5 +1,5 @@
 import { ipcMain, shell } from 'electron'
-import { accepterConditions, etatConditions, urlConditions } from '../domaines/conditions'
+import { accepterConditions, etatConditions } from '../domaines/conditions'
 import { URL_CONDITIONS } from '../../shared/conditions'
 
 /**
@@ -12,7 +12,6 @@ export function enregistrerHandlersConditions(): void {
 
   ipcMain.handle('conditions:accepter', () => accepterConditions())
 
-  ipcMain.handle('conditions:url', () => urlConditions())
 }
 
 /** Ouvrir la page dans le navigateur : c'est le poste qui le fait, dans les deux modes. */

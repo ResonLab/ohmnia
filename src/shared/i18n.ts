@@ -1203,6 +1203,17 @@ const TEXTES = {
     fr: "Copie chiffrée de la base vers une clé USB ou un disque externe (AES-256-GCM, mot de passe jamais enregistré). Indispensable en cas de panne ou de vol de l'ordinateur.",
     en: 'An encrypted copy of the database onto a USB stick or an external drive (AES-256-GCM, the password is never stored). Essential if the computer fails or is stolen.'
   },
+  'facture.enAttenteDepuis': {
+    fr: 'En attente depuis {jours} jours',
+    en: 'Outstanding for {jours} days'
+  },
+  'facture.rappelsEnvoyes': { fr: 'Rappels envoyés', en: 'Reminders sent' },
+  'facture.rappelNiveau': {
+    fr: 'Rappel {niveau} du {date} — frais {frais}',
+    en: 'Reminder {niveau} of {date} — fee {frais}'
+  },
+  'facture.aucunRappel': { fr: 'Aucun rappel envoyé.', en: 'No reminder sent.' },
+  'facture.voirRappels': { fr: 'Rappels', en: 'Reminders' },
   'ent.pays': { fr: 'Pays', en: 'Country' },
   'ent.remplacerConditions': {
     fr: 'Remplacer les conditions générales actuelles par le modèle ?',

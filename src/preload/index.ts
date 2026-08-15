@@ -179,7 +179,6 @@ const api = {
   },
 
   factures: {
-    prochainNumero: (): Promise<string> => ipcRenderer.invoke('factures:prochainNumero'),
     creerBrouillon: (clientId: number): Promise<FactureDetail> =>
       ipcRenderer.invoke('factures:creerBrouillon', clientId),
     obtenirDetail: (id: number): Promise<FactureDetail> => ipcRenderer.invoke('factures:obtenirDetail', id),
@@ -199,7 +198,6 @@ const api = {
   },
 
   devis: {
-    prochainNumero: (): Promise<string> => ipcRenderer.invoke('devis:prochainNumero'),
     creerBrouillon: (clientId: number): Promise<DevisDetail> =>
       ipcRenderer.invoke('devis:creerBrouillon', clientId),
     obtenirDetail: (id: number): Promise<DevisDetail> => ipcRenderer.invoke('devis:obtenirDetail', id),
@@ -232,8 +230,7 @@ const api = {
   conditions: {
     etat: (): Promise<EtatConditions> => ipcRenderer.invoke('conditions:etat'),
     accepter: (): Promise<string> => ipcRenderer.invoke('conditions:accepter'),
-    ouvrirPage: (): Promise<void> => ipcRenderer.invoke('conditions:ouvrirPage'),
-    url: (): Promise<string> => ipcRenderer.invoke('conditions:url')
+    ouvrirPage: (): Promise<void> => ipcRenderer.invoke('conditions:ouvrirPage')
   },
 
   conformite: {

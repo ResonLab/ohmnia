@@ -21,6 +21,7 @@ const SUITES = [
   ['Relances à envoyer', 'relances.mjs'],
   ['Traductions', 'traductions.mjs'],
   ['Pays, écran et documents', 'pays-et-documents.mjs'],
+  ['Ce qui existe est-il atteignable', 'atteignable.mjs'],
   ['Effets React et leurs dépendances', 'effets-react.mjs'],
   ['Serveur multi-postes (étape 1)', 'serveur-multipostes.mjs'],
   ['Comptes, droits et authentification (étape 2)', 'serveur-authentification.mjs'],

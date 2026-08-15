@@ -57,21 +57,21 @@ export interface ParametresImpression {
   margeImpressionPct: number
 }
 
-export function calculerCoutPapierFacture(params: ParametresImpression): number {
+function calculerCoutPapierFacture(params: ParametresImpression): number {
   const prixFeuille = diviserSansErreur(params.prixSachetA4, params.feuillesParSachet)
   return prixFeuille * params.feuillesParFacture
 }
 
-export function calculerCoutAmortissementImprimanteFacture(params: ParametresImpression): number {
+function calculerCoutAmortissementImprimanteFacture(params: ParametresImpression): number {
   return diviserSansErreur(params.prixImprimante, params.nbFacturesAvantRemplacement)
 }
 
-export function calculerCoutEncreFacture(params: ParametresImpression): number {
+function calculerCoutEncreFacture(params: ParametresImpression): number {
   const prixFeuilleEncre = diviserSansErreur(params.prixEncre, params.feuillesParCartouche)
   return prixFeuilleEncre * params.feuillesParFacture
 }
 
-export function calculerCoutEnveloppeFacture(params: ParametresImpression): number {
+function calculerCoutEnveloppeFacture(params: ParametresImpression): number {
   return diviserSansErreur(params.prixSachetEnveloppes, params.nbEnveloppesParSachet)
 }
 
@@ -111,7 +111,7 @@ export function calculerSousTotal(lignes: { quantite: number; prixUnitaire: numb
   return lignes.reduce((total, ligne) => total + calculerTotalLigne(ligne.quantite, ligne.prixUnitaire), 0)
 }
 
-export function calculerTotalApresRemise(sousTotal: number, remisePct: number): number {
+function calculerTotalApresRemise(sousTotal: number, remisePct: number): number {
   return sousTotal * (1 - remisePct / 100)
 }
 

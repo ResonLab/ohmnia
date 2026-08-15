@@ -157,12 +157,6 @@ h3 {
   opacity: 0.9;
 }
 
-.menu-separateur {
-  height: 1px;
-  background: var(--bordure);
-  margin: 0.6rem 1.25rem;
-}
-
 .contenu {
   flex: 1;
   padding: 2rem 2.25rem 3rem;
@@ -279,8 +273,7 @@ button {
 }
 
 .carte > button,
-.barre-boutons button,
-.carte-bouton {
+.barre-boutons button {
   background: var(--degrade-accent);
   color: var(--accent-sombre);
   border: none;

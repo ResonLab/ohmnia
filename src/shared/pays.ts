@@ -11,7 +11,7 @@ import { langue } from './i18n'
  * Elles sont modifiables dans l'application et doivent être confirmées auprès
  * de l'administration fiscale ou d'un fiduciaire avant usage réel.
  *
- * Pour ajouter un pays : copier un bloc ci-dessous et l'ajouter à PROFILS_PAYS.
+ * Pour ajouter un pays : copier un bloc ci-dessous et l'ajouter à PROFILS.
  */
 
 export type CodePays = 'CH' | 'FR' | 'BE' | 'LU' | 'DE'
@@ -247,8 +247,6 @@ const PROFILS: Record<CodePays, ProfilPays> = {
     }
   }
 }
-
-export const PROFILS_PAYS = PROFILS
 
 export const PAYS_PAR_DEFAUT: CodePays = 'CH'
 

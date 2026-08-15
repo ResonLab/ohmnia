@@ -74,7 +74,7 @@ Une sauvegarde est créée **au démarrage** et **avant chaque export PDF**. Dé
 ```bash
 npm install
 npm run dev          # lance l'app avec rechargement à chaud
-npm run verifier     # typecheck + 17 suites de tests — doit passer avant toute publication
+npm run verifier     # typecheck + 18 suites de tests — doit passer avant toute publication
 npm run package:win  # construit l'installeur, sans rien envoyer
 npm run publish:win  # construit ET publie sur les GitHub Releases
 ```

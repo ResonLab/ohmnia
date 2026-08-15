@@ -92,7 +92,6 @@ export const DROITS: Record<string, Role> = {
   'suiviTemps:facturer': 'ecriture',
 
   /* Devis */
-  'devis:prochainNumero': 'lecture',
   'devis:obtenirDetail': 'lecture',
   'devis:historique': 'lecture',
   'devis:creerBrouillon': 'ecriture',
@@ -102,7 +101,6 @@ export const DROITS: Record<string, Role> = {
   'devis:changerStatut': 'ecriture',
 
   /* Factures */
-  'factures:prochainNumero': 'lecture',
   'factures:obtenirDetail': 'lecture',
   'factures:historique': 'lecture',
   'factures:creerBrouillon': 'ecriture',
@@ -144,7 +142,6 @@ export const DROITS: Record<string, Role> = {
 
   /* Conditions d'utilisation */
   'conditions:etat': 'lecture',
-  'conditions:url': 'lecture',
   'conditions:accepter': 'administration',
 
   /* Entreprise — son identité figure sur chaque facture. */

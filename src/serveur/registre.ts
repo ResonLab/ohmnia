@@ -85,7 +85,7 @@ import {
 } from '../main/domaines/inventaire'
 import { rechercheGlobale } from '../main/domaines/recherche'
 import { verifierConformite } from '../main/domaines/conformite'
-import { accepterConditions, etatConditions, urlConditions } from '../main/domaines/conditions'
+import { accepterConditions, etatConditions } from '../main/domaines/conditions'
 import {
   definirLogo,
   enregistrerEntreprise,
@@ -113,7 +113,6 @@ import {
   dupliquerDevis,
   enregistrerDevis,
   historiqueDevis,
-  prochainNumeroDevis,
   supprimerDevis
 } from '../main/domaines/devis'
 import {
@@ -125,7 +124,6 @@ import {
   dupliquerFacture,
   enregistrerFacture,
   historiqueFactures,
-  prochainNumeroFacture,
   supprimerFacture
 } from '../main/domaines/factures'
 import {
@@ -232,7 +230,6 @@ export const REGISTRE: Record<string, Operation> = {
   'suiviTemps:facturer': (ids, factureId, tauxHoraireParDefaut) =>
     facturerInterventions(ids as number[], factureId as number, tauxHoraireParDefaut as number),
 
-  'devis:prochainNumero': () => prochainNumeroDevis(),
   'devis:creerBrouillon': (clientId) => creerBrouillonDevis(clientId as number),
   'devis:obtenirDetail': (id) => chargerDetailDevis(id as number),
   'devis:dupliquer': (id) => dupliquerDevis(id as number),
@@ -242,7 +239,6 @@ export const REGISTRE: Record<string, Operation> = {
     changerStatutDevis(id as number, statut as Parameters<typeof changerStatutDevis>[1]),
   'devis:historique': () => historiqueDevis(),
 
-  'factures:prochainNumero': () => prochainNumeroFacture(),
   'factures:creerBrouillon': (clientId) => creerBrouillonFacture(clientId as number),
   'factures:obtenirDetail': (id) => chargerDetailFacture(id as number),
   'factures:dupliquer': (id) => dupliquerFacture(id as number),
@@ -296,7 +292,6 @@ export const REGISTRE: Record<string, Operation> = {
 
   'conditions:etat': () => etatConditions(),
   'conditions:accepter': () => accepterConditions(),
-  'conditions:url': () => urlConditions(),
 
   'entreprise:lire': () => lireEntreprise(),
   'entreprise:enregistrer': (valeurs) =>

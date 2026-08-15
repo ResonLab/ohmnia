@@ -3,6 +3,7 @@ import type {
   FactureDetail,
   FactureLigne,
   HistoriqueFacture,
+  Rappel,
   ModelePrestation,
   ParametresImpressionDb,
   StatutFacture
@@ -26,6 +27,27 @@ function ligneVide(): FactureLigne {
 
 export default function Facturation(): React.JSX.Element {
   const [historique, setHistorique] = useState<HistoriqueFacture[]>([])
+  /**
+   * Les rappels déjà envoyés pour une facture, dépliés sous sa ligne.
+   *
+   * **`rappels:lister` existait de bout en bout et aucun écran ne l'appelait.**
+   * On pouvait émettre un rappel sans jamais revoir ce qui était parti : à
+   * quelle date, à quel niveau, avec quels frais. Or c'est la première question
+   * qu'on se pose avant de relancer une seconde fois, et la carte des relances
+   * ne répond qu'à « faut-il relancer », pas à « qu'a-t-on déjà envoyé ».
+   *
+   * On garde la facture ouverte plutôt qu'une liste : une seule à la fois, et
+   * refermer efface — ces lignes ne servent qu'à répondre à une question posée.
+   */
+  const [rappelsOuverts, setRappelsOuverts] = useState<{ factureId: number; liste: Rappel[] } | null>(null)
+
+  async function basculerRappels(factureId: number): Promise<void> {
+    if (rappelsOuverts?.factureId === factureId) {
+      setRappelsOuverts(null)
+      return
+    }
+    setRappelsOuverts({ factureId, liste: await window.api.rappels.lister(factureId) })
+  }
   const [brouillon, setBrouillon] = useState<FactureDetail | null>(null)
   const [clientIdNouveau, setClientIdNouveau] = useState<number | null>(null)
   const [impressionParams, setImpressionParams] = useState<ParametresImpressionDb | null>(null)
@@ -544,12 +566,17 @@ export default function Facturation(): React.JSX.Element {
                       ))}
                     </select>
                     {enRetard && (
-                      <span className="badge-alerte">En attente depuis {facture.joursEnAttente} jours</span>
+                      <span className="badge-alerte">
+                        {t('facture.enAttenteDepuis', { jours: facture.joursEnAttente ?? 0 })}
+                      </span>
                     )}
                   </td>
                   <td>{facture.montant === null ? '—' : `${formaterMontant(facture.montant)}`}</td>
                   <td className="cellule-actions">
                     <button onClick={() => ouvrirBrouillon(facture.id)}>{t('devis.ouvrir')}</button>
+                    <button className="discret" onClick={() => basculerRappels(facture.id)}>
+                      {t('facture.voirRappels')}
+                    </button>
                     <button className="action-ecriture" onClick={() => dupliquerFacture(facture.id)}>{t('devis.dupliquer')}</button>
                     {facture.statut === 'En attente' && (
                       <button className="action-ecriture" onClick={() => ouvrirModaleRappel(facture.id)}>{t('facture.rappel')}</button>
@@ -561,6 +588,33 @@ export default function Facturation(): React.JSX.Element {
                 </tr>
               )
             })}
+            {/*
+              Les rappels de la facture ouverte, sous sa ligne. Une seconde
+              ligne de tableau plutôt qu'une modale : on veut lire sans perdre
+              de vue la facture dont il s'agit.
+            */}
+            {rappelsOuverts && (
+              <tr>
+                <td colSpan={6}>
+                  <strong>{t('facture.rappelsEnvoyes')}</strong>
+                  {rappelsOuverts.liste.length === 0 ? (
+                    <p className="discret">{t('facture.aucunRappel')}</p>
+                  ) : (
+                    <ul>
+                      {rappelsOuverts.liste.map((rappel) => (
+                        <li key={rappel.id}>
+                          {t('facture.rappelNiveau', {
+                            niveau: rappel.niveau,
+                            date: rappel.date,
+                            frais: formaterMontant(rappel.frais)
+                          })}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -8,14 +8,12 @@ import {
   dupliquerFacture,
   enregistrerFacture,
   historiqueFactures,
-  prochainNumeroFacture,
   supprimerFacture
 } from '../domaines/factures'
 import type { Facture, FactureDetail } from '../../shared/types'
 
 /** Branchement des factures sur la fenêtre. Logique : `../domaines/factures.ts`. */
 export function enregistrerHandlersFactures(): void {
-  ipcMain.handle('factures:prochainNumero', () => prochainNumeroFacture())
 
   ipcMain.handle('factures:creerBrouillon', (_e, clientId: number) => creerBrouillonFacture(clientId))
 

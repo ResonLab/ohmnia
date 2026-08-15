@@ -21,11 +21,6 @@ export const STATUTS_DEVIS: { valeur: StatutDevis; cle: CleTraduction }[] = [
   { valeur: 'Refusé', cle: 'devis.statutRefuse' }
 ]
 
-/** Le libellé à afficher pour un statut enregistré. */
-export function cleStatutDevis(valeur: StatutDevis): CleTraduction {
-  return STATUTS_DEVIS.find((s) => s.valeur === valeur)?.cle ?? 'devis.statutEnAttente'
-}
-
 /**
  * Les statuts d'une facture.
  *
@@ -39,8 +34,3 @@ export const STATUTS_FACTURE: { valeur: StatutFacture; cle: CleTraduction }[] = 
   { valeur: 'Payée', cle: 'facture.statutPayee' },
   { valeur: 'Annulée', cle: 'facture.statutAnnulee' }
 ]
-
-/** Le libellé à afficher pour un statut enregistré. */
-export function cleStatutFacture(valeur: StatutFacture): CleTraduction {
-  return STATUTS_FACTURE.find((s) => s.valeur === valeur)?.cle ?? 'facture.statutEnAttente'
-}
