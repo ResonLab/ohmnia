@@ -108,7 +108,8 @@ verifier(
 )
 
 /**
- * Les opérations qu'aucun écran n'appelle **et qui attendent une décision**.
+ * Les opérations qu'aucun écran n'appelle **et dont on a décidé qu'il en soit
+ * ainsi**.
  *
  * **Ce n'est pas une exemption de commodité, c'est le motif d'`ECRANS_TRADUITS`.**
  * Un chantier à moitié fait doit se dire au lieu de se taire : la liste nomme ce
@@ -116,40 +117,55 @@ verifier(
  * opération **nouvelle** hors d'atteinte fait échouer la suite. Ce qui est ici
  * a été examiné ; ce qui n'y est pas ne l'a pas été.
  *
- * · `journal:modifier` — corriger une écriture comptable en place est commode,
- *   mais réécrit l'histoire. Ohmnia tient un journal d'audit et verrouille les
- *   exercices clôturés : la discipline inverse — annuler et ressaisir, ou passer
- *   une écriture de correction — laisse une trace. La question n'est pas
- *   technique.
- * · `rappels:supprimer` — il efface la ligne du rappel et **ne retire pas les
- *   frais déjà ajoutés à la facture**. Un bouton produirait une facture qui
- *   garde des frais dont le rappel a disparu, et la liste des relances en
- *   reproposerait un. Il faut d'abord décider ce qu'annuler un rappel fait des
- *   frais.
+ * *La liste s'appelait `EN_ATTENTE_DE_DECISION`, et les deux décisions ont été
+ * prises le 16 août 2026.* Garder ce nom aurait annoncé du travail en suspens
+ * là où il n'y en a plus — la forme la moins soupçonnée de documentation qui
+ * dérive, et celle qui pousse à refaire ce qui est fait.
+ *
+ * **La liste est vide, et c'est le bon état.** Elle doit le rester : une
+ * opération qu'on y ajoute est une décision qu'on remet à plus tard, et le
+ * compte s'affiche à chaque exécution pour qu'on ne l'oublie pas.
+ *
+ * `journal:modifier` en est sorti le 16 août 2026, non pas branché mais
+ * **retiré de bout en bout** — domaine, IPC, pont, registre du serveur et table
+ * des droits. La décision était « il reste fermé » ; le laisser publié sur le
+ * serveur pendant qu'aucun écran ne l'appelait aurait été une porte condamnée
+ * d'un seul côté, puisqu'une opération du registre est appelable par le réseau
+ * sans passer par le moindre écran.
+ *
+ * `rappels:supprimer` en est sorti le 16 août 2026, branché dans la
+ * Facturation. **Le motif qui le retenait était faux** : il disait que la
+ * suppression laissait les frais sur la facture. Les frais ne sont jamais
+ * écrits dans `facture_lignes` — ils vivent sur la ligne `rappels` et ne
+ * deviennent une ligne de document que dans `construireDonneesRappel`, qui les
+ * relit par l'id du rappel. Effacer la ligne les efface partout. *Une réserve
+ * écrite n'est pas une mesure : celle-ci a survécu à deux relectures et n'a
+ * coûté qu'un `grep` à réfuter.*
  */
-const EN_ATTENTE_DE_DECISION = ['journal.modifier', 'rappels.supprimer']
+const HORS_DATTEINTE_ASSUME = []
 
 const pontOrphelin = operations
   .filter((op) => !codeEcranRecolle.includes(`api.${op}`))
-  .filter((op) => !EN_ATTENTE_DE_DECISION.includes(op))
+  .filter((op) => !HORS_DATTEINTE_ASSUME.includes(op))
 
-// Une décision prise puis branchée doit sortir de la liste : l'y laisser ferait
-// croire qu'il reste du travail là où il n'y en a plus. Même règle que pour une
-// clé de traduction déclarée et jamais employée.
-const decidesEtBranches = EN_ATTENTE_DE_DECISION.filter((op) =>
+// Une opération de la liste qui se retrouve branchée doit en sortir : l'y
+// laisser ferait croire qu'elle est encore fermée alors qu'un écran l'appelle.
+// Même règle que pour une clé de traduction déclarée et jamais employée — et il
+// a mordu pour de vrai le 16 août, sur `rappels.supprimer`.
+const assumesEtBranches = HORS_DATTEINTE_ASSUME.filter((op) =>
   codeEcranRecolle.includes(`api.${op}`)
 )
-if (decidesEtBranches.length > 0) {
+if (assumesEtBranches.length > 0) {
   verifier(
-    'la liste des décisions en attente est à jour',
+    'la liste des opérations volontairement fermées est à jour',
     false,
-    `${decidesEtBranches.join(', ')} est branché(e) : à retirer de EN_ATTENTE_DE_DECISION`
+    `${assumesEtBranches.join(', ')} est branché(e) : à retirer de HORS_DATTEINTE_ASSUME`
   )
 }
-if (EN_ATTENTE_DE_DECISION.length > 0) {
+if (HORS_DATTEINTE_ASSUME.length > 0) {
   console.log(
-    `  ····  ${EN_ATTENTE_DE_DECISION.length} opération(s) hors d’atteinte, en attente ` +
-      `d’une décision : ${EN_ATTENTE_DE_DECISION.join(', ')}`
+    `  ····  ${HORS_DATTEINTE_ASSUME.length} opération(s) volontairement hors ` +
+      `d’atteinte : ${HORS_DATTEINTE_ASSUME.join(', ')}`
   )
 }
 verifier(

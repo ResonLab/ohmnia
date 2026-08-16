@@ -5,7 +5,6 @@ import {
   evolutionAnnuelle,
   listerCategoriesJournal,
   listerJournal,
-  modifierEcritureJournal,
   renommerCategorieJournal,
   repartitionParCategorie,
   supprimerCategorieJournal,
@@ -35,10 +34,8 @@ export function enregistrerHandlersJournal(): void {
     ajouterEcritureJournal(valeurs)
   )
 
-  ipcMain.handle('journal:modifier', (_e, valeurs: ValeursEcriture & { id: number }) =>
-    modifierEcritureJournal(valeurs)
-  )
-
+  // Pas de canal `journal:modifier` : voir `src/preload/index.ts`. Une écriture
+  // se corrige en l'annulant et en la ressaisissant, ce qui laisse une trace.
   ipcMain.handle('journal:supprimer', (_e, id: number) => supprimerEcritureJournal(id))
 
   ipcMain.handle('journal:repartitionParCategorie', (_e, filtres: FiltresJournal = {}) =>

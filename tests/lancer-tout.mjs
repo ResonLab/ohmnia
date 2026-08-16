@@ -19,6 +19,10 @@ const SUITES = [
   ['Cohérence du site vitrine', 'coherence-site.mjs'],
   ['Cohérence du guide', 'coherence-guide.mjs'],
   ['Relances à envoyer', 'relances.mjs'],
+  // Celle-ci exécute la requête sur une vraie base, là où la précédente éprouve
+  // la règle sans base. Les deux sont nécessaires : la seconde a laissé passer
+  // pendant des jours une colonne qui n'existait pas.
+  ['Annulation de rappel, sur une vraie base', 'rappels-annulation.mjs'],
   ['Traductions', 'traductions.mjs'],
   ['Pays, écran et documents', 'pays-et-documents.mjs'],
   ['Ce qui existe est-il atteignable', 'atteignable.mjs'],

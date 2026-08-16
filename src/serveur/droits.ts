@@ -120,7 +120,8 @@ export const DROITS: Record<string, Role> = {
   'journal:repartitionParCategorie': 'lecture',
   'journal:evolutionAnnuelle': 'lecture',
   'journal:ajouter': 'ecriture',
-  'journal:modifier': 'ecriture',
+  // `journal:modifier` a été retiré du registre : plus d'opération, donc plus
+  // de droit à lui déclarer. Les deux vont ensemble, et `npm test` le vérifie.
   'journal:supprimer': 'ecriture',
 
   /* Paramètres de calcul — ils changent les prix : réservés à l'administration. */

@@ -795,6 +795,17 @@ const TEXTES = {
     fr: '{rang} rappel créé et exporté :\n{chemin}',
     en: '{rang} reminder created and exported:\n{chemin}'
   },
+  'facture.rappelSupprimer': { fr: 'Annuler', en: 'Cancel' },
+  // La confirmation dit les deux choses qu'on ne devine pas : les frais partent
+  // avec le rappel, et le PDF déjà envoyé ne revient pas.
+  'facture.rappelSupprimerConfirmation': {
+    fr: 'Annuler le rappel de niveau {niveau} ? Ses frais disparaissent avec lui, et cette facture pourra de nouveau être relancée à ce niveau. Le PDF déjà envoyé au client, lui, reste envoyé.',
+    en: 'Cancel the level {niveau} reminder? Its fee goes with it, and this invoice can be chased again at that level. The PDF already sent to the client stays sent.'
+  },
+  'facture.rappelSupprime': {
+    fr: 'Rappel de niveau {niveau} annulé, frais compris.',
+    en: 'Level {niveau} reminder cancelled, fee included.'
+  },
   'facture.modaleModeleTitre': { fr: 'Enregistrer comme modèle', en: 'Save as a template' },
   'facture.modaleModeleValider': { fr: 'Créer le modèle', en: 'Create the template' },
   'facture.modaleModeleAide': {

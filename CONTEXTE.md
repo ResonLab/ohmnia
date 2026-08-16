@@ -119,7 +119,7 @@ src/
     pays.ts             profils CH / FR / BE / LU / DE
     i18n.ts             traductions FR/EN
     conditions.ts       conditions d'utilisation de l'app + version
-tests/                  18 suites — `npm run verifier`
+tests/                  19 suites — `npm run verifier`
 ```
 
 Les compteurs ci-dessus doivent rester exacts : `npm test` vérifie que **tous** les
@@ -399,6 +399,86 @@ discriminer : une facture payée avec 300 jours de retard, une facture relancée
 hier mais très en retard, et la borne exacte du délai — chacun échouerait sous la
 règle inverse.
 
+### Les deux décisions, et le bug qu'elles ont fait sortir — 16 août 2026
+
+**`rappels:supprimer` est branché. `journal:modifier` reste fermé.** Les deux
+opérations attendaient une décision ; elles sont prises.
+
+**Le motif qui retenait `rappels:supprimer` était faux**, et il a suffi d'aller
+regarder pour le savoir. Il disait que la suppression laissait les frais sur la
+facture. Les frais ne sont **jamais** écrits dans `facture_lignes` : ils vivent
+sur la ligne `rappels` et ne deviennent une ligne de document que dans
+`construireDonneesRappel`, qui les relit par l'id du rappel. Effacer la ligne
+les efface partout. *Une réserve écrite n'est pas une mesure* : celle-ci a
+survécu à plusieurs relectures et n'a coûté qu'un `grep` à réfuter.
+
+Ce qui était vrai, en revanche : **la création était tracée au journal d'audit
+et la suppression ne l'était pas.** Le journal montrait des rappels émis et
+jamais aucun annulé — un journal d'audit incomplet est pire qu'absent, parce
+qu'on le lit comme s'il était complet.
+
+**`journal:modifier` a été retiré de bout en bout** — domaine, IPC, pont,
+registre du serveur et table des droits. Le retirer du seul écran n'aurait pas
+suffi : *une opération publiée au registre est appelable par le réseau en mode
+multi-postes, sans passer par le moindre écran.* Une porte condamnée côté salon
+et laissée ouverte côté cave.
+
+La liste de `tests/atteignable.mjs` est donc **vide**, et elle s'appelle
+`HORS_DATTEINTE_ASSUME` et non plus `EN_ATTENTE_DE_DECISION` : garder l'ancien
+nom aurait annoncé du travail en suspens là où il n'y en a plus.
+
+**Le retrait a été éprouvé dans les deux sens**, parce qu'un retrait incomplet
+est le vrai risque ici : un droit laissé pour une opération disparue fait
+échouer « aucun droit ne porte sur une opération qui n'existe plus » ; une
+opération laissée au registre fait échouer « les opérations du serveur existent
+toutes comme canal IPC » *et* « ont toutes un droit déclaré ». Les trois
+garde-fous mordent.
+
+Le code de la fonction est dans l'historique git si la décision change. Il était
+correct — il refusait un exercice clôturé, et refusait même qu'on en sorte une
+écriture en changeant sa date. Ce n'est pas sa qualité qui était en cause.
+
+#### Le vrai défaut, trouvé en écrivant le test : la carte des relances était morte
+
+**`relancesAFaire()` visait `factures.date_echeance`, une colonne qui n'a jamais
+existé** — ni dans `schema.sql`, ni dans les migrations, nulle part ailleurs que
+dans ces trois lignes. Toute base la refusait — vérifié sur une base neuve **et
+sur la base réelle de l'utilisateur**.
+
+**Et la panne était silencieuse.** `rechargerHistorique()` appelle
+`factures.historique()` *avant* `rappels.aFaire()` : l'historique se chargeait
+normalement, seule la seconde promesse était rejetée, et la liste des relances
+restait vide. L'écran n'affichait donc aucune erreur — il affichait **« Rien à
+relancer aujourd'hui »**, en permanence, quel que soit le nombre de factures en
+retard. *Un écran cassé se remarque ; un écran qui rassure à tort ne se remarque
+jamais.* La fonction phare du 13 août n'a jamais pu servir, et rien ne le disait.
+
+*Une première version de cette page annonçait « tout l'écran restait vide ».
+C'était faux, et c'est le lancement de l'application installée qui l'a montré :
+la Facturation s'ouvre parfaitement.*
+
+Partout ailleurs l'échéance se **calcule** — `calculerEcheance(date,
+delai_paiement_jours)`, dans `documents.ts` comme dans `tableauDeBord.ts`.
+Cette requête-là avait inventé une colonne au lieu d'appeler la formule.
+
+**Aucune suite ne pouvait le voir, et c'est le point à retenir.**
+`tests/relances.mjs` éprouve `calculerRelances` sans base — c'est sa qualité, et
+il faut la garder. `tests/atteignable.mjs` constate qu'un écran *appelle*
+`rappels.aFaire`, pas que l'appel *aboutisse* ; c'est écrit en tête de ce
+fichier depuis le début. Il manquait une suite qui **exécute la requête**.
+
+`tests/rappels-annulation.mjs` le fait, sur une vraie base, en compilant les
+**vrais domaines** avec esbuild — même procédé que
+`serveur-authentification.mjs`, et pour la même raison : transcrire les requêtes
+dans le test ne prouverait que la justesse de la transcription. Quatre
+sabotages, quatre échecs.
+
+**La leçon complète la famille des pannes déjà connues ici.** On savait qu'un
+mécanisme peut exister sans être atteignable. Celui-ci était atteignable,
+branché, sous une suite verte — et mort à l'exécution. *Une règle éprouvée hors
+base et une requête jamais exécutée donnent ensemble l'apparence d'une
+fonctionnalité vérifiée.*
+
 ### Autres pistes évoquées et non faites
 
 - **QR-facture suisse** (Swiss QR-bill) — écartée par l'utilisateur, pas encore assujetti.
@@ -487,7 +567,7 @@ corrigé, et ça n'a rien changé.*
 
 ## 9. État actuel
 
-- `npm run verifier` : typecheck + 18 suites de tests, **tout passe**.
+- `npm run verifier` : typecheck + 19 suites de tests, **tout passe**.
 - Version `0.1.3`. Construite par GitHub Actions pour Windows et Linux.
   Elle apporte le **mode multi-postes**, le passage à l'organisation ResonLab et
   les premiers écrans traduits. La `0.1.2` n'a jamais été publiée : son
@@ -580,7 +660,12 @@ dépendance amènerait dans son dos ne le sont pas. Sans ce fichier,
 - `src/serveur/` : squelette de serveur HTTP qui réutilise `domaines/`.
   Protocole : `POST /api/<canal>` avec `{ "arguments": [...] }`.
   **Les noms de canaux sont exactement ceux de l'IPC**, pour que les deux modes
-  ne puissent pas diverger. **99 opérations exposées.**
+  ne puissent pas diverger. **Le nombre d'opérations exposées n'est pas écrit
+  ici** : il disait 99 le 16 août 2026 alors que le registre en portait 105, et
+  personne n'était chargé de le mettre à jour quand il change. C'est la règle
+  déjà appliquée aux numéros de version dans les badges du site.
+  `tests/serveur-multipostes.mjs` l'affiche à chaque exécution, à côté du
+  contrôle qui apparie registre et IPC — donc là où il ne peut pas mentir.
 - `tests/serveur-multipostes.mjs` : démarre un vrai serveur sur une base
   temporaire et fait de vrais appels réseau.
 

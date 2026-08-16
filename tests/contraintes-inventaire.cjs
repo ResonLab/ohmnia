@@ -33,6 +33,11 @@ db.exec(`
     prix_unitaire REAL NOT NULL DEFAULT 0
   );
 `)
+// Un nom manifestement fictif, et c'est délibéré : ce dépôt est public. Une
+// vraie cliente y était nommée en dur, ce qui publiait son nom sur GitHub sans
+// qu'elle l'ait jamais su. **Ne jamais reprendre un nom de la base réelle pour
+// fabriquer un jeu d'essai**, même dans un test qui tourne sur une base
+// temporaire : ce n'est pas la base qui est publiée, c'est le fichier.
 db.prepare("INSERT INTO clients (nom) VALUES ('Cliente Exemple')").run()
 db.prepare("INSERT INTO factures (numero, date, client_id) VALUES ('F0001', date('now'), 1)").run()
 // Une ligne existante SANS reference : elle doit survivre a la migration.

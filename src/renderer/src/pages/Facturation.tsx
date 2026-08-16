@@ -48,6 +48,36 @@ export default function Facturation(): React.JSX.Element {
     }
     setRappelsOuverts({ factureId, liste: await window.api.rappels.lister(factureId) })
   }
+
+  /**
+   * Annule un rappel émis.
+   *
+   * **Les frais s'en vont avec lui sans qu'on ait rien à faire ici**, parce
+   * qu'ils vivent sur la ligne du rappel et nulle part ailleurs — voir
+   * `domaines/rappels.ts`. Retirer une ligne de facture à la main serait
+   * réécrire deux fois la même règle.
+   *
+   * **Ce que la confirmation dit, et qu'aucun code ne peut défaire** : le PDF
+   * est peut-être déjà parti chez le client. Annuler ici remet la facture en
+   * état de reproposer ce rappel ; cela ne rattrape pas un courrier envoyé.
+   *
+   * On recharge l'historique et les relances ensemble, pour la raison déjà
+   * écrite plus haut : un rappel en moins change ce que la carte propose.
+   */
+  async function supprimerRappel(rappel: Rappel): Promise<void> {
+    if (!confirm(t('facture.rappelSupprimerConfirmation', { niveau: rappel.niveau }))) return
+    try {
+      await window.api.rappels.supprimer(rappel.id)
+      setRappelsOuverts({
+        factureId: rappel.factureId,
+        liste: await window.api.rappels.lister(rappel.factureId)
+      })
+      await rechargerHistorique()
+      setMessageInfo(t('facture.rappelSupprime', { niveau: rappel.niveau }))
+    } catch (erreur) {
+      afficherErreur(erreur)
+    }
+  }
   const [brouillon, setBrouillon] = useState<FactureDetail | null>(null)
   const [clientIdNouveau, setClientIdNouveau] = useState<number | null>(null)
   const [impressionParams, setImpressionParams] = useState<ParametresImpressionDb | null>(null)
@@ -607,7 +637,13 @@ export default function Facturation(): React.JSX.Element {
                             niveau: rappel.niveau,
                             date: rappel.date,
                             frais: formaterMontant(rappel.frais)
-                          })}
+                          })}{' '}
+                          <button
+                            className="action-ecriture"
+                            onClick={() => supprimerRappel(rappel)}
+                          >
+                            {t('facture.rappelSupprimer')}
+                          </button>
                         </li>
                       ))}
                     </ul>

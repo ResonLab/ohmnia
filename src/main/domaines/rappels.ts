@@ -1,7 +1,12 @@
 import { getDb } from '../db/database'
 import { tracerAudit } from '../db/audit'
 import type { Rappel } from '../../shared/types'
-import { calculerRelances, type FacturePourRelance, type RelanceProposee } from '../../shared/calculs'
+import {
+  calculerEcheance,
+  calculerRelances,
+  type FacturePourRelance,
+  type RelanceProposee
+} from '../../shared/calculs'
 import { lireParametresApp } from './parametresApp'
 
 /** Rappels de paiement. Aucune dépendance à Electron. */
@@ -71,8 +76,44 @@ export function creerRappel(factureId: number, niveau: number, frais: number): R
   return versRappel(ligne)
 }
 
+/**
+ * Annule un rappel émis.
+ *
+ * **Les frais partent avec lui, et c'est le schéma qui le garantit, pas ce
+ * code.** Les frais de rappel ne sont jamais écrits dans `facture_lignes` :
+ * ils vivent sur la ligne `rappels` et ne deviennent une ligne de document que
+ * dans `construireDonneesRappel`, qui les relit par l'id du rappel. Effacer la
+ * ligne les efface donc partout où ils pouvaient paraître. *Le commentaire de
+ * `tests/atteignable.mjs` affirmait le contraire ; il avait tort, et c'est en
+ * allant regarder qu'on l'a su.*
+ *
+ * **Ce que l'annulation ne défait pas, en revanche** : le PDF déjà exporté et
+ * envoyé au client. L'écran le dit avant de supprimer — sans quoi « annuler »
+ * laisserait croire que le client n'a rien reçu.
+ *
+ * La création était tracée au journal d'audit et la suppression ne l'était
+ * pas : le journal montrait des rappels émis et jamais aucun annulé, ce qui est
+ * exactement le genre de trou qui rend un journal d'audit trompeur plutôt
+ * qu'incomplet.
+ */
 export function supprimerRappel(id: number): void {
+  const rappel = getDb()
+    .prepare(
+      `SELECT r.niveau, r.frais, f.numero
+       FROM rappels r JOIN factures f ON f.id = r.facture_id
+       WHERE r.id = ?`
+    )
+    .get(id) as { niveau: number; frais: number; numero: string } | undefined
+  if (!rappel) throw new Error("Ce rappel n'existe pas.")
+
   getDb().prepare('DELETE FROM rappels WHERE id = ?').run(id)
+
+  tracerAudit(
+    'suppression',
+    'facture',
+    rappel.numero,
+    `Rappel niveau ${rappel.niveau} annulé, frais ${rappel.frais} CHF retirés`
+  )
 }
 
 /**
@@ -84,6 +125,31 @@ export function supprimerRappel(id: number): void {
  * qu'elle doit pouvoir être éprouvée sans base ni fenêtre. Recopiée en SQL,
  * elle finirait par contredire les tests qui la vérifient.
  *
+ * **L'échéance se calcule, elle ne se lit pas.** Cette requête a visé pendant
+ * des jours une colonne `factures.date_echeance` qui **n'a jamais existé** — ni
+ * dans `schema.sql`, ni dans les migrations, nulle part ailleurs que dans ces
+ * trois lignes. Toute base la refusait — vérifié sur une base neuve **et sur la
+ * base réelle de l'utilisateur** —, donc `relancesAFaire()` levait une erreur
+ * SQLite à chaque ouverture de la Facturation.
+ *
+ * **Et la panne était silencieuse, ce qui est le pire cas.**
+ * `rechargerHistorique()` appelle `factures.historique()` *avant*
+ * `rappels.aFaire()` : l'historique se chargeait donc normalement, seule la
+ * seconde promesse était rejetée, et `relances` restait à vide. L'écran ne
+ * montrait aucune erreur — il affichait **« Rien à relancer aujourd'hui »**,
+ * en permanence, quel que soit le nombre de factures en retard. Un écran cassé
+ * se remarque ; un écran qui rassure à tort ne se remarque jamais.
+ *
+ * *Aucune suite ne pouvait le voir* : `tests/relances.mjs` éprouve
+ * `calculerRelances` sans base — c'est même sa qualité — et le contrôle
+ * d'atteignabilité constate qu'un écran appelle `rappels.aFaire`, pas que
+ * l'appel aboutisse. C'est la panne signature de la maison, cette fois dans
+ * l'autre sens : atteignable, branchée, verte, et morte à l'exécution.
+ * `tests/rappels-annulation.mjs` exécute désormais la requête pour de vrai.
+ *
+ * L'échéance passe donc par `calculerEcheance`, comme dans `documents.ts` et
+ * `tableauDeBord.ts` — une formule, un seul endroit.
+ *
  * Le seuil de première relance est celui que l'utilisateur a déjà choisi dans
  * les paramètres : lui en demander un second serait lui demander de tenir deux
  * réglages cohérents entre eux, ce que personne ne fait.
@@ -91,7 +157,7 @@ export function supprimerRappel(id: number): void {
 export function relancesAFaire(): RelanceProposee[] {
   const lignes = getDb()
     .prepare(
-      `SELECT f.id, f.numero, f.date_echeance, f.statut,
+      `SELECT f.id, f.numero, f.date, f.delai_paiement_jours, f.statut,
               COALESCE(c.nom, 'Client supprimé') AS client_nom,
               (SELECT COUNT(*) FROM rappels r WHERE r.facture_id = f.id) AS nb_rappels,
               (SELECT MAX(r.date) FROM rappels r WHERE r.facture_id = f.id) AS dernier_rappel
@@ -101,7 +167,8 @@ export function relancesAFaire(): RelanceProposee[] {
     .all() as unknown as {
     id: number
     numero: string
-    date_echeance: string
+    date: string
+    delai_paiement_jours: number
     statut: string
     client_nom: string
     nb_rappels: number
@@ -113,7 +180,7 @@ export function relancesAFaire(): RelanceProposee[] {
     numero: ligne.numero,
     clientNom: ligne.client_nom,
     statut: ligne.statut,
-    dateEcheance: ligne.date_echeance,
+    dateEcheance: calculerEcheance(ligne.date, ligne.delai_paiement_jours),
     nombreRappels: ligne.nb_rappels,
     dernierRappelLe: ligne.dernier_rappel
   }))

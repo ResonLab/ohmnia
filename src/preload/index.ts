@@ -161,9 +161,14 @@ const api = {
     ajouter: (
       valeurs: Omit<EcritureJournal, 'id' | 'annee' | 'categorieLibelle' | 'montantTva'>
     ): Promise<EcritureJournal> => ipcRenderer.invoke('journal:ajouter', valeurs),
-    modifier: (
-      valeurs: Omit<EcritureJournal, 'annee' | 'categorieLibelle' | 'montantTva'>
-    ): Promise<EcritureJournal> => ipcRenderer.invoke('journal:modifier', valeurs),
+    // **Il n'y a pas de `modifier`, et c'est une décision, pas un oubli.**
+    // Corriger une écriture comptable en place réécrit l'histoire, alors
+    // qu'Ohmnia tient un journal d'audit et verrouille les exercices clos. La
+    // discipline inverse — annuler et ressaisir, ou passer une écriture de
+    // correction — laisse une trace. Décidé le 16 août 2026, et retiré de bout
+    // en bout : pont, IPC, registre du serveur et table des droits. *Le laisser
+    // publié sur le serveur pendant qu'aucun écran ne l'appelle aurait été une
+    // porte condamnée d'un seul côté.*
     supprimer: (id: number): Promise<void> => ipcRenderer.invoke('journal:supprimer', id),
     repartitionParCategorie: (filtres?: FiltresJournal): Promise<RepartitionCategorie[]> =>
       ipcRenderer.invoke('journal:repartitionParCategorie', filtres),

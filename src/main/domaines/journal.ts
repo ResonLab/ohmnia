@@ -176,42 +176,24 @@ export function ajouterEcritureJournal(valeurs: ValeursEcriture): EcritureJourna
   return relireEcriture(resultat.lastInsertRowid)
 }
 
-export function modifierEcritureJournal(
-  valeurs: ValeursEcriture & { id: number }
-): EcritureJournal {
-  const erreur = validerEcriture(valeurs)
-  if (erreur) throw new Error(erreur)
-  verifierExerciceOuvert(valeurs.date)
-
-  // L'ancienne date compte aussi : on ne peut pas sortir une écriture
-  // d'un exercice clôturé en changeant simplement sa date.
-  const ancienne = getDb().prepare('SELECT date FROM journal WHERE id = ?').get(valeurs.id) as
-    | { date: string }
-    | undefined
-  if (ancienne) verifierExerciceOuvert(ancienne.date)
-
-  getDb()
-    .prepare(
-      `UPDATE journal SET
-        date = ?, type = ?, categorie_id = ?, description = ?, montant = ?,
-        numero_facture = ?, notes = ?, tva_pct = ?
-       WHERE id = ?`
-    )
-    .run(
-      valeurs.date,
-      valeurs.type,
-      valeurs.categorieId,
-      valeurs.description,
-      valeurs.montant,
-      valeurs.numeroFacture,
-      valeurs.notes,
-      valeurs.tvaPct,
-      valeurs.id
-    )
-
-  return relireEcriture(valeurs.id)
-}
-
+/**
+ * **Il n'y a pas de `modifierEcritureJournal`, et c'est une décision.**
+ *
+ * Elle a existé — elle validait, refusait un exercice clôturé, et refusait même
+ * qu'on sorte une écriture d'un exercice clos en changeant sa date. Elle était
+ * correcte. Elle a été retirée le 16 août 2026 parce que **corriger une écriture
+ * comptable en place réécrit l'histoire**, ce qui contredit le journal d'audit
+ * et le verrou des exercices que cette application tient par ailleurs.
+ *
+ * La discipline retenue : **annuler et ressaisir, ou passer une écriture de
+ * correction**. Les deux laissent une trace ; la modification en place n'en
+ * laisse aucune.
+ *
+ * Retirée de bout en bout — domaine, IPC, pont, registre du serveur et table
+ * des droits — plutôt que laissée sans appelant. *Une opération publiée sur le
+ * serveur reste appelable par le réseau même quand plus aucun écran ne
+ * l'appelle.* Le code est dans l'historique git si la décision change.
+ */
 export function supprimerEcritureJournal(id: number): void {
   const ligne = getDb().prepare('SELECT date, description FROM journal WHERE id = ?').get(id) as
     | { date: string; description: string }

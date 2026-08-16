@@ -29,7 +29,6 @@ import {
   evolutionAnnuelle,
   listerCategoriesJournal,
   listerJournal,
-  modifierEcritureJournal,
   renommerCategorieJournal,
   repartitionParCategorie,
   supprimerCategorieJournal,
@@ -260,8 +259,8 @@ export const REGISTRE: Record<string, Operation> = {
   'journal:lister': (filtres) => listerJournal((filtres as Parameters<typeof listerJournal>[0]) ?? {}),
   'journal:ajouter': (valeurs) =>
     ajouterEcritureJournal(valeurs as Parameters<typeof ajouterEcritureJournal>[0]),
-  'journal:modifier': (valeurs) =>
-    modifierEcritureJournal(valeurs as Parameters<typeof modifierEcritureJournal>[0]),
+  // Pas de `journal:modifier` : décidé fermé le 16 août 2026. Une opération
+  // publiée ici est appelable par le réseau, même sans écran pour l'appeler.
   'journal:supprimer': (id) => supprimerEcritureJournal(id as number),
   'journal:repartitionParCategorie': (filtres) =>
     repartitionParCategorie((filtres as Parameters<typeof repartitionParCategorie>[0]) ?? {}),
