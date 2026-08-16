@@ -34,7 +34,9 @@ Le revers est assumé : personne ne peut récupérer tes données à ta place. F
 
 👉 **[Télécharger la dernière version](https://github.com/ResonLab/ohmnia/releases/latest)**
 
-Lance `Ohmnia Setup X.Y.Z.exe`. Windows affichera un avertissement SmartScreen au premier lancement : l'exe n'est pas signé par un certificat commercial. **Informations complémentaires** → **Exécuter quand même**.
+Lance `Ohmnia Setup X.Y.Z.exe`. L'installation se fait pour ton compte seulement, dans `%LOCALAPPDATA%\Programs\Ohmnia` — ni droits administrateur, ni Program Files.
+
+L'exe n'est **pas signé** par un certificat commercial. Windows peut donc afficher un avertissement SmartScreen : **Informations complémentaires** → **Exécuter quand même**. *Il ne s'est pas déclenché lors de l'essai du 16 août 2026, mais cela dépend de la réputation du fichier et des réglages du poste — ne compte pas dessus.*
 
 ---
 

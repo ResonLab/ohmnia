@@ -281,9 +281,17 @@ la page web sert de référence consultable.
 
 ## Points de vigilance
 
-- **SmartScreen** : l'exe n'étant pas signé par un certificat commercial, Windows
-  affichera un avertissement au premier lancement. C'est normal pour une application
-  personnelle. Un certificat coûte quelques centaines de francs par an.
+- **SmartScreen** : l'exe n'est pas signé par un certificat commercial, donc
+  Windows **peut** afficher un avertissement au premier lancement. C'est normal
+  pour une application personnelle. Un certificat coûte quelques centaines de
+  francs par an.
+
+  *Mesuré le 16 août 2026 : il ne s'est pas déclenché* — installateur téléchargé
+  depuis la release, marqué « provient d'Internet », `NotSigned` vérifié,
+  double-cliqué depuis l'Explorateur. **Ne pas en faire une promesse** : la
+  réputation SmartScreen dépend du nombre de téléchargements et des réglages du
+  poste, donc elle change avec le temps et d'une machine à l'autre. Écrire
+  « Windows affichera » était une prédiction, pas une observation.
 - **Dépôt public = code visible.** Le code d'Ohmnia ne contient aucun secret, mais
   ne commite jamais ton jeton GitHub ni un fichier de base de données.
 - **Licence** : sans fichier `LICENSE`, ton code reste sous droit d'auteur classique
