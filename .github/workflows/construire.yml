@@ -143,6 +143,36 @@ jobs:
           fi
           echo "Publication effectuée, aucun fichier sauté."
 
+      # **Les guides PDF etaient promis dans les releases et n'y etaient pas.**
+      # Le workflow les produisait bien, mais ils ne partaient que dans les
+      # artefacts du travail, qui expirent au bout de 14 jours. Le LISEZ-MOI et
+      # les CONTEXTE annoncaient le contraire depuis le 13 aout 2026. Constate
+      # sur la 0.2.0 et la 0.2.1 : six fichiers, aucun guide.
+      #
+      # electron-builder ne joint que ce qu'il construit : les PDF doivent etre
+      # deposes a part. Cote linux seulement, puisque c'est la qu'ils sont
+      # produits -- les deposer des deux cotes ferait courir les deux jobs sur
+      # la meme release.
+      - name: Joindre les guides PDF à la release
+        if: ${{ matrix.nom == 'linux' && startsWith(github.ref, 'refs/tags/v') }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          etiquette="${GITHUB_REF#refs/tags/}"
+          gh release upload "$etiquette" release/*guide*.pdf --clobber
+          # **On ne croit pas le code de sortie sur parole** : on relit la
+          # release et on exige les deux guides. C'est la lecon du 16 aout --
+          # une commande qui rend zero sans avoir rien depose est exactement la
+          # panne qu'on vient de retirer d'a cote.
+          joints=$(gh release view "$etiquette" --json assets \
+            --jq '[.assets[].name | select(test("guide.*\\.pdf"))] | length')
+          echo "guides joints : $joints"
+          if [ "$joints" -ne 2 ]; then
+            echo "::error::$joints guide(s) PDF joint(s) à la release, 2 attendus."
+            exit 1
+          fi
+
       # Les installeurs restent téléchargeables depuis la page du travail
       # pendant 14 jours, même sans release.
       - name: Joindre les installeurs
