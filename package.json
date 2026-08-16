@@ -1,6 +1,6 @@
 {
   "name": "ohmnia",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Ohmnia - gestion locale pour technicien electronicien independant",
   "main": "./out/main/index.js",
   "author": "Colin Meng",

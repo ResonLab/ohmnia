@@ -102,11 +102,46 @@ jobs:
           # dans un conteneur jetable : il n'y a rien a isoler de rien.
           xvfb-run --auto-servernum npx electron --no-sandbox scripts/guide-pdf.mjs
 
+      # L'etiquette ne decide de rien : electron-builder lit la version dans
+      # package.json. Poser v0.2.1 sur un projet reste en 0.2.0 fait construire
+      # une 0.2.0, viser la release v0.2.0 -- deja publiee -- et tout sauter.
+      # C'est arrive le 16 aout 2026, et le travail est reste vert.
+      - name: L'étiquette doit correspondre à la version du projet
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        shell: bash
+        run: |
+          etiquette="${GITHUB_REF#refs/tags/v}"
+          projet=$(node -p "require('./package.json').version")
+          echo "étiquette : $etiquette · package.json : $projet"
+          if [ "$etiquette" != "$projet" ]; then
+            echo "::error::L'étiquette v$etiquette ne correspond pas à la version $projet de package.json."
+            echo "Monter la version dans package.json et dans src/serveur/version.ts, puis reposer l'étiquette."
+            exit 1
+          fi
+
       - name: Construire et déposer la release (brouillon)
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: npx electron-builder ${{ matrix.cible }} --publish always
+        shell: bash
+        run: |
+          set -o pipefail
+          npx electron-builder ${{ matrix.cible }} --publish always 2>&1 | tee sortie-publication.txt
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # **Le vrai defaut du 16 aout n'etait pas la version, c'etait ce silence.**
+      # electron-builder ecrit "skipped publishing" pour chaque fichier, puis
+      # sort avec un code nul. Le travail passait au vert sans avoir rien
+      # publie. Une verification qui ne peut pas echouer est pire qu'absente.
+      - name: Refuser une publication silencieusement sautée
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        shell: bash
+        run: |
+          if grep -qE "skipped publishing|release not created" sortie-publication.txt; then
+            echo "::error::electron-builder a sauté la publication — aucun fichier n'est parti."
+            grep -E "skipped publishing|release not created" sortie-publication.txt
+            exit 1
+          fi
+          echo "Publication effectuée, aucun fichier sauté."
 
       # Les installeurs restent téléchargeables depuis la page du travail
       # pendant 14 jours, même sans release.
