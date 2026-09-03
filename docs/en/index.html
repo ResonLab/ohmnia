@@ -228,9 +228,7 @@
   ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 15px; }
   ul.checks li { display: grid; grid-template-columns: 20px 1fr; gap: 12px; color: var(--fg-dim); font-size: 16px; }
   ul.checks b { color: var(--fg); font-weight: 600; }
-  .tick { width: 18px; height: 18px; border-radius: 5px; background: var(--grad); margin-top: 4px; }
-  .js .reveal .tick { transform: scale(.2) rotate(-25deg); opacity: 0; transition: transform .6s var(--ease), opacity .6s var(--ease); transition-delay: calc(var(--d, 0s) + .12s); }
-  .js .reveal.vu .tick { transform: none; opacity: 1; }
+  .tick { width: 10px; height: 2px; background: var(--fg-dim); margin-top: 12px; }
 
   /* ─── fonctionnalités ────────────────────────────────────── */
   section { padding: 90px 0; }
@@ -378,9 +376,7 @@
   /* ─── respect du réglage système « moins d'animations » ──── */
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .js .reveal, .js .entree, .js .reveal .tick {
-      opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important;
-    }
+    .js .reveal, .js .entree { width: 10px; height: 2px; background: var(--fg-dim); margin-top: 12px; }
     .dot { animation: none !important; }
     .btn::before { display: none; }
     .card:hover, .frame:hover, .btn:hover { transform: none; }
