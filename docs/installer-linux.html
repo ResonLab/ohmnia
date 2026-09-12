@@ -214,7 +214,7 @@
   }
   .idee p { color: var(--fg-dim); margin: 0 0 18px; }
   .btn {
-    position: relative; overflow: hidden;
+
     display: inline-flex; align-items: center; justify-content: center;
     padding: 13px 22px; border-radius: 4px;
     background: var(--grad); color: #062229;
@@ -222,13 +222,7 @@
     transition: transform .35s var(--ease);
 
   }
-  .btn::before {
-    content: ''; position: absolute; top: 0; bottom: 0; left: -75%; width: 55%;
-    background: linear-gradient(100deg, transparent, rgba(255,255,255,.42), transparent);
-    transform: skewX(-18deg); transition: left .7s var(--ease);
-  }
   .btn:hover { text-decoration: none; }
-  .btn:hover::before { left: 125%; }
 
   footer { border-top: 1px solid var(--border); padding: 40px 0 60px; color: var(--fg-faint); font-size: 14.5px; }
   .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
@@ -257,7 +251,6 @@
     .js .reveal, .js .entree { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; }
     .puce.encours { animation: none !important; }
     .items li:hover, .btn:hover { transform: none; }
-    .btn::before { display: none; }
   }
 
   /* ─── défilement : couche d'animation supplémentaire ─────── */

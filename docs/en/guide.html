@@ -164,7 +164,7 @@
 
   /* ─── boutons ────────────────────────────────────────────── */
   .btn {
-    position: relative; overflow: hidden;
+
     display: inline-flex; align-items: center; justify-content: center; gap: 9px;
     padding: 13px 22px; border-radius: 4px;
     background: var(--grad); color: #062229;
@@ -173,13 +173,7 @@
     transition: transform .35s var(--ease), filter .35s var(--ease);
 
   }
-  .btn::before {
-    content: ''; position: absolute; top: 0; bottom: 0; left: -75%; width: 55%;
-    background: linear-gradient(100deg, transparent, rgba(255,255,255,.42), transparent);
-    transform: skewX(-18deg); transition: left .7s var(--ease);
-  }
   .btn:hover { text-decoration: none; filter: brightness(1.05); }
-  .btn:hover::before { left: 125%; }
   .btn:active { transform: translateY(0); }
   .btn-ghost {
     background: transparent; color: var(--fg);
@@ -234,7 +228,7 @@
   section { padding: 90px 0; }
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .card {
-    position: relative; overflow: hidden;
+
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 26px;
     transition: transform .45s var(--ease), border-color .45s var(--ease);
@@ -287,7 +281,7 @@
   /* ─── téléchargement ─────────────────────────────────────── */
   .download { text-align: center; }
   .download .inner {
-    position: relative; overflow: hidden;
+
     background: var(--card); border: 1px solid var(--border);
     border-radius: 4px; padding: 58px 32px;
   }
@@ -378,7 +372,6 @@
     html { scroll-behavior: auto; }
     .js .reveal, .js .entree { width: 10px; height: 2px; background: var(--fg-dim); margin-top: 12px; }
     .dot { animation: none !important; }
-    .btn::before { display: none; }
     .card:hover, .frame:hover, .btn:hover { transform: none; }
     .frame img { transform: none !important; }
     .section-head h2::after, .band-grid h2::after { transform: scaleX(1) !important; transition: none !important; }
