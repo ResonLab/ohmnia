@@ -127,8 +127,8 @@ ${section.etapes
     <p class="etat-ligne">${fr ? 'GUIDE DE PRISE EN MAIN' : 'GETTING STARTED'}</p>
     <h1>${
       fr
-        ? 'Par où <span class="grad-text">commencer</span>.'
-        : 'Where to <span class="grad-text">start</span>.'
+        ? 'Par où commencer.'
+        : 'Where to start.'
     }</h1>
     <p class="chapo">${echapper(fr ? guide.resume.fr : guide.resume.en)}</p>
   </section>
