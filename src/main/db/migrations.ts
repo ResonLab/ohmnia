@@ -48,7 +48,9 @@ const COLONNES_ATTENDUES: ColonneAttendue[] = [
   { table: 'entreprise', colonne: 'pays', definition: "TEXT NOT NULL DEFAULT 'CH'" },
   // Remise en montant fixe (francs, euros…), en plus de la remise en pourcentage.
   { table: 'factures', colonne: 'remise_montant', definition: 'REAL NOT NULL DEFAULT 0' },
-  { table: 'devis', colonne: 'remise_montant', definition: 'REAL NOT NULL DEFAULT 0' }
+  { table: 'devis', colonne: 'remise_montant', definition: 'REAL NOT NULL DEFAULT 0' },
+  // Nom imprimé après « Servi par » sur les tickets de caisse.
+  { table: 'entreprise', colonne: 'nom_ticket', definition: "TEXT NOT NULL DEFAULT ''" }
 ]
 
 function colonnesExistantes(db: DatabaseSync, table: string): Set<string> {

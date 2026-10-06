@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS entreprise (
   numero_ide TEXT NOT NULL DEFAULT '',
   conditions_generales TEXT NOT NULL DEFAULT '',
   mentions_pied TEXT NOT NULL DEFAULT '',
+  -- Nom imprimé après « Servi par » sur les tickets de caisse (vide = ligne omise).
+  nom_ticket TEXT NOT NULL DEFAULT '',
   pays TEXT NOT NULL DEFAULT 'CH'
 );
 
@@ -267,6 +269,49 @@ CREATE INDEX IF NOT EXISTS idx_modele_lignes_modele ON modele_lignes(modele_id);
 CREATE INDEX IF NOT EXISTS idx_journal_numero_facture ON journal(numero_facture);
 CREATE INDEX IF NOT EXISTS idx_facture_lignes_facture_id ON facture_lignes(facture_id);
 CREATE INDEX IF NOT EXISTS idx_devis_lignes_devis_id ON devis_lignes(devis_id);
+
+-- Caisse. Une vente annulée reste en base (statut) : son numéro ne se réutilise
+-- jamais, et le Journal d'audit y renvoie.
+CREATE TABLE IF NOT EXISTS ventes_caisse (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  numero TEXT NOT NULL UNIQUE,
+  date TEXT NOT NULL,
+  total REAL NOT NULL DEFAULT 0,
+  statut TEXT NOT NULL DEFAULT 'Validée' CHECK (statut IN ('Validée', 'Annulée')),
+  -- Copié au moment de la vente : renommer la personne plus tard ne réécrit pas les anciens tickets.
+  servi_par TEXT NOT NULL DEFAULT '',
+  tva_pct REAL NOT NULL DEFAULT 0,
+  montant_tva REAL NOT NULL DEFAULT 0
+);
+
+-- Pas de clé étrangère vers `inventaire` : un article supprimé ensuite ne doit
+-- pas empêcher de relire (ni de réimprimer) une vente passée.
+CREATE TABLE IF NOT EXISTS ventes_caisse_lignes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vente_id INTEGER NOT NULL REFERENCES ventes_caisse(id),
+  reference_inventaire TEXT NOT NULL,
+  designation TEXT NOT NULL DEFAULT '',
+  quantite REAL NOT NULL DEFAULT 1,
+  prix_unitaire REAL NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS ventes_caisse_paiements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vente_id INTEGER NOT NULL REFERENCES ventes_caisse(id),
+  mode TEXT NOT NULL CHECK (mode IN ('Espèces', 'Carte')),
+  -- Dans la devise de l'entreprise, arrondi suisse inclus pour les espèces.
+  montant REAL NOT NULL DEFAULT 0,
+  arrondi REAL NOT NULL DEFAULT 0,
+  devise_recue TEXT NOT NULL DEFAULT '',
+  montant_recu REAL NOT NULL DEFAULT 0,
+  taux REAL NOT NULL DEFAULT 1,
+  rendu REAL NOT NULL DEFAULT 0,
+  ecriture_journal_id INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_ventes_caisse_date ON ventes_caisse(date);
+CREATE INDEX IF NOT EXISTS idx_ventes_caisse_lignes_vente ON ventes_caisse_lignes(vente_id);
+CREATE INDEX IF NOT EXISTS idx_ventes_caisse_paiements_vente ON ventes_caisse_paiements(vente_id);
 
 INSERT OR IGNORE INTO entreprise (id) VALUES (1);
 INSERT OR IGNORE INTO parametres_marge (id) VALUES (1);

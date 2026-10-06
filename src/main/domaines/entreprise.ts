@@ -24,6 +24,7 @@ interface LigneEntreprise {
   numero_ide: string
   conditions_generales: string
   mentions_pied: string
+  nom_ticket: string
   pays: string
 }
 
@@ -43,6 +44,7 @@ function versEntreprise(ligne: LigneEntreprise): Entreprise {
     numeroIde: ligne.numero_ide,
     conditionsGenerales: ligne.conditions_generales,
     mentionsPied: ligne.mentions_pied,
+    nomTicket: ligne.nom_ticket,
     pays: ligne.pays
   }
 }
@@ -144,7 +146,7 @@ export function enregistrerEntreprise(valeurs: Entreprise): Entreprise {
         titulaire_compte = ?, tva_defaut_pct = ?, logo_path = ?,
         prefixe_facture = ?, prefixe_devis = ?,
         assujetti_tva = ?, numero_ide = ?, conditions_generales = ?, mentions_pied = ?,
-        pays = ?
+        pays = ?, nom_ticket = ?
        WHERE id = 1`
     )
     .run(
@@ -162,7 +164,8 @@ export function enregistrerEntreprise(valeurs: Entreprise): Entreprise {
       valeurs.numeroIde.trim(),
       valeurs.conditionsGenerales,
       valeurs.mentionsPied,
-      valeurs.pays
+      valeurs.pays,
+      valeurs.nomTicket.trim()
     )
 
   return lireEntreprise()

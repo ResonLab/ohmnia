@@ -19,6 +19,7 @@ const ENTREPRISE_VIDE: Entreprise = {
   numeroIde: '',
   conditionsGenerales: '',
   mentionsPied: '',
+  nomTicket: '',
   pays: PAYS_PAR_DEFAUT
 }
 
@@ -213,6 +214,15 @@ export default function Parametres(): React.JSX.Element {
         <input
           value={valeurs.prefixeDevis}
           onChange={(e) => modifierChamp('prefixeDevis', e.target.value)}
+        />
+      </label>
+
+      <label>
+        {t('ent.nomTicket')}
+        <input
+          placeholder={t('ent.nomTicketExemple')}
+          value={valeurs.nomTicket}
+          onChange={(e) => modifierChamp('nomTicket', e.target.value)}
         />
       </label>
       </div>

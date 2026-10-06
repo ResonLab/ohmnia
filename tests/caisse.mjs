@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { DatabaseSync } from 'node:sqlite'
 import { build } from 'esbuild'
 
 const PROJET = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -47,7 +48,14 @@ const chargerSqlBrut = {
 
 const chemin = (p) => JSON.stringify(join(SRC, p).replace(/\\/g, '/'))
 const entree = join(DOSSIER, 'entree.ts')
-writeFileSync(entree, `export * from ${chemin('shared/caisse')}\n`)
+writeFileSync(
+  entree,
+  `export * from ${chemin('shared/caisse')}
+export { definirContexte } from ${chemin('main/contexte')}
+export { ouvrirBaseDeDonnees, getDb, fermerBaseDeDonnees } from ${chemin('main/db/database')}
+export { lireEntreprise, enregistrerEntreprise } from ${chemin('main/domaines/entreprise')}
+`
+)
 const bundle = join(DOSSIER, 'caisse.mjs')
 await build({
   entryPoints: [entree],
@@ -154,6 +162,55 @@ verifier(
   leve(() => c.calculerReglement({ ...base, devise: 'EUR', taux: -1 }))
 )
 verifier('refus : total nul', leve(() => c.calculerReglement({ ...base, total: 0 })))
+
+/* ── 2. Les tables, et le nom affiché sur les tickets ────────────────────── */
+
+console.log('\n=== Base de données ===')
+c.definirContexte({ dossierDonnees: DOSSIER, version: '0.0.0-test' })
+
+// Une base d'avant la caisse : sans ses tables, sans `nom_ticket`.
+c.ouvrirBaseDeDonnees()
+c.fermerBaseDeDonnees()
+const ancienne = new DatabaseSync(join(DOSSIER, 'gestion.sqlite'))
+ancienne.exec('PRAGMA foreign_keys = OFF')
+for (const table of ['ventes_caisse_paiements', 'ventes_caisse_lignes', 'ventes_caisse']) {
+  ancienne.exec(`DROP TABLE IF EXISTS ${table}`)
+}
+try {
+  ancienne.exec('ALTER TABLE entreprise DROP COLUMN nom_ticket')
+} catch {
+  // Colonne absente : la base est déjà « d'avant ».
+}
+ancienne.prepare("UPDATE entreprise SET nom = 'Atelier Colin' WHERE id = 1").run()
+ancienne.close()
+
+c.ouvrirBaseDeDonnees()
+const db = c.getDb()
+const colonnes = (table) => new Set(db.prepare(`PRAGMA table_info("${table}")`).all().map((l) => l.name))
+const tables = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((l) => l.name))
+
+verifier(
+  'les trois tables de la caisse existent',
+  ['ventes_caisse', 'ventes_caisse_lignes', 'ventes_caisse_paiements'].every((t) => tables.has(t))
+)
+verifier('la migration ajoute entreprise.nom_ticket à une ancienne base', colonnes('entreprise').has('nom_ticket'))
+verifier("la fiche entreprise n'a rien perdu", c.lireEntreprise().nom === 'Atelier Colin')
+verifier("le nom du ticket est vide tant qu'on ne l'a pas réglé", c.lireEntreprise().nomTicket === '')
+verifier(
+  'les ventes ont les colonnes attendues',
+  ['numero', 'date', 'total', 'statut', 'servi_par', 'tva_pct', 'montant_tva'].every((n) => colonnes('ventes_caisse').has(n))
+)
+verifier(
+  'les paiements ont les colonnes attendues',
+  ['vente_id', 'mode', 'montant', 'arrondi', 'devise_recue', 'montant_recu', 'taux', 'rendu', 'ecriture_journal_id'].every(
+    (n) => colonnes('ventes_caisse_paiements').has(n)
+  )
+)
+
+c.enregistrerEntreprise({ ...c.lireEntreprise(), nomTicket: 'Colin' })
+verifier("le nom du ticket s'enregistre", c.lireEntreprise().nomTicket === 'Colin')
+c.enregistrerEntreprise({ ...c.lireEntreprise(), nomTicket: '' })
+verifier('et peut être vidé', c.lireEntreprise().nomTicket === '')
 
 console.log(echecs === 0 ? '\n  CAISSE : VALIDEE' : `\n  CAISSE : ${echecs} ECHEC(S)`)
 process.exit(echecs === 0 ? 0 : 1)

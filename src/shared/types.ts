@@ -15,6 +15,8 @@ export interface Entreprise {
   numeroIde: string
   conditionsGenerales: string
   mentionsPied: string
+  /** Nom imprimé après « Servi par » sur les tickets de caisse ; vide = ligne omise. */
+  nomTicket: string
   /** Code ISO du pays : pilote devise, taux de taxe et mentions légales. */
   pays: string
 }

@@ -1256,6 +1256,11 @@ const TEXTES = {
   'ent.titulaire': { fr: 'Titulaire du compte', en: 'Account holder' },
   'ent.prefixeFacture': { fr: 'Préfixe numéro de facture', en: 'Invoice number prefix' },
   'ent.prefixeDevis': { fr: 'Préfixe numéro de devis', en: 'Quote number prefix' },
+  'ent.nomTicket': {
+    fr: 'Nom affiché sur les tickets de caisse (« Servi par … »)',
+    en: 'Name shown on till receipts ("Served by …")'
+  },
+  'ent.nomTicketExemple': { fr: 'Laisser vide pour ne rien afficher', en: 'Leave empty to show nothing' },
   'ent.logo': { fr: 'Logo', en: 'Logo' },
   'ent.logoAlt': { fr: "Logo de l'entreprise", en: 'Business logo' },
   'ent.choisirLogo': { fr: 'Choisir un logo…', en: 'Choose a logo…' },
