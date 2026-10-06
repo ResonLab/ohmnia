@@ -26,6 +26,7 @@ import { enregistrerHandlersMaj, verifierMajAuDemarrage } from './maj'
 import { enregistrerHandlersConformite } from './ipc/conformite'
 import { enregistrerHandlersConditions } from './ipc/conditions'
 import { enregistrerHandlersInventaire } from './ipc/inventaire'
+import { enregistrerHandlersCaisse } from './ipc/caisse'
 import { enregistrerHandlersResume } from './ipc/resume'
 import { enregistrerHandlersPdf } from './pdf'
 import { enregistrerHandlersDocuments } from './ipc/documents'
@@ -158,6 +159,7 @@ app.whenReady().then(() => {
     enregistrerHandlersConformite()
     enregistrerHandlersConditions()
     enregistrerHandlersInventaire()
+    enregistrerHandlersCaisse()
     enregistrerHandlersResume()
     enregistrerHandlersDocuments()
   } else {

@@ -7,6 +7,8 @@ import type {
   Client,
   ClientDetail,
   ConfigurationMaj,
+  DemandeVenteCaisse,
+  DonneesTicket,
   DevisDetail,
   DocumentImpression,
   EcritureJournal,
@@ -44,7 +46,9 @@ import type {
   TableauDeBord,
   TarifDeplacement,
   TarifMainOeuvre,
-  TarifProduit
+  TarifProduit,
+  TotauxCaisse,
+  VenteCaisse
 } from '../shared/types'
 
 const api = {
@@ -226,6 +230,14 @@ const api = {
       ipcRenderer.invoke('inventaire:modifier', referenceOrigine, article),
     supprimer: (reference: string): Promise<void> => ipcRenderer.invoke('inventaire:supprimer', reference),
     resume: (): Promise<ResumeInventaire> => ipcRenderer.invoke('inventaire:resume')
+  },
+
+  caisse: {
+    vendre: (demande: DemandeVenteCaisse): Promise<VenteCaisse> => ipcRenderer.invoke('caisse:vendre', demande),
+    annuler: (id: number): Promise<VenteCaisse> => ipcRenderer.invoke('caisse:annuler', id),
+    lister: (date?: string): Promise<VenteCaisse[]> => ipcRenderer.invoke('caisse:lister', date),
+    totaux: (date: string): Promise<TotauxCaisse> => ipcRenderer.invoke('caisse:totaux', date),
+    donneesTicket: (id: number): Promise<DonneesTicket> => ipcRenderer.invoke('caisse:donneesTicket', id)
   },
 
   resume: {

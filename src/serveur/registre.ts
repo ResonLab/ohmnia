@@ -82,6 +82,7 @@ import {
   resumeInventaire,
   supprimerArticle
 } from '../main/domaines/inventaire'
+import { annulerVente, donneesTicket, listerVentes, totauxDuJour, vendre } from '../main/domaines/caisse'
 import { rechercheGlobale } from '../main/domaines/recherche'
 import { verifierConformite } from '../main/domaines/conformite'
 import { accepterConditions, etatConditions } from '../main/domaines/conditions'
@@ -213,6 +214,12 @@ export const REGISTRE: Record<string, Operation> = {
     modifierArticle(referenceOrigine as string, article as Parameters<typeof modifierArticle>[1]),
   'inventaire:supprimer': (reference) => supprimerArticle(reference as string),
   'inventaire:resume': () => resumeInventaire(),
+
+  'caisse:vendre': (demande) => vendre(demande as Parameters<typeof vendre>[0]),
+  'caisse:annuler': (id) => annulerVente(id as number),
+  'caisse:lister': (date) => listerVentes(date as string | undefined),
+  'caisse:totaux': (date) => totauxDuJour(date as string),
+  'caisse:donneesTicket': (id) => donneesTicket(id as number),
 
   'recherche:globale': (terme) => rechercheGlobale(terme as string),
 

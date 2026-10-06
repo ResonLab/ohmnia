@@ -104,7 +104,7 @@ src/
       sauvegardeExterne.ts  chiffrement AES-256-GCM (scrypt)
       audit.ts          traçage + verrou des exercices clôturés
       migration-dossier.ts  reprise de l'ancien dossier de données
-    ipc/                un fichier par domaine (22 fichiers)
+    ipc/                un fichier par domaine (23 fichiers)
   preload/index.ts      pont sécurisé — seule porte entre interface et système
   renderer/src/
     App.tsx             menu, navigation, thème, langue, Ctrl+K, écran de conditions

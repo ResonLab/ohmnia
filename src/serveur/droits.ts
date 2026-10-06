@@ -78,6 +78,13 @@ export const DROITS: Record<string, Role> = {
   'inventaire:modifier': 'ecriture',
   'inventaire:supprimer': 'ecriture',
 
+  /* Caisse — vendre et annuler engagent l'argent et le stock : écriture. */
+  'caisse:lister': 'lecture',
+  'caisse:totaux': 'lecture',
+  'caisse:donneesTicket': 'lecture',
+  'caisse:vendre': 'ecriture',
+  'caisse:annuler': 'ecriture',
+
   /* Recherche et conformité */
   'recherche:globale': 'lecture',
   'conformite:verifier': 'lecture',
