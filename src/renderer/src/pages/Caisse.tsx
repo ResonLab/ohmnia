@@ -35,6 +35,8 @@ interface LignePanier {
   prix: number
   stock: number
   quantite: number
+  /** Ce qui est tapé dans le champ ; `quantite` garde la dernière valeur valide. */
+  texte: string
 }
 
 const DEVISES = ['CHF', 'EUR', 'USD', 'GBP']
@@ -71,6 +73,9 @@ function memoriserTaux(devise: string, taux: number): void {
 export default function Caisse(): React.JSX.Element {
   const [onglet, setOnglet] = useState<Onglet>('vente')
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null)
+  // Incrémenté à chaque vente ou annulation : l'autre onglet se recharge.
+  const [version, setVersion] = useState(0)
+  const signaler = (): void => setVersion((v) => v + 1)
 
   useEffect(() => {
     window.api.entreprise.lire().then(setEntreprise)
@@ -88,12 +93,26 @@ export default function Caisse(): React.JSX.Element {
           {t('caisse.ongletJournal')}
         </button>
       </div>
-      {onglet === 'vente' ? <Vente entreprise={entreprise} /> : <JournalCaisse />}
+      {/* Les deux restent montés, cachés tour à tour : un panier rempli survit à un coup d'œil au journal. */}
+      <div style={onglet === 'vente' ? undefined : { display: 'none' }}>
+        <Vente entreprise={entreprise} version={version} onChange={signaler} />
+      </div>
+      <div style={onglet === 'journal' ? undefined : { display: 'none' }}>
+        <JournalCaisse version={version} onChange={signaler} />
+      </div>
     </div>
   )
 }
 
-function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
+function Vente({
+  entreprise,
+  version,
+  onChange
+}: {
+  entreprise: Entreprise
+  version: number
+  onChange: () => void
+}): React.JSX.Element {
   const deviseEntreprise = profilPays(entreprise.pays).devise
   const devises = [deviseEntreprise, ...DEVISES.filter((d) => d !== deviseEntreprise)]
 
@@ -115,7 +134,7 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
 
   useEffect(() => {
     window.api.inventaire.lister().then(setArticles)
-  }, [])
+  }, [version])
 
   const termes = recherche.trim().toLowerCase()
   const articlesAffiches = articles.filter(
@@ -127,7 +146,11 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
     setPanier((precedent) => {
       const present = precedent.find((l) => l.reference === article.reference)
       if (present) {
-        return precedent.map((l) => (l.reference === article.reference ? { ...l, quantite: l.quantite + 1 } : l))
+        return precedent.map((l) =>
+          l.reference === article.reference
+            ? { ...l, quantite: l.quantite + 1, texte: String(l.quantite + 1) }
+            : l
+        )
       }
       return [
         ...precedent,
@@ -136,7 +159,8 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
           designation: article.designation,
           prix: article.prixVenteUnitaire,
           stock: article.quantiteStock,
-          quantite: 1
+          quantite: 1,
+          texte: '1'
         }
       ]
     })
@@ -144,8 +168,17 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
 
   function changerQuantite(reference: string, texte: string): void {
     const valeur = nombre(texte)
-    if (!Number.isFinite(valeur) || valeur <= 0) return
-    setPanier((precedent) => precedent.map((l) => (l.reference === reference ? { ...l, quantite: valeur } : l)))
+    const valide = texte.trim() !== '' && Number.isFinite(valeur) && valeur > 0
+    setPanier((precedent) =>
+      precedent.map((l) =>
+        l.reference === reference ? (valide ? { ...l, texte, quantite: valeur } : { ...l, texte }) : l
+      )
+    )
+  }
+
+  /** Une saisie invalide laissée telle quelle reprend la dernière quantité valide. */
+  function confirmerQuantite(reference: string): void {
+    setPanier((precedent) => precedent.map((l) => (l.reference === reference ? { ...l, texte: String(l.quantite) } : l)))
   }
 
   function retirer(reference: string): void {
@@ -213,9 +246,14 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
       setDerniere(vente)
       setCheminTicket(null)
       setPanier([])
+      // Chaque vente repart du cas courant : une devise étrangère laissée
+      // sélectionnée ferait encaisser la vente suivante dans la mauvaise monnaie.
+      setMode('carte')
       setPartCarteTexte('')
+      setDevise(deviseEntreprise)
+      setTauxTexte('1')
       setRecuTexte('')
-      setArticles(await window.api.inventaire.lister())
+      onChange()
     } catch (e) {
       setErreur(messageDe(e))
     } finally {
@@ -315,9 +353,9 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
                     </td>
                     <td>
                       <input
-                        defaultValue={ligne.quantite}
-                        key={`${ligne.reference}-${ligne.quantite}`}
+                        value={ligne.texte}
                         onChange={(e) => changerQuantite(ligne.reference, e.target.value)}
+                        onBlur={() => confirmerQuantite(ligne.reference)}
                       />
                     </td>
                     <td>{formaterMontant(ligne.quantite * ligne.prix)}</td>
@@ -348,7 +386,7 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
               </p>
             </div>
 
-            <div className="barre-boutons">
+            <div className="barre-boutons" style={{ marginBottom: '1rem' }}>
               {(['carte', 'especes', 'mixte'] as const).map((m) => (
                 <button key={m} className={mode === m ? '' : 'bouton-secondaire'} onClick={() => setMode(m)}>
                   {t(m === 'carte' ? 'caisse.modeCarte' : m === 'especes' ? 'caisse.modeEspeces' : 'caisse.modeMixte')}
@@ -433,7 +471,7 @@ function Vente({ entreprise }: { entreprise: Entreprise }): React.JSX.Element {
   )
 }
 
-function JournalCaisse(): React.JSX.Element {
+function JournalCaisse({ version: versionExterne, onChange }: { version: number; onChange: () => void }): React.JSX.Element {
   const [date, setDate] = useState(aujourdhui())
   const [ventes, setVentes] = useState<VenteCaisse[]>([])
   const [totaux, setTotaux] = useState<TotauxCaisse | null>(null)
@@ -448,7 +486,7 @@ function JournalCaisse(): React.JSX.Element {
         setTotaux(resume)
       })
       .catch((e) => setErreur(messageDe(e)))
-  }, [date, version])
+  }, [date, version, versionExterne])
 
   async function annuler(vente: VenteCaisse): Promise<void> {
     if (!window.confirm(t('caisse.confirmerAnnulation', { numero: vente.numero }))) return
@@ -456,6 +494,7 @@ function JournalCaisse(): React.JSX.Element {
     try {
       await window.api.caisse.annuler(vente.id)
       setVersion((v) => v + 1)
+      onChange()
     } catch (e) {
       setErreur(messageDe(e))
     }
