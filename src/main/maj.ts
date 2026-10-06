@@ -67,7 +67,10 @@ function diffuserEtat(nouvelEtat: EtatMaj): void {
 async function preparerUpdater(
   config: ConfigurationMaj
 ): Promise<typeof import('electron-updater').autoUpdater> {
-  const { autoUpdater } = await import('electron-updater')
+  // electron-updater est un module CommonJS dont `autoUpdater` est un getter :
+  // vu depuis l'ESM, l'export nommé est undefined, il faut passer par `default`.
+  const module = await import('electron-updater')
+  const autoUpdater = module.autoUpdater ?? module.default.autoUpdater
 
   autoUpdater.autoDownload = false // le téléchargement reste un choix explicite
   autoUpdater.autoInstallOnAppQuit = false
