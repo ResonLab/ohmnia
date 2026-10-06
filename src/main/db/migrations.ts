@@ -154,6 +154,77 @@ function retirerContraintesInventaire(db: DatabaseSync): void {
   }
 }
 
+/**
+ * Les factures passent de trois statuts (En attente, Payée, Annulée) à quatre
+ * (Brouillon, Envoyée, Payée, Annulée).
+ *
+ * **Une ancienne « En attente » ne devient pas toujours « Envoyée ».** Elle
+ * confondait deux choses : une facture réellement partie chez le client, et une
+ * facture créée puis jamais terminée. On les sépare d'après ce qui s'est passé :
+ * si elle a une écriture au Journal ou a déjà déduit le stock, c'est qu'elle a
+ * été exportée et confirmée — elle est « Envoyée ». Sinon, personne ne l'a vue
+ * hors le patron — elle est « Brouillon ».
+ *
+ * **Le Journal n'est pas touché.** Une écriture déjà créée pour une facture
+ * encore à encaisser reste là : la supprimer en silence effacerait une trace
+ * comptable. Elle ne sera pas dupliquée à l'encaissement.
+ */
+function migrerStatutsFactures(db: DatabaseSync): void {
+  if (!tableExiste(db, 'factures')) return
+  const definition = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'factures'")
+    .get() as { sql: string } | undefined
+  if (!definition || !definition.sql.includes("'En attente'")) return
+
+  const colonnes = [
+    'id', 'numero', 'date', 'client_id', 'delai_paiement_jours', 'remise_pct', 'remise_montant',
+    'impression_incluse', 'tva_pct', 'notes_internes', 'stock_deduit', 'devis_origine_id'
+  ]
+  const liste = colonnes.map((c) => `"${c}"`).join(', ')
+  const listeF = colonnes.map((c) => `f."${c}"`).join(', ')
+
+  db.exec('PRAGMA foreign_keys = OFF')
+  db.exec('BEGIN')
+  try {
+    db.exec('DROP TABLE IF EXISTS factures_migration')
+    db.exec(`CREATE TABLE factures_migration (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      numero TEXT NOT NULL UNIQUE,
+      date TEXT NOT NULL,
+      client_id INTEGER NOT NULL REFERENCES clients(id),
+      delai_paiement_jours INTEGER NOT NULL DEFAULT 30,
+      remise_pct REAL NOT NULL DEFAULT 0,
+      remise_montant REAL NOT NULL DEFAULT 0,
+      impression_incluse INTEGER NOT NULL DEFAULT 0,
+      tva_pct REAL NOT NULL DEFAULT 0,
+      statut TEXT NOT NULL DEFAULT 'Brouillon' CHECK (statut IN ('Brouillon', 'Envoyée', 'Payée', 'Annulée')),
+      notes_internes TEXT NOT NULL DEFAULT '',
+      stock_deduit INTEGER NOT NULL DEFAULT 0,
+      devis_origine_id INTEGER
+    )`)
+    db.exec(`INSERT INTO factures_migration (${liste}, statut)
+      SELECT ${listeF},
+        CASE
+          WHEN f.statut = 'En attente' AND (
+            f.stock_deduit = 1
+            OR EXISTS (SELECT 1 FROM journal j WHERE j.numero_facture = f.numero)
+          ) THEN 'Envoyée'
+          WHEN f.statut = 'En attente' THEN 'Brouillon'
+          ELSE f.statut
+        END
+      FROM factures f`)
+    db.exec('DROP TABLE factures')
+    db.exec('ALTER TABLE factures_migration RENAME TO factures')
+    db.exec('COMMIT')
+    console.log('Migration : statuts de factures (Brouillon / Envoyée / Payée / Annulée).')
+  } catch (erreur) {
+    db.exec('ROLLBACK')
+    throw erreur
+  } finally {
+    db.exec('PRAGMA foreign_keys = ON')
+  }
+}
+
 export function appliquerMigrations(db: DatabaseSync): void {
   for (const { table, colonne, definition } of COLONNES_ATTENDUES) {
     if (!tableExiste(db, table)) continue
@@ -163,5 +234,6 @@ export function appliquerMigrations(db: DatabaseSync): void {
     console.log(`Migration : colonne ${table}.${colonne} ajoutée.`)
   }
 
+  migrerStatutsFactures(db)
   retirerContraintesInventaire(db)
 }

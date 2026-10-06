@@ -729,7 +729,8 @@ const TEXTES = {
 
   // --- Facturation ---
   // Les trois statuts sont enregistrés en base — voir `src/shared/documents.ts`.
-  'facture.statutEnAttente': { fr: 'En attente', en: 'Pending' },
+  'facture.statutBrouillon': { fr: 'Brouillon', en: 'Draft' },
+  'facture.statutEnvoyee': { fr: 'Envoyée', en: 'Sent' },
   'facture.statutPayee': { fr: 'Payée', en: 'Paid' },
   'facture.statutAnnulee': { fr: 'Annulée', en: 'Cancelled' },
   'facture.nouvelle': { fr: 'Nouvelle facture', en: 'New invoice' },
@@ -739,17 +740,27 @@ const TEXTES = {
     en: 'Choose a client first to create the invoice.'
   },
   'facture.enregistree': { fr: 'Facture enregistrée.', en: 'Invoice saved.' },
-  'facture.confirmerHistorique': {
-    fr: "Enregistrer cette facture dans l'historique et dans le Journal ?\n(Si elle y est déjà, aucun doublon ne sera créé.)",
-    en: 'Record this invoice in the history and in the Ledger?\n(If it is already there, no duplicate will be created.)'
+  'facture.confirmerEnvoi': {
+    fr: "Marquer cette facture comme envoyée au client ?\nLe stock des articles facturés sera déduit. Le Journal n'enregistrera l'entrée d'argent qu'au paiement.",
+    en: 'Mark this invoice as sent to the client?\nThe stock of the invoiced items will be deducted. The Ledger will only record the income once it is paid.'
   },
-  'facture.dejaAuJournal': {
-    fr: 'Cette facture était déjà dans le Journal (aucun doublon créé).',
-    en: 'This invoice was already in the Ledger (no duplicate created).'
+  'facture.marqueeEnvoyee': {
+    fr: 'Facture marquée comme envoyée ({montant} à encaisser).',
+    en: 'Invoice marked as sent ({montant} to collect).'
   },
-  'facture.ecritureAjoutee': {
-    fr: 'Écriture ajoutée au Journal : {montant}.',
-    en: 'Entry added to the Ledger: {montant}.'
+  'garde.confirmerSortie': {
+    fr: "Vous avez des modifications non enregistrées : elles seront perdues si vous partez.\n\nQuitter quand même ?",
+    en: 'You have unsaved changes: they will be lost if you leave.\n\nLeave anyway?'
+  },
+  'maj.version': { fr: 'Version {version}', en: 'Version {version}' },
+  'maj.verifier': { fr: 'Vérifier les mises à jour', en: 'Check for updates' },
+  'maj.verification': { fr: 'Vérification…', en: 'Checking…' },
+  'maj.aJour': { fr: 'Vous avez la dernière version.', en: 'You have the latest version.' },
+  'maj.disponible': { fr: 'Version {version} disponible', en: 'Version {version} available' },
+  'garde.nonEnregistre': { fr: 'Modifications non enregistrées', en: 'Unsaved changes' },
+  'facture.entreeAuPaiement': {
+    fr: "L'entrée d'argent a été ajoutée au Journal : {montant}.",
+    en: 'The income has been added to the Ledger: {montant}.'
   },
   'facture.confirmerSuppression': {
     fr: 'Supprimer définitivement cette facture ?',

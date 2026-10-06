@@ -193,12 +193,15 @@ const api = {
     enregistrer: (detail: FactureDetail): Promise<FactureDetail> =>
       ipcRenderer.invoke('factures:enregistrer', detail),
     supprimer: (id: number): Promise<void> => ipcRenderer.invoke('factures:supprimer', id),
-    changerStatut: (id: number, statut: Facture['statut']): Promise<void> =>
+    changerStatut: (
+      id: number,
+      statut: Facture['statut']
+    ): Promise<{ entreeAjoutee: boolean; total: number; avertissements: string[] }> =>
       ipcRenderer.invoke('factures:changerStatut', id, statut),
     historique: (): Promise<HistoriqueFacture[]> => ipcRenderer.invoke('factures:historique'),
     confirmerEnregistrementHistorique: (
       id: number
-    ): Promise<{ dejaEnregistreeDansJournal: boolean; avertissements: string[]; total: number }> =>
+    ): Promise<{ avertissements: string[]; total: number }> =>
       ipcRenderer.invoke('factures:confirmerEnregistrementHistorique', id)
   },
 
@@ -353,6 +356,11 @@ const api = {
    * Mode multi-postes. Les canaux métier ne changent pas de nom selon le
    * mode : l'interface n'a que ces réglages-ci à connaître.
    */
+  /** La fenêtre de cette machine. */
+  fenetre: {
+    refocaliser: (): Promise<void> => ipcRenderer.invoke('fenetre:refocaliser')
+  },
+
   multipostes: {
     etat: (): Promise<EtatMultipostes> => ipcRenderer.invoke('multipostes:etat'),
     tester: (adresse: string): Promise<{ installe: boolean }> =>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { peutQuitter, useGardeSortie } from '../gardeSortie'
 import type {
   FactureDetail,
   FactureLigne,
@@ -17,7 +18,7 @@ import ClientSelecteur from '../components/ClientSelecteur'
 import Modale from '../components/Modale'
 import { formaterMontant, symboleDevise } from '../lib/devise'
 import { ordinal, t } from '../../../shared/i18n'
-import { STATUTS_FACTURE } from '../../../shared/documents'
+import { STATUTS_FACTURE, STATUT_FACTURE_ENVOYEE } from '../../../shared/documents'
 import { NIVEAU_MAX_RELANCE, type RelanceProposee } from '../../../shared/calculs'
 
 /** Ligne vide temporaire (id négatif : elle n'existe pas encore en base). */
@@ -79,6 +80,19 @@ export default function Facturation(): React.JSX.Element {
     }
   }
   const [brouillon, setBrouillon] = useState<FactureDetail | null>(null)
+  // Ce qui est actuellement enregistré, pour savoir si l'écran a des modifications
+  // en attente. Voir `gardeSortie.ts`.
+  const [instantane, setInstantane] = useState<string | null>(null)
+  const modifie = brouillon !== null && JSON.stringify(brouillon) !== instantane
+  useGardeSortie(modifie)
+
+  /** Charge un document venu de la base : ce qu'on affiche est alors ce qui est enregistré. */
+  function chargerDansEditeur(detail: FactureDetail): void {
+    const pret = { ...detail, lignes: detail.lignes.length ? detail.lignes : [ligneVide()] }
+    setBrouillon(pret)
+    setInstantane(JSON.stringify(pret))
+  }
+
   const [clientIdNouveau, setClientIdNouveau] = useState<number | null>(null)
   const [impressionParams, setImpressionParams] = useState<ParametresImpressionDb | null>(null)
   const [messageErreur, setMessageErreur] = useState<string | null>(null)
@@ -123,6 +137,7 @@ export default function Facturation(): React.JSX.Element {
   }
 
   async function creerBrouillon(): Promise<void> {
+    if (!peutQuitter()) return
     setMessageErreur(null)
     if (!clientIdNouveau) {
       setMessageErreur(t('facture.choisirClient'))
@@ -130,17 +145,18 @@ export default function Facturation(): React.JSX.Element {
     }
     try {
       const detail = await window.api.factures.creerBrouillon(clientIdNouveau)
-      setBrouillon({ ...detail, lignes: [ligneVide()] })
+      chargerDansEditeur(detail)
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function ouvrirBrouillon(id: number): Promise<void> {
+    if (!peutQuitter()) return
     setMessageErreur(null)
     try {
       const detail = await window.api.factures.obtenirDetail(id)
-      setBrouillon({ ...detail, lignes: detail.lignes.length ? detail.lignes : [ligneVide()] })
+      chargerDansEditeur(detail)
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -150,7 +166,7 @@ export default function Facturation(): React.JSX.Element {
     if (!brouillon) return null
     try {
       const misAJour = await window.api.factures.enregistrer(brouillon)
-      setBrouillon({ ...misAJour, lignes: misAJour.lignes.length ? misAJour.lignes : [ligneVide()] })
+      chargerDansEditeur(misAJour)
       await rechargerHistorique()
       setMessageErreur(null)
       setMessageInfo(t('facture.enregistree'))
@@ -170,19 +186,18 @@ export default function Facturation(): React.JSX.Element {
       const chemin = await window.api.pdf.generer('facture', misAJour.id)
       setMessageInfo(t('devis.pdfExporte', { chemin }))
 
-      const confirmer = window.confirm(t('facture.confirmerHistorique'))
+      // Un PDF exporté peut partir chez le client : on propose de sortir la
+      // facture de l'état de brouillon. Refuser la laisse en brouillon.
+      const confirmer = window.confirm(t('facture.confirmerEnvoi'))
       if (confirmer) {
         const resultat = await window.api.factures.confirmerEnregistrementHistorique(misAJour.id)
-        const messages: string[] = []
-        if (resultat.dejaEnregistreeDansJournal) {
-          messages.push(t('facture.dejaAuJournal'))
-        } else {
-          messages.push(
-            t('facture.ecritureAjoutee', { montant: formaterMontant(resultat.total) })
-          )
-        }
-        messages.push(...resultat.avertissements)
+        const messages: string[] = [
+          t('facture.marqueeEnvoyee', { montant: formaterMontant(resultat.total) }),
+          ...resultat.avertissements
+        ]
         setMessageInfo(`${t('devis.pdfExporte', { chemin })}\n${messages.join('\n')}`)
+        const detail = await window.api.factures.obtenirDetail(misAJour.id)
+        chargerDansEditeur(detail)
         await rechargerHistorique()
       }
     } catch (erreur) {
@@ -226,6 +241,8 @@ export default function Facturation(): React.JSX.Element {
       const misAJour = await window.api.factures.enregistrer(brouillon)
       const modele = await window.api.modeles.creerDepuisFacture(misAJour.id, nomNouveauModele)
       setModeles(await window.api.modeles.lister())
+      // Enregistrée pour créer le modèle : l'écran n'a plus rien d'en attente.
+      setInstantane(JSON.stringify(brouillon))
       setNomNouveauModele('')
       setModeleAEnregistrer(false)
       setMessageErreur(null)
@@ -238,10 +255,11 @@ export default function Facturation(): React.JSX.Element {
   }
 
   async function dupliquerFacture(id: number): Promise<void> {
+    if (!peutQuitter()) return
     try {
       const copie = await window.api.factures.dupliquer(id)
       await rechargerHistorique()
-      setBrouillon({ ...copie, lignes: copie.lignes.length ? copie.lignes : [ligneVide()] })
+      chargerDansEditeur(copie)
       setMessageErreur(null)
       setMessageInfo(t('facture.dupliquee', { numero: copie.numero }))
     } catch (erreur) {
@@ -282,8 +300,26 @@ export default function Facturation(): React.JSX.Element {
   }
 
   async function changerStatut(id: number, statut: StatutFacture): Promise<void> {
-    await window.api.factures.changerStatut(id, statut)
+    setMessageErreur(null)
+    try {
+      const resultat = await window.api.factures.changerStatut(id, statut)
+      const messages: string[] = []
+      if (resultat.entreeAjoutee) {
+        messages.push(t('facture.entreeAuPaiement', { montant: formaterMontant(resultat.total) }))
+      }
+      messages.push(...resultat.avertissements)
+      setMessageInfo(messages.length ? messages.join('\n') : null)
+    } catch (erreur) {
+      // Par exemple un exercice clôturé : le statut n'a pas changé, on le dit.
+      afficherErreur(erreur)
+    }
     await rechargerHistorique()
+    // Un brouillon ouvert à côté doit refléter le nouveau statut, sinon son
+    // prochain enregistrement l'écraserait par l'ancien.
+    if (brouillon?.id === id) {
+      const detail = await window.api.factures.obtenirDetail(id)
+      chargerDansEditeur(detail)
+    }
   }
 
   async function supprimerFacture(id: number): Promise<void> {
@@ -334,7 +370,10 @@ export default function Facturation(): React.JSX.Element {
 
       {brouillon && (
         <div className="carte">
-          <h2>Facture {brouillon.numero} (brouillon interne)</h2>
+          <h2>
+            Facture {brouillon.numero} (brouillon interne){' '}
+            {modifie && <span className="badge-alerte">{t('garde.nonEnregistre')}</span>}
+          </h2>
 
           <div className="ligne-formulaire">
             <label>
@@ -629,7 +668,7 @@ export default function Facturation(): React.JSX.Element {
                       {t('facture.voirRappels')}
                     </button>
                     <button className="action-ecriture" onClick={() => dupliquerFacture(facture.id)}>{t('devis.dupliquer')}</button>
-                    {facture.statut === 'En attente' && (
+                    {facture.statut === STATUT_FACTURE_ENVOYEE && (
                       <button className="action-ecriture" onClick={() => ouvrirModaleRappel(facture.id)}>{t('facture.rappel')}</button>
                     )}
                     <button className="action-ecriture bouton-danger" onClick={() => supprimerFacture(facture.id)}>

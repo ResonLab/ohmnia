@@ -213,7 +213,7 @@ export function calculerRelances(
     // Une facture payée ou annulée ne se relance pas. C'est le premier filtre,
     // et il doit le rester : relancer un client qui a payé coûte la confiance
     // que toute la facturation sert à construire.
-    if (facture.statut !== 'En attente') continue
+    if (facture.statut !== 'Envoyée') continue
 
     const joursDeRetard = ecartEnJours(facture.dateEcheance)
     if (joursDeRetard < seuilPremiereRelance) continue

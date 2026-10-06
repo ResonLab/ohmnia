@@ -19,6 +19,17 @@ import type { ConfigurationMaj, EtatMaj, SourceMaj } from '../shared/types'
 
 let etat: EtatMaj = { statut: 'inactif', versionActuelle: app.getVersion() }
 
+/**
+ * Le dépôt des publications d'Ohmnia, utilisé tant qu'aucun autre n'est saisi.
+ *
+ * **Sans lui, les mises à jour n'ont jamais fonctionné pour personne.** Le champ
+ * était vide par défaut, la source « non configurée », et la vérification
+ * refusait de partir : il fallait deviner un réglage enfoui et y taper un nom de
+ * dépôt. On ne fait toujours aucun appel réseau sans action de l'utilisateur
+ * (la vérification au démarrage reste décochée par défaut).
+ */
+const DEPOT_PAR_DEFAUT = 'ResonLab/ohmnia'
+
 function lireConfigurationMaj(): ConfigurationMaj {
   try {
     const ligne = getDb()
@@ -28,12 +39,12 @@ function lireConfigurationMaj(): ConfigurationMaj {
       | undefined
     return {
       source: (ligne?.maj_source as SourceMaj) ?? 'github',
-      depot: ligne?.maj_depot ?? '',
+      depot: ligne?.maj_depot || DEPOT_PAR_DEFAUT,
       url: ligne?.url_maj ?? null,
       auto: (ligne?.maj_auto ?? 0) === 1
     }
   } catch {
-    return { source: 'github', depot: '', url: null, auto: false }
+    return { source: 'github', depot: DEPOT_PAR_DEFAUT, url: null, auto: false }
   }
 }
 

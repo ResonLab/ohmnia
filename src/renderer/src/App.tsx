@@ -1,3 +1,5 @@
+import PiedMiseAJour from './components/PiedMiseAJour'
+import { peutQuitter } from './gardeSortie'
 import { useCallback, useEffect, useState } from 'react'
 import LogoOhmnia from './components/LogoOhmnia'
 import RechercheGlobale from './components/RechercheGlobale'
@@ -47,7 +49,17 @@ const MODULES = [
 type ModuleId = (typeof MODULES)[number]['id']
 
 export default function App(): React.JSX.Element {
-  const [moduleActif, setModuleActif] = useState<ModuleId>('accueil')
+  const [moduleActif, setModuleActifBrut] = useState<ModuleId>('accueil')
+
+  /**
+   * Tout changement d'écran passe par ici : un brouillon non enregistré demande
+   * d'abord confirmation (voir `gardeSortie.ts`).
+   */
+  function setModuleActif(module: ModuleId): void {
+    if (module === moduleActif) return
+    if (!peutQuitter()) return
+    setModuleActifBrut(module)
+  }
   const [theme, setTheme] = useState<Theme>('sombre')
   const [couleurAccent, setCouleurAccent] = useState('#1be7b6')
   const [rechercheOuverte, setRechercheOuverte] = useState(false)
@@ -254,6 +266,8 @@ export default function App(): React.JSX.Element {
             </button>
           </p>
         )}
+
+        <PiedMiseAJour onOuvrirReglages={() => setModuleActif('parametresApp')} />
 
         <p className="menu-raccourci">
           <kbd>Ctrl</kbd> + <kbd>K</kbd> {t('menu.rechercher')}

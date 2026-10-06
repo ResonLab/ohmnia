@@ -1,6 +1,6 @@
 import { dansUneTransaction, getDb } from '../db/database'
 import { lireParametresApp } from './parametresApp'
-import { tracerAudit } from '../db/audit'
+import { tracerAudit, verifierExerciceOuvert } from '../db/audit'
 import { calculerPrixFactureImpression, calculerTotalDocument } from '../../shared/calculs'
 import type { Facture, FactureDetail, FactureLigne, HistoriqueFacture } from '../../shared/types'
 
@@ -115,7 +115,7 @@ export function creerBrouillonFacture(clientId: number): FactureDetail {
   const resultat = getDb()
     .prepare(
       `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, impression_incluse, tva_pct, statut, notes_internes)
-       VALUES (?, ?, ?, ?, 0, 0, ?, 'En attente', '')`
+       VALUES (?, ?, ?, ?, 0, 0, ?, 'Brouillon', '')`
     )
     .run(numero, date, clientId, delaiPaiementDefaut, entreprise.tva_defaut_pct)
 
@@ -134,7 +134,7 @@ export function dupliquerFacture(id: number): FactureDetail {
     const resultat = db
       .prepare(
         `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, remise_montant, impression_incluse, tva_pct, statut, notes_internes)
-         VALUES (?, date('now'), ?, ?, ?, ?, ?, ?, 'En attente', ?)`
+         VALUES (?, date('now'), ?, ?, ?, ?, ?, ?, 'Brouillon', ?)`
       )
       .run(
         numero,
@@ -210,7 +210,7 @@ export function creerFactureDepuisDevis(devisId: number): FactureDetail {
     const resultat = db
       .prepare(
         `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, remise_montant, impression_incluse, tva_pct, statut, notes_internes, devis_origine_id)
-         VALUES (?, date('now'), ?, ?, ?, ?, 0, ?, 'En attente', ?, ?)`
+         VALUES (?, date('now'), ?, ?, ?, ?, 0, ?, 'Brouillon', ?, ?)`
       )
       .run(
         numero,
@@ -281,54 +281,14 @@ export function supprimerFacture(id: number): void {
   getDb().prepare('DELETE FROM factures WHERE id = ?').run(id)
 }
 
-export function changerStatutFacture(id: number, statut: Facture['statut']): void {
-  getDb().prepare('UPDATE factures SET statut = ? WHERE id = ?').run(statut, id)
-}
-
-export function historiqueFactures(): HistoriqueFacture[] {
-  const lignes = getDb()
-    .prepare(
-      `SELECT f.*, c.nom AS client_nom,
-        (SELECT SUM(j.montant) FROM journal j WHERE j.numero_facture = f.numero) AS montant
-       FROM factures f
-       LEFT JOIN clients c ON c.id = f.client_id
-       ORDER BY f.date DESC, f.id DESC`
-    )
-    .all() as unknown as (LigneFactureDb & {
-    client_nom: string | null
-    montant: number | null
-  })[]
-
-  const maintenant = Date.now()
-  return lignes.map((ligne): HistoriqueFacture => {
-    const facture = versFacture(ligne)
-    let joursEnAttente: number | null = null
-    if (facture.statut === 'En attente') {
-      joursEnAttente = Math.floor(
-        (maintenant - new Date(facture.date).getTime()) / (1000 * 60 * 60 * 24)
-      )
-    }
-    return {
-      ...facture,
-      clientNom: ligne.client_nom ?? 'Client supprimé',
-      montant: ligne.montant,
-      joursEnAttente
-    }
-  })
-}
-
 /**
- * Décrémente le stock (une seule fois par facture) et enregistre dans le Journal.
- * Retourne les avertissements de stock insuffisant/référence inconnue sans bloquer.
+ * Les frais d'impression ne s'ajoutent au total que si la facture les inclut.
+ * Un seul endroit les calcule : le total affiché, le montant à encaisser et
+ * l'entrée au Journal doivent donner le même chiffre.
  */
-export function confirmerEnregistrementHistorique(id: number): {
-  dejaEnregistreeDansJournal: boolean
-  avertissements: string[]
-  total: number
-} {
-  const db = getDb()
-  const detail = chargerDetailFacture(id)
-  const impressionParams = db.prepare('SELECT * FROM parametres_impression WHERE id = 1').get() as {
+function fraisImpressionDe(detail: FactureDetail): number {
+  if (!detail.impressionIncluse) return 0
+  const p = getDb().prepare('SELECT * FROM parametres_impression WHERE id = 1').get() as {
     prix_sachet_a4: number
     feuilles_par_sachet: number
     feuilles_par_facture: number
@@ -341,71 +301,159 @@ export function confirmerEnregistrementHistorique(id: number): {
     nb_enveloppes_par_sachet: number
     marge_impression_pct: number
   }
+  return calculerPrixFactureImpression({
+    prixSachetA4: p.prix_sachet_a4,
+    feuillesParSachet: p.feuilles_par_sachet,
+    feuillesParFacture: p.feuilles_par_facture,
+    prixImprimante: p.prix_imprimante,
+    nbFacturesAvantRemplacement: p.nb_factures_avant_remplacement,
+    prixEncre: p.prix_encre,
+    feuillesParCartouche: p.feuilles_par_cartouche,
+    prixTimbre: p.prix_timbre,
+    prixSachetEnveloppes: p.prix_sachet_enveloppes,
+    nbEnveloppesParSachet: p.nb_enveloppes_par_sachet,
+    margeImpressionPct: p.marge_impression_pct
+  })
+}
 
-  const parametresImpression = {
-    prixSachetA4: impressionParams.prix_sachet_a4,
-    feuillesParSachet: impressionParams.feuilles_par_sachet,
-    feuillesParFacture: impressionParams.feuilles_par_facture,
-    prixImprimante: impressionParams.prix_imprimante,
-    nbFacturesAvantRemplacement: impressionParams.nb_factures_avant_remplacement,
-    prixEncre: impressionParams.prix_encre,
-    feuillesParCartouche: impressionParams.feuilles_par_cartouche,
-    prixTimbre: impressionParams.prix_timbre,
-    prixSachetEnveloppes: impressionParams.prix_sachet_enveloppes,
-    nbEnveloppesParSachet: impressionParams.nb_enveloppes_par_sachet,
-    margeImpressionPct: impressionParams.marge_impression_pct
-  }
-
-  const fraisImpression = detail.impressionIncluse
-    ? calculerPrixFactureImpression(parametresImpression)
-    : 0
-  const { total } = calculerTotalDocument(
+/**
+ * Le montant TTC d'une facture, calculé depuis ses lignes.
+ *
+ * **Il ne vient plus du Journal.** Le Journal n'a une écriture qu'une fois la
+ * facture payée : une facture envoyée et pas encore encaissée n'y figure pas, et
+ * son montant à encaisser doit pourtant s'afficher. Les lignes sont la seule
+ * source qui existe à chaque étape.
+ */
+export function totalFacture(id: number): number {
+  const detail = chargerDetailFacture(id)
+  return calculerTotalDocument(
     detail.lignes,
     detail.remisePct,
     detail.tvaPct,
-    fraisImpression,
+    fraisImpressionDe(detail),
     detail.remiseMontant
-  )
+  ).total
+}
 
-  const dejaDansJournal = db
-    .prepare('SELECT COUNT(*) AS n FROM journal WHERE numero_facture = ?')
-    .get(detail.numero) as { n: number }
-
+/** Déduit le stock des articles facturés, une seule fois par facture. */
+function deduireStockUneFois(detail: FactureDetail): string[] {
+  const db = getDb()
   const avertissements: string[] = []
+  if (detail.stockDeduit) return avertissements
+
+  for (const ligne of detail.lignes) {
+    if (!ligne.referenceInventaire) continue
+    const article = db
+      .prepare('SELECT quantite_stock FROM inventaire WHERE reference = ?')
+      .get(ligne.referenceInventaire) as { quantite_stock: number } | undefined
+
+    if (!article) {
+      avertissements.push(`Référence "${ligne.referenceInventaire}" introuvable dans l'inventaire.`)
+      continue
+    }
+    if (article.quantite_stock < ligne.quantite) {
+      avertissements.push(
+        `Stock insuffisant pour "${ligne.referenceInventaire}" (${article.quantite_stock} en stock, ${ligne.quantite} facturé).`
+      )
+    }
+    db.prepare(
+      "UPDATE inventaire SET quantite_stock = quantite_stock - ?, derniere_maj = datetime('now') WHERE reference = ?"
+    ).run(ligne.quantite, ligne.referenceInventaire)
+  }
+  db.prepare('UPDATE factures SET stock_deduit = 1 WHERE id = ?').run(detail.id)
+  return avertissements
+}
+
+/**
+ * Change le statut d'une facture.
+ *
+ * **Passer à « Payée » est le seul moment où l'argent entre au Journal.** Une
+ * facture brouillon ou envoyée n'est pas une entrée d'argent : la compter ici
+ * faisait monter le chiffre d'affaires d'une facture que personne n'avait payée.
+ * Si une écriture existe déjà (factures d'avant ce changement), elle est gardée
+ * et rien n'est dupliqué. Le stock est déduit si ça n'a pas encore été fait.
+ */
+export function changerStatutFacture(
+  id: number,
+  statut: Facture['statut']
+): { entreeAjoutee: boolean; total: number; avertissements: string[] } {
+  const db = getDb()
+  const detail = chargerDetailFacture(id)
+  let entreeAjoutee = false
+  let avertissements: string[] = []
+  const total = totalFacture(id)
 
   dansUneTransaction(() => {
-    if (dejaDansJournal.n === 0) {
-      db.prepare(
-        `INSERT INTO journal (date, type, categorie_id, description, montant, numero_facture, notes, tva_pct)
-         VALUES (?, 'Entrée', (SELECT id FROM categories_journal WHERE libelle = 'Facture client'), ?, ?, ?, '', ?)`
-      ).run(detail.date, `Facture ${detail.numero}`, total, detail.numero, detail.tvaPct)
-    }
+    if (statut === 'Payée') {
+      const dejaDansJournal = db
+        .prepare('SELECT COUNT(*) AS n FROM journal WHERE numero_facture = ?')
+        .get(detail.numero) as { n: number }
 
-    if (!detail.stockDeduit) {
-      for (const ligne of detail.lignes) {
-        if (!ligne.referenceInventaire) continue
-        const article = db
-          .prepare('SELECT quantite_stock FROM inventaire WHERE reference = ?')
-          .get(ligne.referenceInventaire) as { quantite_stock: number } | undefined
-
-        if (!article) {
-          avertissements.push(
-            `Référence "${ligne.referenceInventaire}" introuvable dans l'inventaire.`
-          )
-          continue
-        }
-        if (article.quantite_stock < ligne.quantite) {
-          avertissements.push(
-            `Stock insuffisant pour "${ligne.referenceInventaire}" (${article.quantite_stock} en stock, ${ligne.quantite} facturé).`
-          )
-        }
+      if (dejaDansJournal.n === 0) {
+        const aujourdhui = new Date().toISOString().slice(0, 10)
+        verifierExerciceOuvert(aujourdhui)
         db.prepare(
-          "UPDATE inventaire SET quantite_stock = quantite_stock - ?, derniere_maj = datetime('now') WHERE reference = ?"
-        ).run(ligne.quantite, ligne.referenceInventaire)
+          `INSERT INTO journal (date, type, categorie_id, description, montant, numero_facture, notes, tva_pct)
+           VALUES (?, 'Entrée', (SELECT id FROM categories_journal WHERE libelle = 'Facture client'), ?, ?, ?, '', ?)`
+        ).run(aujourdhui, `Facture ${detail.numero}`, total, detail.numero, detail.tvaPct)
+        entreeAjoutee = true
       }
-      db.prepare('UPDATE factures SET stock_deduit = 1 WHERE id = ?').run(id)
+      avertissements = deduireStockUneFois(detail)
+    }
+    db.prepare('UPDATE factures SET statut = ? WHERE id = ?').run(statut, id)
+  })
+
+  return { entreeAjoutee, total, avertissements }
+}
+
+export function historiqueFactures(): HistoriqueFacture[] {
+  const lignes = getDb()
+    .prepare(
+      `SELECT f.*, c.nom AS client_nom
+       FROM factures f
+       LEFT JOIN clients c ON c.id = f.client_id
+       ORDER BY f.date DESC, f.id DESC`
+    )
+    .all() as unknown as (LigneFactureDb & { client_nom: string | null })[]
+
+  const maintenant = Date.now()
+  return lignes.map((ligne): HistoriqueFacture => {
+    const facture = versFacture(ligne)
+    let joursEnAttente: number | null = null
+    if (facture.statut === 'Envoyée') {
+      joursEnAttente = Math.floor(
+        (maintenant - new Date(facture.date).getTime()) / (1000 * 60 * 60 * 24)
+      )
+    }
+    return {
+      ...facture,
+      clientNom: ligne.client_nom ?? 'Client supprimé',
+      montant: totalFacture(ligne.id),
+      joursEnAttente
+    }
+  })
+}
+
+/**
+ * Marque la facture comme envoyée au client : elle quitte l'état de brouillon.
+ * Le stock des articles facturés est déduit (une seule fois). **Le Journal n'est
+ * pas touché** — l'entrée d'argent n'existe qu'au paiement.
+ */
+export function confirmerEnregistrementHistorique(id: number): {
+  avertissements: string[]
+  total: number
+} {
+  const db = getDb()
+  const detail = chargerDetailFacture(id)
+  let avertissements: string[] = []
+
+  dansUneTransaction(() => {
+    avertissements = deduireStockUneFois(detail)
+    // On ne fait jamais reculer une facture déjà payée ou annulée.
+    if (detail.statut === 'Brouillon') {
+      db.prepare("UPDATE factures SET statut = 'Envoyée' WHERE id = ?").run(id)
     }
   })
 
-  return { dejaEnregistreeDansJournal: dejaDansJournal.n > 0, avertissements, total }
+  return { avertissements, total: totalFacture(id) }
 }

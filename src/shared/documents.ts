@@ -25,12 +25,19 @@ export const STATUTS_DEVIS: { valeur: StatutDevis; cle: CleTraduction }[] = [
  * Les statuts d'une facture.
  *
  * Même règle que pour les devis : la colonne `factures.statut` contient
- * littéralement « En attente », « Payée » ou « Annulée ». Traduire la valeur
- * fausserait le tableau de bord, qui compte les factures en attente et en
+ * littéralement « Brouillon », « Envoyée », « Payée » ou « Annulée ». Traduire la
+ * valeur fausserait le tableau de bord, qui compte les factures envoyées et en
  * retard en comparant cette chaîne.
  */
+/**
+ * La valeur « Envoyée », pour les écrans qui comparent un statut : un écran
+ * traduit n'écrit aucune chaîne accentuée, la valeur vient donc d'ici.
+ */
+export const STATUT_FACTURE_ENVOYEE: StatutFacture = 'Envoyée'
+
 export const STATUTS_FACTURE: { valeur: StatutFacture; cle: CleTraduction }[] = [
-  { valeur: 'En attente', cle: 'facture.statutEnAttente' },
+  { valeur: 'Brouillon', cle: 'facture.statutBrouillon' },
+  { valeur: 'Envoyée', cle: 'facture.statutEnvoyee' },
   { valeur: 'Payée', cle: 'facture.statutPayee' },
   { valeur: 'Annulée', cle: 'facture.statutAnnulee' }
 ]

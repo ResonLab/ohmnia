@@ -173,7 +173,7 @@ export interface FactureDuClient {
   id: number
   numero: string
   date: string
-  statut: 'Payée' | 'En attente' | 'Annulée'
+  statut: StatutFacture
   montant: number | null
   joursEnAttente: number | null
 }
@@ -193,7 +193,14 @@ export interface ClientDetail extends Client {
   totalEnAttente: number
 }
 
-export type StatutFacture = 'Payée' | 'En attente' | 'Annulée'
+/**
+ * Où en est la facture.
+ *
+ * **Brouillon** : seul le patron l'a vue, rien n'est dû et rien n'est compté.
+ * **Envoyée** : elle a pu être vue par le client, le paiement est attendu.
+ * Le Journal n'enregistre l'entrée d'argent qu'au passage à **Payée**.
+ */
+export type StatutFacture = 'Brouillon' | 'Envoyée' | 'Payée' | 'Annulée'
 export type StatutDevis = 'Accepté' | 'En attente' | 'Refusé'
 
 export interface FactureLigne {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { peutQuitter, useGardeSortie } from '../gardeSortie'
 import type {
   DevisDetail,
   DevisLigne,
@@ -20,6 +21,19 @@ function ligneVide(): DevisLigne {
 export default function DevisPage(): React.JSX.Element {
   const [historique, setHistorique] = useState<HistoriqueDevis[]>([])
   const [brouillon, setBrouillon] = useState<DevisDetail | null>(null)
+  // Ce qui est actuellement enregistré, pour savoir si l'écran a des modifications
+  // en attente. Voir `gardeSortie.ts`.
+  const [instantane, setInstantane] = useState<string | null>(null)
+  const modifie = brouillon !== null && JSON.stringify(brouillon) !== instantane
+  useGardeSortie(modifie)
+
+  /** Charge un document venu de la base : ce qu'on affiche est alors ce qui est enregistré. */
+  function chargerDansEditeur(detail: DevisDetail): void {
+    const pret = { ...detail, lignes: detail.lignes.length ? detail.lignes : [ligneVide()] }
+    setBrouillon(pret)
+    setInstantane(JSON.stringify(pret))
+  }
+
   const [clientIdNouveau, setClientIdNouveau] = useState<number | null>(null)
   const [messageErreur, setMessageErreur] = useState<string | null>(null)
   const [messageInfo, setMessageInfo] = useState<string | null>(null)
@@ -41,6 +55,7 @@ export default function DevisPage(): React.JSX.Element {
   }
 
   async function creerBrouillon(): Promise<void> {
+    if (!peutQuitter()) return
     setMessageErreur(null)
     if (!clientIdNouveau) {
       setMessageErreur(t('devis.choisirClient'))
@@ -48,17 +63,18 @@ export default function DevisPage(): React.JSX.Element {
     }
     try {
       const detail = await window.api.devis.creerBrouillon(clientIdNouveau)
-      setBrouillon({ ...detail, lignes: [ligneVide()] })
+      chargerDansEditeur(detail)
     } catch (erreur) {
       afficherErreur(erreur)
     }
   }
 
   async function ouvrirBrouillon(id: number): Promise<void> {
+    if (!peutQuitter()) return
     setMessageErreur(null)
     try {
       const detail = await window.api.devis.obtenirDetail(id)
-      setBrouillon({ ...detail, lignes: detail.lignes.length ? detail.lignes : [ligneVide()] })
+      chargerDansEditeur(detail)
     } catch (erreur) {
       afficherErreur(erreur)
     }
@@ -68,7 +84,7 @@ export default function DevisPage(): React.JSX.Element {
     if (!brouillon) return null
     try {
       const misAJour = await window.api.devis.enregistrer(brouillon)
-      setBrouillon({ ...misAJour, lignes: misAJour.lignes.length ? misAJour.lignes : [ligneVide()] })
+      chargerDansEditeur(misAJour)
       await rechargerHistorique()
       setMessageErreur(null)
       setMessageInfo(t('devis.enregistre'))
@@ -114,10 +130,11 @@ export default function DevisPage(): React.JSX.Element {
   }
 
   async function dupliquerDevis(id: number): Promise<void> {
+    if (!peutQuitter()) return
     try {
       const copie = await window.api.devis.dupliquer(id)
       await rechargerHistorique()
-      setBrouillon({ ...copie, lignes: copie.lignes.length ? copie.lignes : [ligneVide()] })
+      chargerDansEditeur(copie)
       setMessageErreur(null)
       setMessageInfo(t('devis.duplique', { numero: copie.numero }))
     } catch (erreur) {
@@ -182,7 +199,10 @@ export default function DevisPage(): React.JSX.Element {
 
       {brouillon && (
         <div className="carte">
-          <h2>Devis {brouillon.numero} (brouillon interne)</h2>
+          <h2>
+            Devis {brouillon.numero} (brouillon interne){' '}
+            {modifie && <span className="badge-alerte">{t('garde.nonEnregistre')}</span>}
+          </h2>
 
           <div className="ligne-formulaire">
             <label>

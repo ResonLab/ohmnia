@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS factures (
   remise_montant REAL NOT NULL DEFAULT 0,
   impression_incluse INTEGER NOT NULL DEFAULT 0,
   tva_pct REAL NOT NULL DEFAULT 0,
-  statut TEXT NOT NULL DEFAULT 'En attente' CHECK (statut IN ('Payée', 'En attente', 'Annulée')),
+  statut TEXT NOT NULL DEFAULT 'Brouillon' CHECK (statut IN ('Brouillon', 'Envoyée', 'Payée', 'Annulée')),
   notes_internes TEXT NOT NULL DEFAULT '',
   stock_deduit INTEGER NOT NULL DEFAULT 0,
   -- Devis dont cette facture est issue (conversion Devis → Facture).

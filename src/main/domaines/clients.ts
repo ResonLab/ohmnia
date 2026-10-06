@@ -1,5 +1,6 @@
 import { getDb } from '../db/database'
 import { calculerTotalDocument } from '../../shared/calculs'
+import { totalFacture as montantFacture } from './factures'
 import type { Client, ClientDetail, DevisDuClient, FactureDuClient } from '../../shared/types'
 
 /**
@@ -76,11 +77,11 @@ export function obtenirDetailClient(id: number): ClientDetail {
     | undefined
   if (!client) throw new Error("Ce client n'existe pas ou a été supprimé.")
 
-  // Le montant des factures vient toujours du Journal, jamais d'une ressaisie.
+  // Le montant d'une facture se calcule depuis ses lignes : le Journal n'en a
+  // une qu'une fois la facture payée.
   const lignesFactures = getDb()
     .prepare(
-      `SELECT f.id, f.numero, f.date, f.statut,
-        (SELECT SUM(j.montant) FROM journal j WHERE j.numero_facture = f.numero) AS montant
+      `SELECT f.id, f.numero, f.date, f.statut
        FROM factures f
        WHERE f.client_id = ?
        ORDER BY f.date DESC, f.id DESC`
@@ -90,7 +91,6 @@ export function obtenirDetailClient(id: number): ClientDetail {
     numero: string
     date: string
     statut: FactureDuClient['statut']
-    montant: number | null
   }[]
 
   const maintenant = Date.now()
@@ -99,9 +99,9 @@ export function obtenirDetailClient(id: number): ClientDetail {
     numero: f.numero,
     date: f.date,
     statut: f.statut,
-    montant: f.montant,
+    montant: montantFacture(f.id),
     joursEnAttente:
-      f.statut === 'En attente'
+      f.statut === 'Envoyée'
         ? Math.floor((maintenant - new Date(f.date).getTime()) / (1000 * 60 * 60 * 24))
         : null
   }))
@@ -136,7 +136,7 @@ export function obtenirDetailClient(id: number): ClientDetail {
 
   const totalFacture = factures.reduce((s, f) => s + (f.montant ?? 0), 0)
   const totalEnAttente = factures
-    .filter((f) => f.statut === 'En attente')
+    .filter((f) => f.statut === 'Envoyée')
     .reduce((s, f) => s + (f.montant ?? 0), 0)
 
   return { ...client, factures, devis, totalFacture, totalEnAttente } satisfies ClientDetail

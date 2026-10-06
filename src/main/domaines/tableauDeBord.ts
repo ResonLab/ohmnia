@@ -1,6 +1,7 @@
 import { getDb } from '../db/database'
 import { calculerEcheance } from '../../shared/calculs'
 import { lireParametresApp } from './parametresApp'
+import { totalFacture } from './factures'
 import type { FactureEcheance, TableauDeBord } from '../../shared/types'
 
 /** Tableau de bord d'accueil. Aucune dépendance à Electron. */
@@ -31,14 +32,13 @@ export function chargerTableauDeBord(): TableauDeBord {
     .prepare('SELECT objectif_ca FROM objectifs_annuels WHERE annee = ?')
     .get(anneeCourante) as { objectif_ca: number } | undefined
 
-  // Les factures « En attente » et leur montant, lu depuis le Journal.
+  // Les factures « Envoyée » (à encaisser) et leur montant, calculé depuis les lignes.
   const facturesEnAttente = db
     .prepare(
-      `SELECT f.id, f.numero, f.date, f.delai_paiement_jours, c.nom AS client_nom,
-        (SELECT SUM(j.montant) FROM journal j WHERE j.numero_facture = f.numero) AS montant
+      `SELECT f.id, f.numero, f.date, f.delai_paiement_jours, c.nom AS client_nom
        FROM factures f
        LEFT JOIN clients c ON c.id = f.client_id
-       WHERE f.statut = 'En attente'
+       WHERE f.statut = 'Envoyée'
        ORDER BY f.date`
     )
     .all() as unknown as {
@@ -47,7 +47,6 @@ export function chargerTableauDeBord(): TableauDeBord {
     date: string
     delai_paiement_jours: number
     client_nom: string | null
-    montant: number | null
   }[]
 
   const aujourdhui = maintenant.getTime()
@@ -57,7 +56,7 @@ export function chargerTableauDeBord(): TableauDeBord {
   const prochainesEcheances: FactureEcheance[] = []
 
   for (const facture of facturesEnAttente) {
-    const montant = facture.montant ?? 0
+    const montant = totalFacture(facture.id)
     montantEnAttente += montant
 
     const joursDepuisEmission = Math.floor((aujourdhui - new Date(facture.date).getTime()) / 86400000)
@@ -73,7 +72,7 @@ export function chargerTableauDeBord(): TableauDeBord {
       clientNom: facture.client_nom ?? 'Client supprimé',
       dateEcheance,
       joursRestants: Math.ceil((new Date(dateEcheance).getTime() - aujourdhui) / 86400000),
-      montant: facture.montant
+      montant
     })
   }
 

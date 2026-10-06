@@ -37,7 +37,7 @@ const facture = (id, retard, extras = {}) => ({
   id,
   numero: `F-${String(id).padStart(4, '0')}`,
   clientNom: `Client ${id}`,
-  statut: 'En attente',
+  statut: 'Envoyée',
   dateEcheance: new Date(Date.parse(AUJOURDHUI) - retard * 86400000)
     .toISOString()
     .slice(0, 10),

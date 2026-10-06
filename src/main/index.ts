@@ -1,4 +1,5 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { enregistrerHandlersFenetre } from './ipc/fenetre'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { ouvrirBaseDeDonnees, fermerBaseDeDonnees } from './db/database'
@@ -77,6 +78,24 @@ function creerFenetrePrincipale(): void {
 
   fenetre.once('ready-to-show', () => fenetre.show())
 
+  // Fermer la fenêtre avec un brouillon non enregistré : l'écran s'y oppose
+  // (voir `renderer/src/gardeSortie.ts`) et c'est ici qu'on demande à l'utilisateur.
+  // Sans ce gestionnaire, Electron refuserait de fermer en silence.
+  fenetre.webContents.on('will-prevent-unload', (evenement) => {
+    const fr = app.getLocale().toLowerCase().startsWith('fr')
+    const choix = dialog.showMessageBoxSync(fenetre, {
+      type: 'warning',
+      buttons: fr ? ['Rester', 'Quitter sans enregistrer'] : ['Stay', 'Leave without saving'],
+      defaultId: 0,
+      cancelId: 0,
+      title: 'Ohmnia',
+      message: fr
+        ? 'Vous avez des modifications non enregistrées. Elles seront perdues si vous quittez.'
+        : 'You have unsaved changes. They will be lost if you quit.'
+    })
+    if (choix === 1) evenement.preventDefault() // ignorer l'opposition : on ferme
+  })
+
   fenetre.webContents.on('console-message', (event) => {
     console.log(`[renderer] ${event.sourceId}:${event.lineNumber} ${event.message}`)
   })
@@ -149,6 +168,7 @@ app.whenReady().then(() => {
   // Ce qui concerne cette machine-ci existe dans les deux modes : boîtes de
   // dialogue, fichiers, impression, mises à jour.
   enregistrerHandlersMultipostes()
+  enregistrerHandlersFenetre()
   enregistrerHandlersApparence()
   enregistrerHandlersComptabilitePoste()
   enregistrerHandlersEntreprisePoste()

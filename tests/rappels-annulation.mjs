@@ -84,7 +84,7 @@ const db = domaines.getDb()
 db.prepare("INSERT INTO clients (nom, adresse, email, telephone) VALUES ('Client Test', '', '', '')").run()
 db.prepare(
   `INSERT INTO factures (numero, client_id, date, delai_paiement_jours, statut, remise_pct, tva_pct)
-   VALUES ('F-TEST-001', 1, '2026-01-10', 30, 'En attente', 0, 0)`
+   VALUES ('F-TEST-001', 1, '2026-01-10', 30, 'Envoyée', 0, 0)`
 ).run()
 db.prepare(
   `INSERT INTO facture_lignes (facture_id, designation, quantite, prix_unitaire)
