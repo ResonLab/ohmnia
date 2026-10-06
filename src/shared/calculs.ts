@@ -111,8 +111,14 @@ export function calculerSousTotal(lignes: { quantite: number; prixUnitaire: numb
   return lignes.reduce((total, ligne) => total + calculerTotalLigne(ligne.quantite, ligne.prixUnitaire), 0)
 }
 
-function calculerTotalApresRemise(sousTotal: number, remisePct: number): number {
-  return sousTotal * (1 - remisePct / 100)
+/**
+ * La remise en pourcentage s'applique d'abord, puis la remise en montant
+ * fixe : « 10 % puis 50 francs » se lit dans cet ordre sur un devis. Le total
+ * ne descend jamais sous zéro — une remise plus grosse que la facture ne doit
+ * pas produire un montant négatif à payer.
+ */
+function calculerTotalApresRemise(sousTotal: number, remisePct: number, remiseMontant = 0): number {
+  return Math.max(0, sousTotal * (1 - remisePct / 100) - remiseMontant)
 }
 
 export function calculerEcheance(dateFacture: string, delaiJours: number): string {
@@ -263,10 +269,12 @@ export function calculerTotalDocument(
   lignes: { quantite: number; prixUnitaire: number }[],
   remisePct: number,
   tvaPct: number,
-  fraisSupplementaires = 0
+  fraisSupplementaires = 0,
+  remiseMontant = 0
 ): ResultatTotalDocument {
   const sousTotal = calculerSousTotal(lignes)
-  const totalApresRemise = calculerTotalApresRemise(sousTotal, remisePct) + fraisSupplementaires
+  const totalApresRemise =
+    calculerTotalApresRemise(sousTotal, remisePct, remiseMontant) + fraisSupplementaires
   const montantTva = calculerMontantTva(totalApresRemise, tvaPct)
   return { sousTotal, totalApresRemise, montantTva, total: totalApresRemise + montantTva }
 }

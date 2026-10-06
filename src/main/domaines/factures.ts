@@ -16,6 +16,7 @@ interface LigneFactureDb {
   client_id: number
   delai_paiement_jours: number
   remise_pct: number
+  remise_montant: number
   impression_incluse: number
   tva_pct: number
   statut: Facture['statut']
@@ -39,6 +40,7 @@ function versFacture(ligne: LigneFactureDb): Facture {
     clientId: ligne.client_id,
     delaiPaiementJours: ligne.delai_paiement_jours,
     remisePct: ligne.remise_pct,
+    remiseMontant: ligne.remise_montant,
     impressionIncluse: ligne.impression_incluse === 1,
     tvaPct: ligne.tva_pct,
     statut: ligne.statut,
@@ -76,6 +78,7 @@ function validerFacture(facture: Omit<Facture, 'id' | 'stockDeduit'>): string | 
   if (!facture.clientId) return 'Un client doit être sélectionné.'
   if (facture.remisePct < 0 || facture.remisePct > 100)
     return 'La remise doit être comprise entre 0 et 100%.'
+  if (facture.remiseMontant < 0) return 'La remise en montant ne peut pas être négative.'
   if (facture.tvaPct < 0 || facture.tvaPct > 100) return 'La TVA doit être comprise entre 0 et 100%.'
   return null
 }
@@ -130,14 +133,15 @@ export function dupliquerFacture(id: number): FactureDetail {
     const numero = prochainNumero(entreprise.prefixe_facture)
     const resultat = db
       .prepare(
-        `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, impression_incluse, tva_pct, statut, notes_internes)
-         VALUES (?, date('now'), ?, ?, ?, ?, ?, 'En attente', ?)`
+        `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, remise_montant, impression_incluse, tva_pct, statut, notes_internes)
+         VALUES (?, date('now'), ?, ?, ?, ?, ?, ?, 'En attente', ?)`
       )
       .run(
         numero,
         source.clientId,
         source.delaiPaiementJours,
         source.remisePct,
+        source.remiseMontant,
         source.impressionIncluse ? 1 : 0,
         source.tvaPct,
         source.notesInternes
@@ -174,6 +178,7 @@ export function creerFactureDepuisDevis(devisId: number): FactureDetail {
         numero: string
         client_id: number
         remise_pct: number
+        remise_montant: number
         tva_pct: number
       }
     | undefined
@@ -204,14 +209,15 @@ export function creerFactureDepuisDevis(devisId: number): FactureDetail {
     const numero = prochainNumero(entreprise.prefixe_facture)
     const resultat = db
       .prepare(
-        `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, impression_incluse, tva_pct, statut, notes_internes, devis_origine_id)
-         VALUES (?, date('now'), ?, ?, ?, 0, ?, 'En attente', ?, ?)`
+        `INSERT INTO factures (numero, date, client_id, delai_paiement_jours, remise_pct, remise_montant, impression_incluse, tva_pct, statut, notes_internes, devis_origine_id)
+         VALUES (?, date('now'), ?, ?, ?, ?, 0, ?, 'En attente', ?, ?)`
       )
       .run(
         numero,
         devis.client_id,
         delaiPaiementDefaut,
         devis.remise_pct,
+        devis.remise_montant,
         devis.tva_pct,
         `Issue du devis ${devis.numero}`,
         devisId
@@ -238,7 +244,7 @@ export function enregistrerFacture(detail: FactureDetail): FactureDetail {
   dansUneTransaction(() => {
     db.prepare(
       `UPDATE factures SET
-        numero = ?, date = ?, client_id = ?, delai_paiement_jours = ?, remise_pct = ?,
+        numero = ?, date = ?, client_id = ?, delai_paiement_jours = ?, remise_pct = ?, remise_montant = ?,
         impression_incluse = ?, tva_pct = ?, statut = ?, notes_internes = ?
        WHERE id = ?`
     ).run(
@@ -247,6 +253,7 @@ export function enregistrerFacture(detail: FactureDetail): FactureDetail {
       detail.clientId,
       detail.delaiPaiementJours,
       detail.remisePct,
+      detail.remiseMontant,
       detail.impressionIncluse ? 1 : 0,
       detail.tvaPct,
       detail.statut,
@@ -356,7 +363,8 @@ export function confirmerEnregistrementHistorique(id: number): {
     detail.lignes,
     detail.remisePct,
     detail.tvaPct,
-    fraisImpression
+    fraisImpression,
+    detail.remiseMontant
   )
 
   const dejaDansJournal = db

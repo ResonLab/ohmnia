@@ -131,6 +131,11 @@ export default function ImpressionDocument(): React.JSX.Element {
             {t('doc.remise')} : {donnees.remisePct}%
           </p>
         )}
+        {donnees.remiseMontant > 0 && (
+          <p>
+            {t('doc.remise')} : {formaterMontant(donnees.remiseMontant, donnees.pays)}
+          </p>
+        )}
         {/* La ligne de taxe n'apparaît que si l'entreprise y est assujettie. */}
         {donnees.assujettiTva && (
           <p>

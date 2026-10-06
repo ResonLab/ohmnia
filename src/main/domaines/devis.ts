@@ -16,6 +16,7 @@ interface LigneDevisDb {
   client_id: number
   validite_jours: number
   remise_pct: number
+  remise_montant: number
   tva_pct: number
   statut: Devis['statut']
 }
@@ -35,6 +36,7 @@ function versDevis(ligne: LigneDevisDb): Devis {
     clientId: ligne.client_id,
     validiteJours: ligne.validite_jours,
     remisePct: ligne.remise_pct,
+    remiseMontant: ligne.remise_montant,
     tvaPct: ligne.tva_pct,
     statut: ligne.statut
   }
@@ -68,6 +70,7 @@ function validerDevis(devis: Omit<Devis, 'id'>): string | null {
   if (!devis.clientId) return 'Un client doit être sélectionné.'
   if (devis.remisePct < 0 || devis.remisePct > 100)
     return 'La remise doit être comprise entre 0 et 100%.'
+  if (devis.remiseMontant < 0) return 'La remise en montant ne peut pas être négative.'
   if (devis.tvaPct < 0 || devis.tvaPct > 100) return 'La TVA doit être comprise entre 0 et 100%.'
   return null
 }
@@ -122,10 +125,17 @@ export function dupliquerDevis(id: number): DevisDetail {
     const numero = prochainNumero(entreprise.prefixe_devis)
     const resultat = db
       .prepare(
-        `INSERT INTO devis (numero, date, client_id, validite_jours, remise_pct, tva_pct, statut)
-         VALUES (?, date('now'), ?, ?, ?, ?, 'En attente')`
+        `INSERT INTO devis (numero, date, client_id, validite_jours, remise_pct, remise_montant, tva_pct, statut)
+         VALUES (?, date('now'), ?, ?, ?, ?, ?, 'En attente')`
       )
-      .run(numero, source.clientId, source.validiteJours, source.remisePct, source.tvaPct)
+      .run(
+        numero,
+        source.clientId,
+        source.validiteJours,
+        source.remisePct,
+        source.remiseMontant,
+        source.tvaPct
+      )
 
     const nouvelId = Number(resultat.lastInsertRowid)
     const insererLigne = db.prepare(
@@ -147,7 +157,7 @@ export function enregistrerDevis(detail: DevisDetail): DevisDetail {
   const db = getDb()
   dansUneTransaction(() => {
     db.prepare(
-      `UPDATE devis SET numero = ?, date = ?, client_id = ?, validite_jours = ?, remise_pct = ?, tva_pct = ?, statut = ?
+      `UPDATE devis SET numero = ?, date = ?, client_id = ?, validite_jours = ?, remise_pct = ?, remise_montant = ?, tva_pct = ?, statut = ?
        WHERE id = ?`
     ).run(
       detail.numero,
@@ -155,6 +165,7 @@ export function enregistrerDevis(detail: DevisDetail): DevisDetail {
       detail.clientId,
       detail.validiteJours,
       detail.remisePct,
+      detail.remiseMontant,
       detail.tvaPct,
       detail.statut,
       detail.id
@@ -202,7 +213,9 @@ export function historiqueDevis(): HistoriqueDevis[] {
     const { total } = calculerTotalDocument(
       devisLignes.map(versDevisLigne),
       ligne.remise_pct,
-      ligne.tva_pct
+      ligne.tva_pct,
+      0,
+      ligne.remise_montant
     )
     return {
       ...versDevis(ligne),

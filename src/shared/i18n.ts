@@ -695,6 +695,8 @@ const TEXTES = {
   'devis.statut': { fr: 'Statut', en: 'Status' },
   'devis.sousTotal': { fr: 'Sous-total : {montant}', en: 'Subtotal: {montant}' },
   'devis.remiseLigne': { fr: 'Remise : {pct}%', en: 'Discount: {pct}%' },
+  'devis.remiseMontant': { fr: 'Remise (montant fixe)', en: 'Discount (fixed amount)' },
+  'devis.remiseMontantLigne': { fr: 'Remise : {montant}', en: 'Discount: {montant}' },
   'devis.tvaLigne': { fr: 'TVA ({pct}%) : {montant}', en: 'Tax ({pct}%): {montant}' },
   'devis.totalLigne': { fr: 'TOTAL DEVIS : {montant}', en: 'QUOTE TOTAL: {montant}' },
   'devis.exporterPdf': { fr: 'Exporter en PDF', en: 'Export to PDF' },

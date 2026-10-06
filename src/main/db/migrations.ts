@@ -45,7 +45,10 @@ const COLONNES_ATTENDUES: ColonneAttendue[] = [
   { table: 'entreprise', colonne: 'conditions_generales', definition: "TEXT NOT NULL DEFAULT ''" },
   { table: 'entreprise', colonne: 'mentions_pied', definition: "TEXT NOT NULL DEFAULT ''" },
   // Pays de l'entreprise : pilote la devise, les taux de taxe et les mentions légales.
-  { table: 'entreprise', colonne: 'pays', definition: "TEXT NOT NULL DEFAULT 'CH'" }
+  { table: 'entreprise', colonne: 'pays', definition: "TEXT NOT NULL DEFAULT 'CH'" },
+  // Remise en montant fixe (francs, euros…), en plus de la remise en pourcentage.
+  { table: 'factures', colonne: 'remise_montant', definition: 'REAL NOT NULL DEFAULT 0' },
+  { table: 'devis', colonne: 'remise_montant', definition: 'REAL NOT NULL DEFAULT 0' }
 ]
 
 function colonnesExistantes(db: DatabaseSync, table: string): Set<string> {

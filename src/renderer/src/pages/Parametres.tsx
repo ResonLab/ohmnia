@@ -33,7 +33,13 @@ export default function Parametres(): React.JSX.Element {
     window.api.entreprise
       .lire()
       .then(async (entreprise) => {
-        setValeurs(entreprise)
+        // Le champ du taux est caché tant qu'on n'est pas assujetti : un taux
+        // non nul resté en base ferait refuser l'enregistrement sans qu'on
+        // puisse le corriger à l'écran. On l'aligne donc dès le chargement.
+        setValeurs({
+          ...entreprise,
+          tvaDefautPct: entreprise.assujettiTva ? entreprise.tvaDefautPct : 0
+        })
         setLogoDataUrl(await window.api.entreprise.lireLogoDataUrl())
       })
       .finally(() => setChargement(false))
@@ -109,7 +115,11 @@ export default function Parametres(): React.JSX.Element {
       setValeurs(misAJour)
       setMessageSucces(t('ent.enregistre'))
     } catch (erreur) {
-      setMessageErreur(erreur instanceof Error ? erreur.message : 'Erreur inconnue.')
+      // Electron préfixe les refus du processus principal d'un jargon technique
+      // (« Error invoking remote method … Error: ») qui n'apprend rien à
+      // l'utilisateur : on ne garde que la phrase écrite pour lui.
+      const brut = erreur instanceof Error ? erreur.message : 'Erreur inconnue.'
+      setMessageErreur(brut.replace(/^Error invoking remote method '[^']*': (Error: )?/, ''))
     }
   }
 

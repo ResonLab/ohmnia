@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS factures (
   client_id INTEGER NOT NULL REFERENCES clients(id),
   delai_paiement_jours INTEGER NOT NULL DEFAULT 30,
   remise_pct REAL NOT NULL DEFAULT 0,
+  remise_montant REAL NOT NULL DEFAULT 0,
   impression_incluse INTEGER NOT NULL DEFAULT 0,
   tva_pct REAL NOT NULL DEFAULT 0,
   statut TEXT NOT NULL DEFAULT 'En attente' CHECK (statut IN ('Payée', 'En attente', 'Annulée')),
@@ -134,6 +135,7 @@ CREATE TABLE IF NOT EXISTS devis (
   client_id INTEGER NOT NULL REFERENCES clients(id),
   validite_jours INTEGER NOT NULL DEFAULT 30,
   remise_pct REAL NOT NULL DEFAULT 0,
+  remise_montant REAL NOT NULL DEFAULT 0,
   tva_pct REAL NOT NULL DEFAULT 0,
   statut TEXT NOT NULL DEFAULT 'En attente' CHECK (statut IN ('Accepté', 'En attente', 'Refusé'))
 );

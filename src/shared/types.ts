@@ -211,6 +211,8 @@ export interface Facture {
   clientId: number
   delaiPaiementJours: number
   remisePct: number
+  /** Remise en montant fixe (dans la devise du pays), après la remise en pourcentage. */
+  remiseMontant: number
   impressionIncluse: boolean
   tvaPct: number
   statut: StatutFacture
@@ -242,6 +244,8 @@ export interface Devis {
   clientId: number
   validiteJours: number
   remisePct: number
+  /** Remise en montant fixe (dans la devise du pays), après la remise en pourcentage. */
+  remiseMontant: number
   tvaPct: number
   statut: StatutDevis
 }
@@ -456,6 +460,8 @@ export interface DocumentImpression {
   labelTotal: string
   lignes: LigneDocumentImpression[]
   remisePct: number
+  /** Remise en montant fixe (dans la devise du pays), après la remise en pourcentage. */
+  remiseMontant: number
   tvaPct: number
   sousTotal: number
   totalApresRemise: number

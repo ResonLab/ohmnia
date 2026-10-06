@@ -310,7 +310,13 @@ export default function Facturation(): React.JSX.Element {
     brouillon?.impressionIncluse && impressionParams ? calculerPrixFactureImpression(impressionParams) : 0
 
   const totaux = brouillon
-    ? calculerTotalDocument(brouillon.lignes, brouillon.remisePct, brouillon.tvaPct, fraisImpression)
+    ? calculerTotalDocument(
+        brouillon.lignes,
+        brouillon.remisePct,
+        brouillon.tvaPct,
+        fraisImpression,
+        brouillon.remiseMontant
+      )
     : null
 
   return (
@@ -452,6 +458,18 @@ export default function Facturation(): React.JSX.Element {
               />
             </label>
             <label>
+              {t('devis.remiseMontant')}
+              <input
+                type="number"
+                step="0.05"
+                min="0"
+                value={brouillon.remiseMontant}
+                onChange={(e) =>
+                  setBrouillon({ ...brouillon, remiseMontant: Math.max(0, Number(e.target.value)) })
+                }
+              />
+            </label>
+            <label>
               {t('devis.tvaPct')}
               <input
                 type="number"
@@ -495,6 +513,9 @@ export default function Facturation(): React.JSX.Element {
             <div className="resultats-calcules">
               <p>{t('devis.sousTotal', { montant: formaterMontant(totaux.sousTotal) })}</p>
               {brouillon.remisePct > 0 && <p>{t('devis.remiseLigne', { pct: brouillon.remisePct })}</p>}
+              {brouillon.remiseMontant > 0 && (
+                <p>{t('devis.remiseMontantLigne', { montant: formaterMontant(brouillon.remiseMontant) })}</p>
+              )}
               {fraisImpression > 0 && (
                 <p>{t('facture.fraisImpression', { montant: formaterMontant(fraisImpression) })}</p>
               )}

@@ -108,7 +108,7 @@ export function obtenirDetailClient(id: number): ClientDetail {
 
   const lignesDevis = getDb()
     .prepare(
-      'SELECT id, numero, date, statut, remise_pct, tva_pct FROM devis WHERE client_id = ? ORDER BY date DESC, id DESC'
+      'SELECT id, numero, date, statut, remise_pct, remise_montant, tva_pct FROM devis WHERE client_id = ? ORDER BY date DESC, id DESC'
     )
     .all(id) as unknown as {
     id: number
@@ -116,6 +116,7 @@ export function obtenirDetailClient(id: number): ClientDetail {
     date: string
     statut: DevisDuClient['statut']
     remise_pct: number
+    remise_montant: number
     tva_pct: number
   }[]
 
@@ -126,7 +127,9 @@ export function obtenirDetailClient(id: number): ClientDetail {
     const { total } = calculerTotalDocument(
       lignes.map((l) => ({ quantite: l.quantite, prixUnitaire: l.prix_unitaire })),
       d.remise_pct,
-      d.tva_pct
+      d.tva_pct,
+      0,
+      d.remise_montant
     )
     return { id: d.id, numero: d.numero, date: d.date, statut: d.statut, total }
   })

@@ -142,6 +142,7 @@ function construireDonneesFacture(id: number): DocumentImpression {
     client_id: number
     delai_paiement_jours: number
     remise_pct: number
+    remise_montant: number
     impression_incluse: number
     tva_pct: number
   }
@@ -200,7 +201,13 @@ function construireDonneesFacture(id: number): DocumentImpression {
     fraisImpression = 0 // déjà inclus comme ligne, ne pas l'ajouter une 2e fois au total
   }
 
-  const totaux = calculerTotalDocument(lignes, facture.remise_pct, facture.tva_pct, fraisImpression)
+  const totaux = calculerTotalDocument(
+    lignes,
+    facture.remise_pct,
+    facture.tva_pct,
+    fraisImpression,
+    facture.remise_montant
+  )
   const entreprise = chargerEntreprise()
 
   return {
@@ -215,6 +222,7 @@ function construireDonneesFacture(id: number): DocumentImpression {
     labelTotal: 'doc.totalAPayer',
     lignes,
     remisePct: facture.remise_pct,
+    remiseMontant: facture.remise_montant,
     tvaPct: facture.tva_pct,
     ...totaux,
     codeVerification: calculerCodeVerification(facture.numero, totaux.total, facture.date)
@@ -229,6 +237,7 @@ function construireDonneesDevis(id: number): DocumentImpression {
     client_id: number
     validite_jours: number
     remise_pct: number
+    remise_montant: number
     tva_pct: number
   }
   if (!devis) throw new Error("Ce devis n'existe pas.")
@@ -248,7 +257,7 @@ function construireDonneesDevis(id: number): DocumentImpression {
     total: l.quantite * l.prix_unitaire
   }))
 
-  const totaux = calculerTotalDocument(lignes, devis.remise_pct, devis.tva_pct)
+  const totaux = calculerTotalDocument(lignes, devis.remise_pct, devis.tva_pct, 0, devis.remise_montant)
   const entreprise = chargerEntreprise()
 
   return {
@@ -263,6 +272,7 @@ function construireDonneesDevis(id: number): DocumentImpression {
     labelTotal: 'doc.totalDevis',
     lignes,
     remisePct: devis.remise_pct,
+    remiseMontant: devis.remise_montant,
     tvaPct: devis.tva_pct,
     ...totaux,
     codeVerification: calculerCodeVerification(devis.numero, totaux.total, devis.date)
@@ -291,7 +301,7 @@ function construireDonneesRappel(factureId: number, rappelId: number): DocumentI
     })
   }
 
-  const totaux = calculerTotalDocument(lignes, base.remisePct, base.tvaPct)
+  const totaux = calculerTotalDocument(lignes, base.remisePct, base.tvaPct, 0, base.remiseMontant)
   const joursDeRetard = Math.max(
     0,
     Math.floor((new Date(rappel.date).getTime() - new Date(base.dateEcheance).getTime()) / 86400000)
