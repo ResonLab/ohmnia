@@ -504,3 +504,71 @@ export interface EtatMultipostes {
   connecte: boolean
   session: SessionMultipostes | null
 }
+
+// --- Caisse ---
+
+export type ModePaiement = 'Espèces' | 'Carte'
+
+export interface LigneVenteCaisse {
+  referenceInventaire: string
+  designation: string
+  quantite: number
+  prixUnitaire: number
+}
+
+export interface PaiementCaisse {
+  mode: ModePaiement
+  /** Dans la devise de l'entreprise ; arrondi suisse inclus pour les espèces. */
+  montant: number
+  arrondi: number
+  deviseRecue: string
+  montantRecu: number
+  taux: number
+  rendu: number
+}
+
+/** Ce que l'écran envoie : jamais de prix, ils sont relus en base au moment de la vente. */
+export interface DemandeVenteCaisse {
+  lignes: { referenceInventaire: string; quantite: number }[]
+  partCarte: number
+  deviseRecue: string
+  taux: number
+  montantRecuEspeces: number
+}
+
+export interface VenteCaisse {
+  id: number
+  numero: string
+  date: string
+  total: number
+  statut: 'Validée' | 'Annulée'
+  serviPar: string
+  tvaPct: number
+  montantTva: number
+  lignes: LigneVenteCaisse[]
+  paiements: PaiementCaisse[]
+  avertissements: string[]
+}
+
+export interface TotauxCaisse {
+  date: string
+  nbVentes: number
+  especes: number
+  carte: number
+  total: number
+}
+
+export interface DonneesTicket {
+  vente: VenteCaisse
+  entrepriseNom: string
+  adresse: string
+  telephone: string
+  numeroIde: string
+  logo: string | null
+  assujettiTva: boolean
+  mentionNonAssujetti: string
+  nomTaxe: string
+  pays: string
+  devise: string
+  langue: string
+}
