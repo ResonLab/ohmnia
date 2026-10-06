@@ -66,6 +66,18 @@ const TEXTES = {
   'doc.titulaire': { fr: 'Titulaire', en: 'Account holder' },
   'doc.conditionsGenerales': { fr: 'Conditions générales', en: 'Terms and conditions' },
   'doc.codeVerification': { fr: 'Code de vérification', en: 'Verification code' },
+  // --- Ticket de caisse (A4) ---
+  'ticket.titre': { fr: 'Ticket', en: 'Receipt' },
+  'ticket.annule': { fr: 'ANNULÉ', en: 'VOID' },
+  'ticket.totalHt': { fr: 'Total hors taxe', en: 'Total excl. tax' },
+  'ticket.totalTtc': { fr: 'Total toutes taxes comprises', en: 'Total incl. tax' },
+  'ticket.carte': { fr: 'Carte', en: 'Card' },
+  'ticket.especes': { fr: 'Espèces', en: 'Cash' },
+  'ticket.arrondi': { fr: 'Arrondi', en: 'Rounding' },
+  'ticket.recu': { fr: 'Reçu', en: 'Received' },
+  'ticket.taux': { fr: 'Taux de change', en: 'Exchange rate' },
+  'ticket.rendu': { fr: 'Rendu', en: 'Change' },
+  'ticket.serviPar': { fr: 'Servi par {nom}', en: 'Served by {nom}' },
   'doc.rappelTexte1': {
     fr: 'Sauf erreur de notre part, la facture ci-dessous demeure impayée',
     en: 'Unless we are mistaken, the invoice below remains unpaid'

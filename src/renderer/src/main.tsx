@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import ImpressionDocument from './pages/ImpressionDocument'
+import ImpressionTicket from './pages/ImpressionTicket'
 import './styles.css'
 
 /**
@@ -25,7 +26,10 @@ window.alert = (message?: unknown): void => {
 }
 
 const estVueImpression = window.location.hash.startsWith('#imprimer')
+const estVueTicket = window.location.hash.startsWith('#ticket')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>{estVueImpression ? <ImpressionDocument /> : <App />}</React.StrictMode>
+  <React.StrictMode>
+    {estVueImpression ? <ImpressionDocument /> : estVueTicket ? <ImpressionTicket /> : <App />}
+  </React.StrictMode>
 )

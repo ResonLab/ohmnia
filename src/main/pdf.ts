@@ -5,7 +5,7 @@ import { sauvegarderBaseDeDonnees } from './db/backup'
 import { dossierDocumentsEffectif } from './ipc/parametresApp'
 import { estModeServeur, executer } from './multipostes/routeur'
 import type { TypeDocument } from './domaines/documents'
-import type { DocumentImpression } from '../shared/types'
+import type { DocumentImpression, DonneesTicket } from '../shared/types'
 
 /**
  * Fabrication des PDF. **Côté poste, dans les deux modes** : c'est cette
@@ -24,13 +24,13 @@ function donneesDuDocument(
   return executer('documents:donnees', type, id, rappelId) as Promise<DocumentImpression>
 }
 
-async function genererPdf(type: TypeDocument, id: number, rappelId?: number): Promise<string> {
-  const donnees = await donneesDuDocument(type, id, rappelId)
-
-  // Sauvegarde de sécurité avant toute opération d'export. En multi-postes il
-  // n'y a pas de base locale à sauvegarder : c'est l'affaire du serveur.
-  if (!estModeServeur()) sauvegarderBaseDeDonnees()
-
+/**
+ * Fabrique le PDF A4 d'un écran d'impression du renderer, repéré par son
+ * ancre (`imprimer?type=…`, `ticket?id=…`). Factures, devis, rappels et
+ * tickets de caisse passent tous par ici : une seule fenêtre invisible, un
+ * seul délai d'attente, une seule façon de la refermer.
+ */
+async function imprimerHash(hash: string): Promise<Buffer> {
   const fenetre = new BrowserWindow({
     show: false,
     webPreferences: {
@@ -55,8 +55,6 @@ async function genererPdf(type: TypeDocument, id: number, rappelId?: number): Pr
     ipcMain.once('pdf:pret', surPret)
   })
 
-  const hash =
-    `imprimer?type=${type}&id=${id}` + (rappelId !== undefined ? `&rappelId=${rappelId}` : '')
   let buffer: Buffer
   try {
     if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
@@ -76,6 +74,20 @@ async function genererPdf(type: TypeDocument, id: number, rappelId?: number): Pr
     if (!fenetre.isDestroyed()) fenetre.close()
   }
 
+  return buffer
+}
+
+async function genererPdf(type: TypeDocument, id: number, rappelId?: number): Promise<string> {
+  const donnees = await donneesDuDocument(type, id, rappelId)
+
+  // Sauvegarde de sécurité avant toute opération d'export. En multi-postes il
+  // n'y a pas de base locale à sauvegarder : c'est l'affaire du serveur.
+  if (!estModeServeur()) sauvegarderBaseDeDonnees()
+
+  const hash =
+    `imprimer?type=${type}&id=${id}` + (rappelId !== undefined ? `&rappelId=${rappelId}` : '')
+  const buffer = await imprimerHash(hash)
+
   const sousDossiers = { facture: 'Factures', devis: 'Devis', rappel: 'Rappels' } as const
   const dossier = join(dossierDocumentsEffectif(), sousDossiers[type])
   if (!existsSync(dossier)) mkdirSync(dossier, { recursive: true })
@@ -83,6 +95,22 @@ async function genererPdf(type: TypeDocument, id: number, rappelId?: number): Pr
   const nomFichier =
     type === 'rappel' ? `${donnees.numero}-rappel${donnees.rappelNiveau}.pdf` : `${donnees.numero}.pdf`
   const cheminFichier = join(dossier, nomFichier)
+  writeFileSync(cheminFichier, buffer)
+  return cheminFichier
+}
+
+/** Le ticket d'une vente de caisse, en A4 : l'utilisateur n'a pas d'imprimante à tickets. */
+async function genererTicket(id: number): Promise<string> {
+  const donnees = (await executer('caisse:donneesTicket', id)) as DonneesTicket
+
+  // Même sauvegarde de sécurité que pour les autres documents.
+  if (!estModeServeur()) sauvegarderBaseDeDonnees()
+
+  const buffer = await imprimerHash(`ticket?id=${id}`)
+
+  const dossier = join(dossierDocumentsEffectif(), 'Tickets')
+  if (!existsSync(dossier)) mkdirSync(dossier, { recursive: true })
+  const cheminFichier = join(dossier, `${donnees.vente.numero}.pdf`)
   writeFileSync(cheminFichier, buffer)
   return cheminFichier
 }
@@ -95,4 +123,6 @@ export function enregistrerHandlersPdf(): void {
   ipcMain.handle('pdf:generer', (_e, type: TypeDocument, id: number, rappelId?: number) =>
     genererPdf(type, id, rappelId)
   )
+
+  ipcMain.handle('pdf:genererTicket', (_e, id: number) => genererTicket(id))
 }

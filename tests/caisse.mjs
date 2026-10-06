@@ -460,5 +460,31 @@ reglerEntreprise({ assujettiTva: true, numeroIde: 'CHE-123.456.789 TVA', tvaDefa
 verifier('ticket : assujettie', c.donneesTicket(v1.id).assujettiTva === true && c.donneesTicket(v1.id).nomTaxe === 'TVA')
 reglerEntreprise({ assujettiTva: false, numeroIde: '', tvaDefautPct: 0 })
 
+/* ── 5. Le ticket PDF est bien branché ───────────────────────────────────── */
+
+console.log('\n=== Ticket PDF ===')
+
+const lireSource = (relatif) => {
+  try {
+    return readFileSync(join(PROJET, relatif), 'utf-8').replaceAll('\r\n', '\n')
+  } catch {
+    return ''
+  }
+}
+const pageTicket = lireSource('src/renderer/src/pages/ImpressionTicket.tsx')
+const pdfMain = lireSource('src/main/pdf.ts')
+const occurrences = (texte, motif) => texte.split(motif).length - 1
+
+verifier('la page du ticket relit la vente par le canal de la caisse', /caisse\s*\.donneesTicket/.test(pageTicket))
+verifier('la page du ticket signale quand elle est peinte', pageTicket.includes('signalerPret'))
+verifier('main.tsx route #ticket vers la page du ticket', lireSource('src/renderer/src/main.tsx').includes("'#ticket'"))
+verifier('le pont expose pdf:genererTicket', lireSource('src/preload/index.ts').includes("'pdf:genererTicket'"))
+verifier('pdf.ts déclare le canal pdf:genererTicket', pdfMain.includes("ipcMain.handle('pdf:genererTicket'"))
+verifier(
+  'factures, devis et tickets passent par la même impression (imprimerHash)',
+  occurrences(pdfMain, 'imprimerHash(') === 3,
+  `${occurrences(pdfMain, 'imprimerHash(')} occurrence(s), 3 attendues (définition + 2 usages)`
+)
+
 console.log(echecs === 0 ? '\n  CAISSE : VALIDEE' : `\n  CAISSE : ${echecs} ECHEC(S)`)
 process.exit(echecs === 0 ? 0 : 1)

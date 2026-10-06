@@ -1,4 +1,14 @@
 import { calculerMontantTva, calculerSousTotal } from './calculs'
+import type { ModePaiement, VenteCaisse } from './types'
+
+/**
+ * Les valeurs stockées en base, nommées une fois. Un écran les compare à ces
+ * constantes plutôt qu'à un mot français écrit en dur, que le contrôle de
+ * traduction prendrait pour du texte d'interface.
+ */
+export const MODE_ESPECES: ModePaiement = 'Espèces'
+export const MODE_CARTE: ModePaiement = 'Carte'
+export const STATUT_VENTE_ANNULEE: VenteCaisse['statut'] = 'Annulée'
 
 /**
  * Calcul d'un règlement en caisse. Pur : aucun accès à la base ni à la fenêtre,

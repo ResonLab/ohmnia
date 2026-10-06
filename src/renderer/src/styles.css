@@ -1536,6 +1536,35 @@ input[type='color'] {
   margin: 0.15rem 0;
 }
 
+.ticket-annule {
+  margin: 1rem 0 0;
+  padding: 0.5rem 0.8rem;
+  border: 2px solid #c0392b;
+  color: #c0392b;
+  font-size: 16pt;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.ticket-paiements {
+  margin-top: 1.4rem;
+  padding: 0.9rem 1.1rem;
+  background: #f7f8fa;
+  border-left: 3px solid #0e9cd9;
+  font-size: 10pt;
+}
+
+.ticket-paiements p {
+  margin: 0.15rem 0;
+}
+
+.ticket-servi-par {
+  margin-top: 1.6rem;
+  font-style: italic;
+  color: #555;
+}
+
 .document-mention-legale {
   margin-top: 0.6rem !important;
   font-size: 9pt;

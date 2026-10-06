@@ -359,6 +359,7 @@ const api = {
     ): Promise<DocumentImpression> => ipcRenderer.invoke('pdf:donnees', type, id, rappelId),
     generer: (type: 'facture' | 'devis' | 'rappel', id: number, rappelId?: number): Promise<string> =>
       ipcRenderer.invoke('pdf:generer', type, id, rappelId),
+    genererTicket: (id: number): Promise<string> => ipcRenderer.invoke('pdf:genererTicket', id),
     signalerPret: (): void => {
       ipcRenderer.send('pdf:pret')
     }

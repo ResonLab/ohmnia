@@ -108,7 +108,7 @@ src/
   preload/index.ts      pont sécurisé — seule porte entre interface et système
   renderer/src/
     App.tsx             menu, navigation, thème, langue, Ctrl+K, écran de conditions
-    pages/              17 écrans
+    pages/              18 écrans
     components/         11 composants (Modale, Camembert, BarresAnnuelles,
                         LogoOhmnia, ConditionsUtilisation, RechercheGlobale,
                         ConnexionServeur, ReglageMultipostes, PiedMiseAJour…)
