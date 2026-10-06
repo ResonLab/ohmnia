@@ -292,7 +292,10 @@ CREATE TABLE IF NOT EXISTS ventes_caisse_lignes (
   reference_inventaire TEXT NOT NULL,
   designation TEXT NOT NULL DEFAULT '',
   quantite REAL NOT NULL DEFAULT 1,
-  prix_unitaire REAL NOT NULL DEFAULT 0
+  prix_unitaire REAL NOT NULL DEFAULT 0,
+  -- Ce que la vente a réellement retiré du stock (jamais plus que ce qu'il y avait) :
+  -- c'est cette quantité, et pas `quantite`, que l'annulation remet.
+  quantite_deduite REAL NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS ventes_caisse_paiements (

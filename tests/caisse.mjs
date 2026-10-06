@@ -55,7 +55,7 @@ export { definirContexte } from ${chemin('main/contexte')}
 export { ouvrirBaseDeDonnees, getDb, fermerBaseDeDonnees } from ${chemin('main/db/database')}
 export { lireEntreprise, enregistrerEntreprise } from ${chemin('main/domaines/entreprise')}
 export { ajouterArticle } from ${chemin('main/domaines/inventaire')}
-export { vendre, lireVente, listerVentes } from ${chemin('main/domaines/caisse')}
+export { vendre, lireVente, listerVentes, annulerVente, totauxDuJour, donneesTicket } from ${chemin('main/domaines/caisse')}
 `
 )
 const bundle = join(DOSSIER, 'caisse.mjs')
@@ -382,6 +382,83 @@ verifier(
   'et la vente suivante reprend le bon numéro, sans trou',
   c.vendre(demande([['A2', 1]], { partCarte: 50 })).numero === 'T-0009'
 )
+
+/* ── 4. Annuler, totaux du jour, données du ticket ───────────────────────── */
+
+console.log('\n=== Annuler, totaux, ticket ===')
+
+const stockA2 = stockDe('A2')
+const annulee = c.annulerVente(v3.id)
+verifier('annuler : le statut passe à Annulée', annulee.statut === 'Annulée')
+verifier('annuler : le stock est remis', stockDe('A2') === stockA2 + 1, `${stockDe('A2')} au lieu de ${stockA2 + 1}`)
+verifier('annuler : les écritures du Journal disparaissent', ecrituresDe(v3.numero).length === 0)
+verifier(
+  'annuler : la vente reste dans la liste',
+  c.listerVentes().some((v) => v.numero === v3.numero && v.statut === 'Annulée')
+)
+verifier(
+  "annuler : l'audit garde la trace",
+  db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE action = 'annulation' AND reference = ?").get(v3.numero).n === 1
+)
+verifier('annuler deux fois : refusé, le stock n\'est pas remis deux fois', leve(() => c.annulerVente(v3.id)) && stockDe('A2') === stockA2 + 1)
+verifier('annuler une vente inconnue : refusé', leve(() => c.annulerVente(99999)))
+
+// Vente faite avec un stock insuffisant : on ne remet que ce qui a vraiment été retiré.
+db.prepare("UPDATE inventaire SET quantite_stock = 2 WHERE reference = 'A1'").run()
+const faible = c.vendre(demande([['A1', 6]], { partCarte: 60 }))
+verifier('stock plafonné à zéro par la vente', stockDe('A1') === 0)
+c.annulerVente(faible.id)
+verifier(
+  'annuler remet 2 (ce qui avait été retiré), pas 6',
+  stockDe('A1') === 2,
+  String(stockDe('A1'))
+)
+
+verifier('le numéro d\'une vente annulée n\'est jamais réutilisé', c.vendre(demande([['A2', 1]], { partCarte: 50 })).numero === 'T-0011')
+
+const totaux = c.totauxDuJour(aujourdhui)
+const sommeDuJour = (mode) =>
+  Math.round(
+    db
+      .prepare(
+        `SELECT COALESCE(SUM(p.montant), 0) AS s FROM ventes_caisse_paiements p
+         JOIN ventes_caisse v ON v.id = p.vente_id
+         WHERE v.statut = 'Validée' AND substr(v.date, 1, 10) = ? AND p.mode = ?`
+      )
+      .get(aujourdhui, mode).s * 100
+  ) / 100
+verifier('totaux : espèces du jour, sans les ventes annulées', totaux.especes === 82.35 && totaux.especes === sommeDuJour('Espèces'), String(totaux.especes))
+verifier('totaux : carte du jour, sans les ventes annulées', totaux.carte === 274.05 && totaux.carte === sommeDuJour('Carte'), String(totaux.carte))
+verifier('totaux : le total est la somme des deux', totaux.total === 356.4, String(totaux.total))
+verifier('totaux : nombre de ventes validées', totaux.nbVentes === 9, String(totaux.nbVentes))
+verifier('totaux : un jour sans vente est à zéro', c.totauxDuJour('2000-01-01').total === 0 && c.totauxDuJour('2000-01-01').nbVentes === 0)
+
+// Un exercice clôturé interdit aussi d'annuler : l'écriture ne peut plus bouger.
+const stockAvant = stockDe('A1')
+db.prepare('INSERT INTO exercices_clotures (annee) VALUES (?)').run(maintenant.getFullYear())
+verifier(
+  'exercice clôturé : annuler est refusé et ne change rien',
+  leve(() => c.annulerVente(v2.id)) &&
+    c.lireVente(v2.id).statut === 'Validée' &&
+    ecrituresDe(v2.numero).length === 1 &&
+    stockDe('A1') === stockAvant
+)
+db.prepare('DELETE FROM exercices_clotures WHERE annee = ?').run(maintenant.getFullYear())
+
+// Un article supprimé depuis la vente n'empêche pas de l'annuler.
+db.prepare("DELETE FROM inventaire WHERE reference = 'A3'").run()
+verifier('annuler une vente dont l\'article n\'existe plus', c.annulerVente(v5.id).statut === 'Annulée')
+
+const ticket = c.donneesTicket(v1.id)
+verifier(
+  'ticket : entreprise, devise, langue, vente',
+  ticket.entrepriseNom === 'Atelier Colin' && ticket.devise === 'CHF' && ticket.langue === 'fr' && ticket.vente.numero === 'T-0001' && ticket.logo === null,
+  JSON.stringify({ n: ticket.entrepriseNom, d: ticket.devise, l: ticket.langue })
+)
+verifier('ticket : non assujettie, avec la mention légale du pays', ticket.assujettiTva === false && ticket.mentionNonAssujetti.includes('Non assujetti'))
+reglerEntreprise({ assujettiTva: true, numeroIde: 'CHE-123.456.789 TVA', tvaDefautPct: 8.1 })
+verifier('ticket : assujettie', c.donneesTicket(v1.id).assujettiTva === true && c.donneesTicket(v1.id).nomTaxe === 'TVA')
+reglerEntreprise({ assujettiTva: false, numeroIde: '', tvaDefautPct: 0 })
 
 console.log(echecs === 0 ? '\n  CAISSE : VALIDEE' : `\n  CAISSE : ${echecs} ECHEC(S)`)
 process.exit(echecs === 0 ? 0 : 1)

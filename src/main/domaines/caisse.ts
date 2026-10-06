@@ -7,10 +7,17 @@ import type {
   LigneVenteCaisse,
   ModePaiement,
   PaiementCaisse,
+  TotauxCaisse,
   VenteCaisse
 } from '../../shared/types'
-import { lireEntreprise } from './entreprise'
-import { ajouterCategorieJournal, ajouterEcritureJournal, listerCategoriesJournal } from './journal'
+import type { DonneesTicket } from '../../shared/types'
+import { lireEntreprise, lireLogo } from './entreprise'
+import {
+  ajouterCategorieJournal,
+  ajouterEcritureJournal,
+  listerCategoriesJournal,
+  supprimerEcritureJournal
+} from './journal'
 
 /**
  * Caisse, sans Electron.
@@ -184,11 +191,6 @@ export function vendre(demande: DemandeVenteCaisse): VenteCaisse {
     )
 
     for (const ligne of lignes) {
-      db.prepare(
-        `INSERT INTO ventes_caisse_lignes (vente_id, reference_inventaire, designation, quantite, prix_unitaire)
-         VALUES (?, ?, ?, ?, ?)`
-      ).run(venteId, ligne.referenceInventaire, ligne.designation, ligne.quantite, ligne.prixUnitaire)
-
       // Comme pour une facture : on prévient d'un stock insuffisant sans bloquer
       // la vente, et le stock ne descend jamais sous zéro.
       const stock = (
@@ -201,9 +203,15 @@ export function vendre(demande: DemandeVenteCaisse): VenteCaisse {
           `Stock insuffisant pour "${ligne.referenceInventaire}" (${stock} en stock, ${ligne.quantite} vendu).`
         )
       }
+      const deduite = Math.min(stock, ligne.quantite)
       db.prepare(
         "UPDATE inventaire SET quantite_stock = ?, derniere_maj = datetime('now') WHERE reference = ?"
-      ).run(Math.max(0, stock - ligne.quantite), ligne.referenceInventaire)
+      ).run(stock - deduite, ligne.referenceInventaire)
+      db.prepare(
+        `INSERT INTO ventes_caisse_lignes
+           (vente_id, reference_inventaire, designation, quantite, prix_unitaire, quantite_deduite)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).run(venteId, ligne.referenceInventaire, ligne.designation, ligne.quantite, ligne.prixUnitaire, deduite)
     }
 
     const enregistrerPaiement = (paiement: PaiementCaisse, categorie: string): void => {
@@ -267,4 +275,91 @@ export function vendre(demande: DemandeVenteCaisse): VenteCaisse {
 
     return { ...lireVente(venteId), avertissements }
   })
+}
+
+/**
+ * Annule une vente : le statut change, le stock est remis, les écritures du
+ * Journal sont retirées. La vente, elle, reste lisible — son numéro ne se
+ * réutilise jamais, et l'audit y renvoie.
+ *
+ * Un exercice clôturé refuse l'annulation (le Journal n'y bouge plus) : on
+ * contrôle avant de toucher quoi que ce soit, et la transaction défait le
+ * reste si une écriture échoue malgré tout.
+ */
+export function annulerVente(id: number): VenteCaisse {
+  return dansUneTransaction(() => {
+    const db = getDb()
+    const vente = lireVente(id)
+    if (vente.statut === 'Annulée') throw new Error(`La vente ${vente.numero} est déjà annulée.`)
+    verifierExerciceOuvert(vente.date.slice(0, 10))
+
+    const ecritures = db
+      .prepare('SELECT ecriture_journal_id AS id FROM ventes_caisse_paiements WHERE vente_id = ?')
+      .all(id) as unknown as { id: number | null }[]
+    for (const ecriture of ecritures) {
+      if (ecriture.id !== null) supprimerEcritureJournal(ecriture.id)
+    }
+    db.prepare('UPDATE ventes_caisse_paiements SET ecriture_journal_id = NULL WHERE vente_id = ?').run(id)
+
+    // Un article supprimé depuis la vente n'existe plus : l'UPDATE ne touche alors aucune ligne.
+    const deduites = db
+      .prepare('SELECT reference_inventaire AS reference, quantite_deduite AS quantite FROM ventes_caisse_lignes WHERE vente_id = ?')
+      .all(id) as unknown as { reference: string; quantite: number }[]
+    for (const ligne of deduites) {
+      db.prepare(
+        "UPDATE inventaire SET quantite_stock = quantite_stock + ?, derniere_maj = datetime('now') WHERE reference = ?"
+      ).run(ligne.quantite, ligne.reference)
+    }
+
+    db.prepare("UPDATE ventes_caisse SET statut = 'Annulée' WHERE id = ?").run(id)
+    tracerAudit('annulation', 'vente_caisse', vente.numero, `${vente.total}`)
+    return lireVente(id)
+  })
+}
+
+/** Ce qui est entré en caisse un jour donné (`YYYY-MM-DD`), ventes annulées exclues. */
+export function totauxDuJour(date: string): TotauxCaisse {
+  const db = getDb()
+  const parMode = db
+    .prepare(
+      `SELECT p.mode AS mode, SUM(p.montant) AS somme FROM ventes_caisse_paiements p
+       JOIN ventes_caisse v ON v.id = p.vente_id
+       WHERE v.statut = 'Validée' AND substr(v.date, 1, 10) = ?
+       GROUP BY p.mode`
+    )
+    .all(date) as unknown as { mode: ModePaiement; somme: number }[]
+  const somme = (mode: ModePaiement): number =>
+    Math.round((parMode.find((l) => l.mode === mode)?.somme ?? 0) * 100) / 100
+  const nombre = db
+    .prepare("SELECT COUNT(*) AS n FROM ventes_caisse WHERE statut = 'Validée' AND substr(date, 1, 10) = ?")
+    .get(date) as { n: number }
+
+  const especes = somme('Espèces')
+  const carte = somme('Carte')
+  return { date, nbVentes: nombre.n, especes, carte, total: Math.round((especes + carte) * 100) / 100 }
+}
+
+/** Tout ce qu'il faut pour imprimer le ticket d'une vente, relue en base. */
+export function donneesTicket(id: number): DonneesTicket {
+  const vente = lireVente(id)
+  const entreprise = lireEntreprise()
+  const profil = profilPays(entreprise.pays)
+  const parametres = getDb().prepare('SELECT langue FROM parametres_app WHERE id = 1').get() as
+    | { langue: string }
+    | undefined
+
+  return {
+    vente,
+    entrepriseNom: entreprise.nom,
+    adresse: entreprise.adresse,
+    telephone: entreprise.telephone,
+    numeroIde: entreprise.numeroIde,
+    logo: lireLogo(),
+    assujettiTva: entreprise.assujettiTva,
+    mentionNonAssujetti: profil.mentionNonAssujetti,
+    nomTaxe: profil.nomTaxe,
+    pays: entreprise.pays,
+    devise: profil.devise,
+    langue: parametres?.langue ?? 'fr'
+  }
 }
