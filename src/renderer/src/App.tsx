@@ -21,6 +21,7 @@ import Clients from './pages/Clients'
 import Facturation from './pages/Facturation'
 import DevisPage from './pages/DevisPage'
 import Inventaire from './pages/Inventaire'
+import Caisse from './pages/Caisse'
 import Modeles from './pages/Modeles'
 import SuiviTemps from './pages/SuiviTemps'
 import Comptabilite from './pages/Comptabilite'
@@ -36,6 +37,7 @@ const MODULES = [
   { id: 'suiviTemps', cle: 'menu.suiviTemps', icone: '⏱️' },
   { id: 'journal', cle: 'menu.journal', icone: '📊' },
   { id: 'inventaire', cle: 'menu.inventaire', icone: '📦' },
+  { id: 'caisse', cle: 'menu.caisse', icone: '🛒' },
   { id: 'modeles', cle: 'menu.modeles', icone: '🧩' },
   { id: 'tarifs', cle: 'menu.tarifs', icone: '🏷️' },
   { id: 'charges', cle: 'menu.charges', icone: '⚙️' },
@@ -291,6 +293,7 @@ export default function App(): React.JSX.Element {
         {moduleActif === 'suiviTemps' && <SuiviTemps />}
         {moduleActif === 'journal' && <Journal />}
         {moduleActif === 'inventaire' && <Inventaire />}
+        {moduleActif === 'caisse' && <Caisse />}
         {moduleActif === 'modeles' && <Modeles />}
         {moduleActif === 'tarifs' && <Tarifs />}
         {moduleActif === 'charges' && <ChargesMarge />}

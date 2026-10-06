@@ -1693,3 +1693,35 @@ input[type='color'] {
 .app[data-peut-administrer='non'] .action-administration {
   display: none;
 }
+
+/* ==========================================================================
+   Caisse
+   ========================================================================== */
+
+.caisse-grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+
+.caisse-grille .carte {
+  max-width: none;
+}
+
+.caisse-confirmation {
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.caisse-annulee td {
+  text-decoration: line-through;
+  color: var(--texte-faible);
+}
+
+@media (max-width: 1100px) {
+  .caisse-grille {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

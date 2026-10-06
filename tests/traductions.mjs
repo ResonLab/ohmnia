@@ -52,6 +52,7 @@ const ECRANS_TRADUITS = [
   'src/renderer/src/pages/Audit.tsx',
   'src/renderer/src/pages/ImpressionDocument.tsx',
   'src/renderer/src/pages/ImpressionTicket.tsx',
+  'src/renderer/src/pages/Caisse.tsx',
   'src/renderer/src/pages/Tarifs.tsx',
   'src/renderer/src/pages/Journal.tsx',
   'src/renderer/src/pages/SuiviTemps.tsx',
