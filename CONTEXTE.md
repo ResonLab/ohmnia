@@ -942,3 +942,27 @@ invisible et fait échouer la suite, alors que le code est correct.
 interne en quittant, **alors que tous les tests passaient**. Le code de sortie
 était faux. Dans les tests, utiliser le module `node:http` et ne jamais appeler
 `process.exit()` pendant la fermeture des sockets.
+
+## La caisse (0.3.0)
+
+Demandée à l'oral par Colin le 2026-10-06. Spécification : `docs/superpowers/specs/2026-10-06-caisse-design.md`,
+plan : `docs/superpowers/plans/2026-10-06-caisse.md`.
+
+- **Où** : `shared/caisse.ts` (calcul pur : total, taxe, arrondi, mixte, change, rendu — le même code pour
+  l'écran et pour l'enregistrement), `domaines/caisse.ts` (vente atomique, annulation, totaux, ticket),
+  `ipc/caisse.ts`, écran `pages/Caisse.tsx`, ticket `pages/ImpressionTicket.tsx` (ancre `#ticket?id=`).
+- **Une vente est atomique** : vente, lignes, paiements, stock et Journal s'écrivent ensemble ou pas du tout
+  (un exercice clôturé refuse la vente entière).
+- **Le Journal reçoit une entrée par mode de paiement**, catégories « Caisse – espèces » et « Caisse – carte ».
+  Une vente annulée reste lisible (statut) ; ses écritures sont retirées, son numéro n'est jamais réutilisé.
+- **Arrondi aux 5 centimes** : seulement en CHF, seulement sur la part espèces.
+- **Les prix de l'inventaire sont hors taxe** ; la taxe suit `assujetti_tva` comme sur les factures.
+- **« Servi par »** vient du réglage « Nom affiché sur les tickets » (Mon entreprise) ; vide = ligne omise.
+- **Le taux de change est saisi, jamais récupéré en ligne** (l'application reste locale). Le dernier taux par
+  devise est mémorisé dans le navigateur de l'application.
+- **`ventes_caisse_lignes.quantite_deduite`** : ce que la vente a réellement retiré du stock. Une vente faite
+  avec un stock insuffisant retire moins que `quantite` ; l'annulation ne remet que cette part.
+- **Piège** : les valeurs de base (`'Espèces'`, `'Annulée'`…) se comparent aux constantes de `shared/caisse.ts`
+  dans les écrans, sinon `tests/traductions.mjs` les prend pour du texte d'interface en dur.
+- **Piège** : les deux onglets de l'écran restent montés (cachés tour à tour) ; sinon un panier rempli
+  disparaît quand on regarde le journal.

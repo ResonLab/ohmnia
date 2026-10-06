@@ -7,4 +7,4 @@
  *
  * **Elle doit rester égale à la version du projet** : `npm test` le vérifie.
  */
-export const VERSION_SERVEUR = '0.2.3'
+export const VERSION_SERVEUR = '0.3.0'

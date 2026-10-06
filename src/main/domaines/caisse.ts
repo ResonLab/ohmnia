@@ -4,13 +4,13 @@ import { calculerReglement, calculerTotalCaisse } from '../../shared/caisse'
 import { profilPays } from '../../shared/pays'
 import type {
   DemandeVenteCaisse,
+  DonneesTicket,
   LigneVenteCaisse,
   ModePaiement,
   PaiementCaisse,
   TotauxCaisse,
   VenteCaisse
 } from '../../shared/types'
-import type { DonneesTicket } from '../../shared/types'
 import { lireEntreprise, lireLogo } from './entreprise'
 import {
   ajouterCategorieJournal,
