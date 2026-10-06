@@ -631,7 +631,7 @@
     <h1 class="entree" style="--d:.14s">Run your business, <span>entirely on your own computer</span></h1>
     <p class="lede entree" style="--d:.24s">Invoicing, quotes, simplified accounting and inventory in a single application installed on your machine. No account, no server, no connection required.</p>
     <div class="cta-row entree" style="--d:.34s">
-      <a class="btn" id="dl-hero" href="https://github.com/ResonLab/ohmnia/releases/latest">Download the latest version</a>
+      <a class="btn" id="dl-hero" data-telechargement="auto" href="https://github.com/ResonLab/ohmnia/releases/latest">Download the latest version</a>
       <a class="btn btn-ghost" href="#features">See the features</a>
     </div>
     <p class="cta-note entree" style="--d:.42s">Windows · local installation</p>
@@ -723,14 +723,14 @@
         <h2>Download Ohmnia</h2>
         <p>The latest version is published on GitHub. Download the installer and run it.</p>
         <div class="systemes">
-          <a class="systeme" id="dl-win" href="https://github.com/ResonLab/ohmnia/releases/latest">
+          <a class="systeme" id="dl-win" data-telechargement="windows" href="https://github.com/ResonLab/ohmnia/releases/latest">
             <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor">
               <path d="M3 5.6l7.2-1v6.9H3V5.6zm0 12.8l7.2 1v-6.8H3v5.8zm8 1.1l10 1.4v-8.3H11v6.9zM11 4.1v7.2h10V2.7L11 4.1z"/>
             </svg>
             <b>Windows</b>
             <span>.exe installer · 10 and 11</span>
           </a>
-          <a class="systeme" id="dl-linux" href="https://github.com/ResonLab/ohmnia/releases/latest">
+          <a class="systeme" id="dl-linux" data-telechargement="linux" href="https://github.com/ResonLab/ohmnia/releases/latest">
             <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor">
               <path d="M12 2c-2 0-3.2 1.6-3.2 3.7 0 1.2.2 1.9.2 2.8 0 .9-.9 1.7-1.7 3.1-.8 1.4-1.6 2.6-2.4 3.6-.5.6-.4 1.4.2 1.7.5.3.7.7.7 1.3 0 .9.7 1.5 2 1.5 1.1 0 1.8-.4 2.4-.4h3.6c.6 0 1.3.4 2.4.4 1.3 0 2-.6 2-1.5 0-.6.2-1 .7-1.3.6-.3.7-1.1.2-1.7-.8-1-1.6-2.2-2.4-3.6-.8-1.4-1.7-2.2-1.7-3.1 0-.9.2-1.6.2-2.8C15.2 3.6 14 2 12 2zm-1.5 3.1c.4 0 .7.4.7 1s-.3 1-.7 1-.7-.4-.7-1 .3-1 .7-1zm3 0c.4 0 .7.4.7 1s-.3 1-.7 1-.7-.4-.7-1 .3-1 .7-1zm-1.5 2.6c.8 0 1.6.5 1.6.9 0 .4-.8.9-1.6.9s-1.6-.5-1.6-.9c0-.4.8-.9 1.6-.9z"/>
             </svg>
@@ -1018,6 +1018,34 @@
     // Le calcul du défilement doit repartir immédiatement, sans recharger.
     dispatchEvent(new Event('scroll'));
   });
+})();
+</script>
+<script>
+(function () {
+  // Direct download: the link goes straight to the installer for the visitor's
+  // system. Without JavaScript, or if GitHub's API refuses, it keeps pointing
+  // at the releases page. No version number is written here: it comes from the API.
+  var liens = document.querySelectorAll('[data-telechargement]');
+  if (!liens.length || !window.fetch) return;
+  var agent = navigator.userAgent || '';
+  var systeme = /Windows/i.test(agent) ? 'windows'
+    : (/Linux/i.test(agent) && !/Android/i.test(agent)) ? 'linux' : null;
+  fetch('https://api.github.com/repos/ResonLab/ohmnia/releases/latest')
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json() })
+    .then(function (pub) {
+      function fichier(motif) {
+        for (var i = 0; i < pub.assets.length; i++) if (motif.test(pub.assets[i].name)) return pub.assets[i];
+        return null;
+      }
+      for (var k = 0; k < liens.length; k++) {
+        var cible = liens[k].getAttribute('data-telechargement');
+        if (cible === 'auto') cible = systeme;
+        if (!cible) continue;
+        var f = fichier(cible === 'windows' ? /\.exe$/i : /\.AppImage$/i);
+        if (f) { liens[k].href = f.browser_download_url; liens[k].setAttribute('download', f.name); }
+      }
+    })
+    .catch(function () {});
 })();
 </script>
 </body>
