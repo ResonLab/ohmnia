@@ -572,3 +572,68 @@ export interface DonneesTicket {
   devise: string
   langue: string
 }
+
+// --- Agenda ---
+
+export type StatutLocation = 'Réservée' | 'Rendue' | 'Annulée'
+
+/** `id: 0` désigne un événement à créer. */
+export interface EvenementAgenda {
+  id: number
+  titre: string
+  /** `YYYY-MM-DD HH:MM` */
+  debut: string
+  fin: string
+  lieu: string
+  notes: string
+}
+
+export interface LigneLocation {
+  referenceInventaire: string
+  designation: string
+  quantite: number
+  prixParJour: number
+}
+
+export interface LocationAgenda {
+  id: number
+  clientId: number
+  clientNom: string
+  /** `YYYY-MM-DD`, bornes comprises. */
+  dateDebut: string
+  dateFin: string
+  statut: StatutLocation
+  notes: string
+  factureId: number | null
+  factureNumero: string | null
+  lignes: LigneLocation[]
+  jours: number
+  total: number
+}
+
+/** Ce que l'écran envoie : la désignation est relue en base, le statut ne se change pas ici. `id: 0` crée. */
+export interface ValeursLocation {
+  id: number
+  clientId: number
+  dateDebut: string
+  dateFin: string
+  notes: string
+  lignes: { referenceInventaire: string; quantite: number; prixParJour: number }[]
+}
+
+export interface ContenuAgenda {
+  evenements: EvenementAgenda[]
+  locations: LocationAgenda[]
+}
+
+export interface DisponibiliteArticle {
+  reference: string
+  stock: number
+  loue: number
+  disponible: number
+}
+
+export interface ResultatLocation {
+  location: LocationAgenda
+  avertissements: string[]
+}
