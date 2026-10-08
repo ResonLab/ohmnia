@@ -12,12 +12,14 @@ import type {
   ContenuAgenda,
   DisponibiliteArticle,
   EvenementAgenda,
+  FactureDetail,
   LigneLocation,
   LocationAgenda,
   ResultatLocation,
   StatutLocation,
   ValeursLocation
 } from '../../shared/types'
+import { chargerDetailFacture, creerBrouillonFacture, enregistrerFacture, supprimerFacture } from './factures'
 
 /**
  * Agenda, sans Electron.
@@ -327,4 +329,55 @@ export function listerAgenda(debut: string, fin: string): ContenuAgenda {
     .prepare('SELECT id FROM locations WHERE date_debut <= ? AND date_fin >= ? ORDER BY date_debut, id')
     .all(fin, debut) as unknown as { id: number }[]
   return { evenements: evenements.map(versEvenement), locations: locations.map((l) => lireLocation(l.id)) }
+}
+
+/**
+ * Crée un **brouillon** de facture à partir d'une location : une ligne par ligne
+ * de location, quantité × jours au prix par jour.
+ *
+ * **Les lignes n'ont aucune référence d'inventaire, et c'est voulu.** Confirmer
+ * une facture retire du stock les articles référencés ; or le matériel loué
+ * revient. Avec la référence, facturer une location ferait baisser le stock.
+ *
+ * Une location qui a déjà sa facture (encore existante) ne se refacture pas ;
+ * si on supprime ce brouillon, elle redevient facturable.
+ *
+ * **Pas de transaction englobante** : `creerBrouillonFacture` et
+ * `enregistrerFacture` ouvrent chacune la leur, et SQLite n'accepte pas deux
+ * `BEGIN` imbriqués. On compense à la main : si une étape échoue après la
+ * création du brouillon, on supprime ce brouillon plutôt que de le laisser
+ * orphelin dans la liste des factures.
+ */
+export function creerFactureDepuisLocation(id: number): FactureDetail {
+  const location = lireLocation(id)
+  if (location.statut === STATUT_LOCATION_ANNULEE) {
+    throw new Error('Une location annulée ne peut pas être facturée.')
+  }
+  if (location.factureNumero !== null) {
+    throw new Error(`Cette location a déjà sa facture : ${location.factureNumero}.`)
+  }
+  if (location.total <= 0) throw new Error("Cette location a un total de zéro : il n'y a rien à facturer.")
+
+  const periode = `du ${formaterDateCourte(location.dateDebut)} au ${formaterDateCourte(location.dateFin)}`
+  const brouillon = creerBrouillonFacture(location.clientId)
+  try {
+    enregistrerFacture({
+      ...brouillon,
+      notesInternes: `Location n° ${id}`,
+      lignes: location.lignes.map((l) => ({
+        id: 0,
+        designation: `Location ${l.designation}, ${periode}`,
+        referenceInventaire: null,
+        quantite: l.quantite * location.jours,
+        prixUnitaire: l.prixParJour
+      }))
+    })
+    getDb().prepare('UPDATE locations SET facture_id = ? WHERE id = ?').run(brouillon.id, id)
+  } catch (erreur) {
+    supprimerFacture(brouillon.id)
+    throw erreur
+  }
+
+  tracerAudit('creation', 'location_facture', String(id), brouillon.numero)
+  return chargerDetailFacture(brouillon.id)
 }

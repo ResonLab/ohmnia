@@ -55,7 +55,8 @@ export { definirContexte } from ${chemin('main/contexte')}
 export { ouvrirBaseDeDonnees, getDb, fermerBaseDeDonnees } from ${chemin('main/db/database')}
 export { ajouterClient, supprimerClient } from ${chemin('main/domaines/clients')}
 export { ajouterArticle } from ${chemin('main/domaines/inventaire')}
-export { enregistrerEvenement, supprimerEvenement, listerAgenda, lireLocation, enregistrerLocation, changerStatutLocation, disponibiliteArticle } from ${chemin('main/domaines/agenda')}
+export { chargerDetailFacture, changerStatutFacture, supprimerFacture } from ${chemin('main/domaines/factures')}
+export { enregistrerEvenement, supprimerEvenement, listerAgenda, lireLocation, enregistrerLocation, changerStatutLocation, disponibiliteArticle, creerFactureDepuisLocation } from ${chemin('main/domaines/agenda')}
 `
 )
 const bundle = join(DOSSIER, 'agenda.mjs')
@@ -323,6 +324,81 @@ verifier(
   'l\'audit garde la création et l\'annulation',
   db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'location' AND action = 'creation'").get().n >= 1 &&
     db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'location' AND action = 'annulation'").get().n === 1
+)
+
+/* ── 5. La facture créée depuis une location ─────────────────────────────── */
+
+console.log('\n=== Facture depuis une location ===')
+
+const nbFactures = () => db.prepare('SELECT COUNT(*) AS n FROM factures').get().n
+const aFacturer = a.enregistrerLocation(
+  location({
+    lignes: [
+      { referenceInventaire: 'P1', quantite: 3, prixParJour: 12.5 },
+      { referenceInventaire: 'P2', quantite: 1, prixParJour: 40 }
+    ]
+  })
+).location
+const stockP1 = stockDe('P1')
+const stockP2 = stockDe('P2')
+const facturesAvant = nbFactures()
+
+const f = a.creerFactureDepuisLocation(aFacturer.id)
+verifier('la facture créée est un brouillon pour le bon client', f.statut === 'Brouillon' && f.clientId === clientA.id, `${f.statut} / ${f.clientId}`)
+verifier('une ligne de facture par ligne de location', f.lignes.length === 2)
+verifier(
+  'quantité = quantité × jours, prix unitaire = prix par jour',
+  f.lignes[0].quantite === 9 && f.lignes[0].prixUnitaire === 12.5 && f.lignes[1].quantite === 3 && f.lignes[1].prixUnitaire === 40,
+  JSON.stringify(f.lignes.map((l) => [l.quantite, l.prixUnitaire]))
+)
+verifier(
+  'désignation : article et dates de la location',
+  f.lignes[0].designation === 'Location Projecteur LED, du 10.10.2026 au 12.10.2026' &&
+    f.lignes[1].designation === 'Location Enceinte, du 10.10.2026 au 12.10.2026',
+  f.lignes[0].designation
+)
+verifier('AUCUNE référence d\'inventaire sur les lignes de facture', f.lignes.every((l) => l.referenceInventaire === null))
+verifier('la note interne renvoie à la location', f.notesInternes === `Location n° ${aFacturer.id}`, f.notesInternes)
+verifier('la location retient le numéro de la facture', a.lireLocation(aFacturer.id).factureId === f.id && a.lireLocation(aFacturer.id).factureNumero === f.numero)
+
+a.changerStatutFacture(f.id, 'Payée')
+verifier(
+  'régler la facture ne retire rien du stock',
+  stockDe('P1') === stockP1 && stockDe('P2') === stockP2,
+  `P1 ${stockDe('P1')}/${stockP1}, P2 ${stockDe('P2')}/${stockP2}`
+)
+
+const facturesApres = nbFactures()
+verifier('une seconde facture pour la même location est refusée', leve(() => a.creerFactureDepuisLocation(aFacturer.id)) && nbFactures() === facturesApres)
+
+const annuleeFacturable = a.enregistrerLocation(location()).location
+a.changerStatutLocation(annuleeFacturable.id, a.STATUT_LOCATION_ANNULEE)
+verifier('facturer une location annulée est refusé', leve(() => a.creerFactureDepuisLocation(annuleeFacturable.id)) && nbFactures() === facturesApres)
+
+const gratuite = a.enregistrerLocation(location({ lignes: [{ referenceInventaire: 'P1', quantite: 1, prixParJour: 0 }] })).location
+verifier('facturer une location de total zéro est refusé', leve(() => a.creerFactureDepuisLocation(gratuite.id)) && nbFactures() === facturesApres)
+verifier('facturer une location inconnue est refusé', leve(() => a.creerFactureDepuisLocation(9999)) && nbFactures() === facturesApres)
+
+// Une panne après la création du brouillon ne doit laisser aucun brouillon orphelin.
+const apresPanne = a.enregistrerLocation(location({ lignes: [{ referenceInventaire: 'P2', quantite: 1, prixParJour: 40 }] })).location
+db.exec("CREATE TRIGGER panne_facture BEFORE UPDATE OF facture_id ON locations BEGIN SELECT RAISE(ABORT, 'panne'); END")
+verifier(
+  'panne après la création du brouillon : refusé, et aucun brouillon ne reste',
+  leve(() => a.creerFactureDepuisLocation(apresPanne.id)) && nbFactures() === facturesApres
+)
+db.exec('DROP TRIGGER panne_facture')
+const brouillon2 = a.creerFactureDepuisLocation(apresPanne.id)
+verifier('la location peut ensuite être facturée normalement', brouillon2.statut === 'Brouillon' && nbFactures() === facturesApres + 1)
+
+// Supprimer le brouillon libère la location : elle peut être refacturée.
+// (Une facture réglée, elle, est liée au Journal et ne se supprime plus.)
+a.supprimerFacture(brouillon2.id)
+verifier('une facture supprimée n\'est plus liée à la location', a.lireLocation(apresPanne.id).factureNumero === null)
+verifier('et la location peut être refacturée', a.creerFactureDepuisLocation(apresPanne.id).lignes.length === 1)
+
+verifier(
+  'l\'audit garde la création de la facture',
+  db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'location_facture'").get().n >= 3
 )
 
 console.log(echecs === 0 ? '\n  AGENDA : VALIDE' : `\n  AGENDA : ${echecs} ECHEC(S)`)
