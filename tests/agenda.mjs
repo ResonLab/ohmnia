@@ -54,7 +54,8 @@ writeFileSync(
 export { definirContexte } from ${chemin('main/contexte')}
 export { ouvrirBaseDeDonnees, getDb, fermerBaseDeDonnees } from ${chemin('main/db/database')}
 export { ajouterClient, supprimerClient } from ${chemin('main/domaines/clients')}
-export { enregistrerEvenement, supprimerEvenement, listerAgenda } from ${chemin('main/domaines/agenda')}
+export { ajouterArticle } from ${chemin('main/domaines/inventaire')}
+export { enregistrerEvenement, supprimerEvenement, listerAgenda, lireLocation, enregistrerLocation, changerStatutLocation, disponibiliteArticle } from ${chemin('main/domaines/agenda')}
 `
 )
 const bundle = join(DOSSIER, 'agenda.mjs')
@@ -147,6 +148,7 @@ verifier(
   'et ce client existe toujours',
   db.prepare('SELECT COUNT(*) AS n FROM clients WHERE id = ?').get(clientA.id).n === 1
 )
+db.exec('DELETE FROM locations') // la suite repart d'un agenda sans location
 const clientB = a.ajouterClient({ nom: 'Client B', adresse: '', email: '', telephone: '' })
 a.supprimerClient(clientB.id)
 verifier(
@@ -206,6 +208,121 @@ verifier(
   ['creation', 'modification', 'suppression'].every(
     (action) => db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'evenement_agenda' AND action = ?").get(action).n >= 1
   )
+)
+
+/* ── 4. Les locations et la disponibilité ────────────────────────────────── */
+
+console.log('\n=== Locations ===')
+
+db.exec('DELETE FROM locations') // la ligne de la partie 2 n'avait pas de lignes d'articles
+const article = (reference, designation, stock) =>
+  a.ajouterArticle({
+    reference,
+    designation,
+    categorie: 'Autre',
+    quantiteStock: stock,
+    seuilAlerte: 0,
+    prixAchatUnitaire: 1,
+    prixVenteUnitaire: 100,
+    fournisseur: '',
+    emplacement: '',
+    derniereMaj: ''
+  })
+article('P1', 'Projecteur LED', 8)
+article('P2', 'Enceinte', 2)
+
+const stockDe = (reference) => db.prepare('SELECT quantite_stock AS n FROM inventaire WHERE reference = ?').get(reference).n
+const nbLocations = () => db.prepare('SELECT COUNT(*) AS n FROM locations').get().n
+const nbLignesLocation = () => db.prepare('SELECT COUNT(*) AS n FROM location_lignes').get().n
+const location = (reste = {}) => ({
+  id: 0,
+  clientId: clientA.id,
+  dateDebut: '2026-10-10',
+  dateFin: '2026-10-12',
+  notes: '',
+  lignes: [{ referenceInventaire: 'P1', quantite: 3, prixParJour: 12.5 }],
+  ...reste
+})
+
+const r1 = a.enregistrerLocation(location())
+verifier('une location neuve est « Réservée »', r1.location.statut === a.STATUT_LOCATION_RESERVEE)
+verifier('3 jours, bornes comprises', r1.location.jours === 3)
+verifier('total : 3 × 12.50 × 3 jours = 112.50', r1.location.total === 112.5, String(r1.location.total))
+verifier('la désignation est relue dans l\'inventaire', r1.location.lignes[0].designation === 'Projecteur LED')
+verifier('le client est nommé, aucune facture n\'est liée', r1.location.clientNom === 'Client A' && r1.location.factureId === null && r1.location.factureNumero === null)
+verifier('aucun avertissement quand le stock suffit', r1.avertissements.length === 0)
+verifier('le stock de l\'inventaire est inchangé', stockDe('P1') === 8, String(stockDe('P1')))
+
+const dispo = (reference, debut, fin, exclure) => a.disponibiliteArticle(reference, `2026-10-${debut}`, `2026-10-${fin}`, exclure)
+const d1 = dispo('P1', '10', '12')
+verifier('disponibilité du 10 au 12 : stock 8, loué 3, disponible 5', d1.stock === 8 && d1.loue === 3 && d1.disponible === 5, JSON.stringify(d1))
+verifier('du 13 au 14 : rien de loué', dispo('P1', '13', '14').loue === 0)
+verifier('du 12 au 14 : la location finit le 12, elle compte', dispo('P1', '12', '14').loue === 3)
+verifier('du 08 au 09 : elle commence le 10, elle ne compte pas', dispo('P1', '08', '09').loue === 0)
+verifier('disponibilité d\'un article inconnu : refusée', leve(() => a.disponibiliteArticle('ZZ', '2026-10-10', '2026-10-12')))
+
+const r2 = a.enregistrerLocation(location({ lignes: [{ referenceInventaire: 'P1', quantite: 6, prixParJour: 12.5 }] }))
+verifier(
+  'dépasser la disponibilité : la location est enregistrée, avec un avertissement',
+  nbLocations() === 2 && r2.avertissements.length === 1,
+  JSON.stringify(r2.avertissements)
+)
+verifier(
+  'l\'avertissement nomme l\'article, la quantité demandée et la quantité disponible',
+  r2.avertissements[0].includes('"P1"') && r2.avertissements[0].includes('6') && r2.avertissements[0].includes('5'),
+  r2.avertissements[0]
+)
+
+const annulee = a.changerStatutLocation(r1.location.id, a.STATUT_LOCATION_ANNULEE)
+verifier('annuler une location change son statut', annulee.statut === a.STATUT_LOCATION_ANNULEE)
+verifier('une location annulée ne compte plus : loué 6', dispo('P1', '10', '12').loue === 6)
+verifier('en excluant la location qu\'on modifie : loué 0', dispo('P1', '10', '12', r2.location.id).loue === 0)
+
+const reenregistree = a.enregistrerLocation({
+  id: r2.location.id,
+  clientId: clientA.id,
+  dateDebut: '2026-10-10',
+  dateFin: '2026-10-12',
+  notes: 'modifiée',
+  lignes: [{ referenceInventaire: 'P1', quantite: 6, prixParJour: 12.5 }]
+})
+verifier('modifier une location ne la compte pas contre elle-même : aucun avertissement', reenregistree.avertissements.length === 0, JSON.stringify(reenregistree.avertissements))
+
+a.changerStatutLocation(r2.location.id, a.STATUT_LOCATION_RENDUE)
+a.enregistrerLocation({ ...location({ id: r2.location.id, notes: 'encore modifiée' }), lignes: [{ referenceInventaire: 'P1', quantite: 6, prixParJour: 12.5 }] })
+verifier('modifier une location ne change pas son statut', a.lireLocation(r2.location.id).statut === a.STATUT_LOCATION_RENDUE)
+
+const locCheval = a.enregistrerLocation(location({ dateDebut: '2026-10-31', dateFin: '2026-11-02', lignes: [{ referenceInventaire: 'P2', quantite: 1, prixParJour: 40 }] }))
+verifier('une location à cheval sur deux mois est dans octobre', a.listerAgenda('2026-10-01', '2026-10-31').locations.some((l) => l.id === locCheval.location.id))
+verifier('et dans novembre', a.listerAgenda('2026-11-01', '2026-11-30').locations.some((l) => l.id === locCheval.location.id))
+verifier('mais pas en décembre', a.listerAgenda('2026-12-01', '2026-12-31').locations.length === 0)
+verifier('la liste montre aussi les locations annulées, triées par début', a.listerAgenda('2026-10-01', '2026-10-31').locations.map((l) => l.id).join() === [r1.location.id, r2.location.id, locCheval.location.id].join())
+
+// Les refus ne doivent rien écrire du tout.
+const avantLoc = { locations: nbLocations(), lignes: nbLignesLocation() }
+const rienEcrit = () => nbLocations() === avantLoc.locations && nbLignesLocation() === avantLoc.lignes
+const ligneOk = { referenceInventaire: 'P1', quantite: 1, prixParJour: 10 }
+verifier('refus : fin avant début', leve(() => a.enregistrerLocation(location({ dateDebut: '2026-10-12', dateFin: '2026-10-10' }))) && rienEcrit())
+verifier('refus : aucune ligne', leve(() => a.enregistrerLocation(location({ lignes: [] }))) && rienEcrit())
+verifier('refus : quantité nulle', leve(() => a.enregistrerLocation(location({ lignes: [{ ...ligneOk, quantite: 0 }] }))) && rienEcrit())
+verifier('refus : quantité négative', leve(() => a.enregistrerLocation(location({ lignes: [{ ...ligneOk, quantite: -1 }] }))) && rienEcrit())
+verifier('refus : prix négatif', leve(() => a.enregistrerLocation(location({ lignes: [{ ...ligneOk, prixParJour: -1 }] }))) && rienEcrit())
+verifier('refus : article inconnu', leve(() => a.enregistrerLocation(location({ lignes: [{ ...ligneOk, referenceInventaire: 'ZZ' }] }))) && rienEcrit())
+verifier('refus : client inconnu', leve(() => a.enregistrerLocation(location({ clientId: 9999 }))) && rienEcrit())
+verifier('refus : modifier une location qui n\'existe pas', leve(() => a.enregistrerLocation(location({ id: 9999 }))) && rienEcrit())
+verifier('refus : date mal formée', leve(() => a.enregistrerLocation(location({ dateDebut: 'lundi' }))) && rienEcrit())
+verifier('refus : statut inconnu', leve(() => a.changerStatutLocation(r1.location.id, 'Perdue')) && a.lireLocation(r1.location.id).statut === a.STATUT_LOCATION_ANNULEE)
+verifier('refus : statut d\'une location inconnue', leve(() => a.changerStatutLocation(9999, a.STATUT_LOCATION_RENDUE)))
+
+// Une panne après l'écriture de l'en-tête : tout doit être annulé, en-tête compris.
+db.exec("CREATE TRIGGER panne_test BEFORE INSERT ON location_lignes BEGIN SELECT RAISE(ABORT, 'panne'); END")
+verifier('panne en cours d\'enregistrement : tout est annulé, en-tête compris', leve(() => a.enregistrerLocation(location())) && rienEcrit())
+db.exec('DROP TRIGGER panne_test')
+
+verifier(
+  'l\'audit garde la création et l\'annulation',
+  db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'location' AND action = 'creation'").get().n >= 1 &&
+    db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'location' AND action = 'annulation'").get().n === 1
 )
 
 console.log(echecs === 0 ? '\n  AGENDA : VALIDE' : `\n  AGENDA : ${echecs} ECHEC(S)`)
