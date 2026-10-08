@@ -54,6 +54,7 @@ writeFileSync(
 export { definirContexte } from ${chemin('main/contexte')}
 export { ouvrirBaseDeDonnees, getDb, fermerBaseDeDonnees } from ${chemin('main/db/database')}
 export { ajouterClient, supprimerClient } from ${chemin('main/domaines/clients')}
+export { enregistrerEvenement, supprimerEvenement, listerAgenda } from ${chemin('main/domaines/agenda')}
 `
 )
 const bundle = join(DOSSIER, 'agenda.mjs')
@@ -151,6 +152,60 @@ a.supprimerClient(clientB.id)
 verifier(
   'un client sans rien est supprimé',
   db.prepare('SELECT COUNT(*) AS n FROM clients WHERE id = ?').get(clientB.id).n === 0
+)
+
+/* ── 3. Les événements ───────────────────────────────────────────────────── */
+
+console.log('\n=== Événements ===')
+
+const nbEvenements = () => db.prepare('SELECT COUNT(*) AS n FROM evenements_agenda').get().n
+const evenement = (valeurs = {}) => ({
+  id: 0,
+  titre: 'Salon du matériel',
+  debut: '2026-10-20 18:00',
+  fin: '2026-10-20 22:00',
+  lieu: 'Halle 3',
+  notes: 'Apporter les câbles',
+  ...valeurs
+})
+
+const e1 = a.enregistrerEvenement(evenement())
+verifier('un événement créé reçoit un identifiant', e1.id > 0)
+verifier(
+  'il est relu à l\'identique',
+  e1.titre === 'Salon du matériel' && e1.debut === '2026-10-20 18:00' && e1.fin === '2026-10-20 22:00' && e1.lieu === 'Halle 3' && e1.notes === 'Apporter les câbles'
+)
+verifier(
+  'il apparaît dans la liste du mois',
+  a.listerAgenda('2026-10-01', '2026-10-31').evenements.some((e) => e.id === e1.id)
+)
+verifier('la liste des locations est vide tant qu\'il n\'y en a pas', a.listerAgenda('2026-10-01', '2026-10-31').locations.length === 0)
+
+const modifie = a.enregistrerEvenement({ ...e1, titre: 'Salon (déplacé)', fin: '2026-10-20 23:30' })
+verifier('modifier un événement le met à jour sans en créer un autre', modifie.id === e1.id && modifie.titre === 'Salon (déplacé)' && modifie.fin === '2026-10-20 23:30' && nbEvenements() === 1)
+
+const cheval = a.enregistrerEvenement(evenement({ titre: 'Soirée', debut: '2026-10-31 20:00', fin: '2026-11-01 02:00' }))
+verifier('un événement à cheval sur la fin du mois est dans octobre', a.listerAgenda('2026-10-01', '2026-10-31').evenements.some((e) => e.id === cheval.id))
+verifier('et dans novembre', a.listerAgenda('2026-11-01', '2026-11-30').evenements.some((e) => e.id === cheval.id))
+verifier('mais pas en décembre', !a.listerAgenda('2026-12-01', '2026-12-31').evenements.some((e) => e.id === cheval.id))
+verifier('les événements sont triés par début', a.listerAgenda('2026-10-01', '2026-11-30').evenements.map((e) => e.id).join() === `${e1.id},${cheval.id}`)
+
+const avant = nbEvenements()
+verifier('refus : titre vide', leve(() => a.enregistrerEvenement(evenement({ titre: '   ' }))) && nbEvenements() === avant)
+verifier('refus : fin avant début', leve(() => a.enregistrerEvenement(evenement({ debut: '2026-10-20 22:00', fin: '2026-10-20 18:00' }))) && nbEvenements() === avant)
+verifier('refus : date sans heure', leve(() => a.enregistrerEvenement(evenement({ debut: '2026-10-20' }))) && nbEvenements() === avant)
+verifier('refus : date mal formée', leve(() => a.enregistrerEvenement(evenement({ fin: 'demain soir' }))) && nbEvenements() === avant)
+verifier('refus : heure impossible', leve(() => a.enregistrerEvenement(evenement({ fin: '2026-10-21 25:00' }))) && nbEvenements() === avant)
+verifier('refus : modifier un événement qui n\'existe pas', leve(() => a.enregistrerEvenement(evenement({ id: 9999 }))) && nbEvenements() === avant)
+
+a.supprimerEvenement(cheval.id)
+verifier('supprimer retire l\'événement', nbEvenements() === avant - 1 && !a.listerAgenda('2026-10-01', '2026-11-30').evenements.some((e) => e.id === cheval.id))
+verifier('supprimer un événement inconnu ne fait rien', !leve(() => a.supprimerEvenement(424242)))
+verifier(
+  'l\'audit garde la création, la modification et la suppression',
+  ['creation', 'modification', 'suppression'].every(
+    (action) => db.prepare("SELECT COUNT(*) AS n FROM journal_audit WHERE entite = 'evenement_agenda' AND action = ?").get(action).n >= 1
+  )
 )
 
 console.log(echecs === 0 ? '\n  AGENDA : VALIDE' : `\n  AGENDA : ${echecs} ECHEC(S)`)
