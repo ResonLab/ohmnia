@@ -83,6 +83,15 @@ import {
   supprimerArticle
 } from '../main/domaines/inventaire'
 import { annulerVente, donneesTicket, listerVentes, totauxDuJour, vendre } from '../main/domaines/caisse'
+import {
+  changerStatutLocation,
+  creerFactureDepuisLocation,
+  disponibiliteArticle,
+  enregistrerEvenement,
+  enregistrerLocation,
+  listerAgenda,
+  supprimerEvenement
+} from '../main/domaines/agenda'
 import { rechercheGlobale } from '../main/domaines/recherche'
 import { verifierConformite } from '../main/domaines/conformite'
 import { accepterConditions, etatConditions } from '../main/domaines/conditions'
@@ -220,6 +229,18 @@ export const REGISTRE: Record<string, Operation> = {
   'caisse:lister': (date) => listerVentes(date as string | undefined),
   'caisse:totaux': (date) => totauxDuJour(date as string),
   'caisse:donneesTicket': (id) => donneesTicket(id as number),
+
+  'agenda:lister': (debut, fin) => listerAgenda(debut as string, fin as string),
+  'agenda:disponibilite': (reference, debut, fin, exclureLocationId) =>
+    disponibiliteArticle(reference as string, debut as string, fin as string, exclureLocationId as number),
+  'agenda:enregistrerEvenement': (evenement) =>
+    enregistrerEvenement(evenement as Parameters<typeof enregistrerEvenement>[0]),
+  'agenda:supprimerEvenement': (id) => supprimerEvenement(id as number),
+  'agenda:enregistrerLocation': (valeurs) =>
+    enregistrerLocation(valeurs as Parameters<typeof enregistrerLocation>[0]),
+  'agenda:changerStatutLocation': (id, statut) =>
+    changerStatutLocation(id as number, statut as Parameters<typeof changerStatutLocation>[1]),
+  'agenda:creerFacture': (id) => creerFactureDepuisLocation(id as number),
 
   'recherche:globale': (terme) => rechercheGlobale(terme as string),
 

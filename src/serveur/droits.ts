@@ -85,6 +85,15 @@ export const DROITS: Record<string, Role> = {
   'caisse:vendre': 'ecriture',
   'caisse:annuler': 'ecriture',
 
+  /* Agenda — consulter est de la lecture ; tout ce qui écrit (dont créer une facture) est de l'écriture. */
+  'agenda:lister': 'lecture',
+  'agenda:disponibilite': 'lecture',
+  'agenda:enregistrerEvenement': 'ecriture',
+  'agenda:supprimerEvenement': 'ecriture',
+  'agenda:enregistrerLocation': 'ecriture',
+  'agenda:changerStatutLocation': 'ecriture',
+  'agenda:creerFacture': 'ecriture',
+
   /* Recherche et conformité */
   'recherche:globale': 'lecture',
   'conformite:verifier': 'lecture',

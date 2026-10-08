@@ -27,6 +27,7 @@ import { enregistrerHandlersConformite } from './ipc/conformite'
 import { enregistrerHandlersConditions } from './ipc/conditions'
 import { enregistrerHandlersInventaire } from './ipc/inventaire'
 import { enregistrerHandlersCaisse } from './ipc/caisse'
+import { enregistrerHandlersAgenda } from './ipc/agenda'
 import { enregistrerHandlersResume } from './ipc/resume'
 import { enregistrerHandlersPdf } from './pdf'
 import { enregistrerHandlersDocuments } from './ipc/documents'
@@ -160,6 +161,7 @@ app.whenReady().then(() => {
     enregistrerHandlersConditions()
     enregistrerHandlersInventaire()
     enregistrerHandlersCaisse()
+    enregistrerHandlersAgenda()
     enregistrerHandlersResume()
     enregistrerHandlersDocuments()
   } else {

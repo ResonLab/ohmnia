@@ -7,7 +7,9 @@ import type {
   Client,
   ClientDetail,
   ConfigurationMaj,
+  ContenuAgenda,
   DemandeVenteCaisse,
+  DisponibiliteArticle,
   DonneesTicket,
   DevisDetail,
   DocumentImpression,
@@ -17,6 +19,7 @@ import type {
   EtatConditions,
   EtatMultipostes,
   EtatMaj,
+  EvenementAgenda,
   EvolutionAnnuelle,
   ExerciceCloture,
   Facture,
@@ -27,6 +30,7 @@ import type {
   InfosSysteme,
   Intervention,
   Justificatif,
+  LocationAgenda,
   ModelePrestation,
   MouvementBancaire,
   ParametresApp,
@@ -37,17 +41,20 @@ import type {
   Rappel,
   RepartitionCategorie,
   ResultatImport,
+  ResultatLocation,
   ResultatRecherche,
   ResumeAnnuel,
   ResumeInventaire,
   SauvegardeFichier,
   SessionMultipostes,
   StatutDevis,
+  StatutLocation,
   TableauDeBord,
   TarifDeplacement,
   TarifMainOeuvre,
   TarifProduit,
   TotauxCaisse,
+  ValeursLocation,
   VenteCaisse
 } from '../shared/types'
 
@@ -238,6 +245,25 @@ const api = {
     lister: (date?: string): Promise<VenteCaisse[]> => ipcRenderer.invoke('caisse:lister', date),
     totaux: (date: string): Promise<TotauxCaisse> => ipcRenderer.invoke('caisse:totaux', date),
     donneesTicket: (id: number): Promise<DonneesTicket> => ipcRenderer.invoke('caisse:donneesTicket', id)
+  },
+
+  agenda: {
+    lister: (debut: string, fin: string): Promise<ContenuAgenda> => ipcRenderer.invoke('agenda:lister', debut, fin),
+    disponibilite: (
+      reference: string,
+      debut: string,
+      fin: string,
+      exclureLocationId: number
+    ): Promise<DisponibiliteArticle> =>
+      ipcRenderer.invoke('agenda:disponibilite', reference, debut, fin, exclureLocationId),
+    enregistrerEvenement: (evenement: EvenementAgenda): Promise<EvenementAgenda> =>
+      ipcRenderer.invoke('agenda:enregistrerEvenement', evenement),
+    supprimerEvenement: (id: number): Promise<void> => ipcRenderer.invoke('agenda:supprimerEvenement', id),
+    enregistrerLocation: (valeurs: ValeursLocation): Promise<ResultatLocation> =>
+      ipcRenderer.invoke('agenda:enregistrerLocation', valeurs),
+    changerStatutLocation: (id: number, statut: StatutLocation): Promise<LocationAgenda> =>
+      ipcRenderer.invoke('agenda:changerStatutLocation', id, statut),
+    creerFacture: (id: number): Promise<FactureDetail> => ipcRenderer.invoke('agenda:creerFacture', id)
   },
 
   resume: {
