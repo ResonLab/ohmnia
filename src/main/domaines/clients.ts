@@ -62,10 +62,13 @@ export function supprimerClient(id: number): void {
   const nbDevis = getDb().prepare('SELECT COUNT(*) AS n FROM devis WHERE client_id = ?').get(id) as {
     n: number
   }
-  if (nbFactures.n > 0 || nbDevis.n > 0) {
+  const nbLocations = getDb()
+    .prepare('SELECT COUNT(*) AS n FROM locations WHERE client_id = ?')
+    .get(id) as { n: number }
+  if (nbFactures.n > 0 || nbDevis.n > 0 || nbLocations.n > 0) {
     throw new Error(
-      `Ce client ne peut pas être supprimé : il est lié à ${nbFactures.n} facture(s) et ${nbDevis.n} devis. ` +
-        "Supprimez ou réattribuez ces documents d'abord."
+      `Ce client ne peut pas être supprimé : il est lié à ${nbFactures.n} facture(s), ${nbDevis.n} devis ` +
+        `et ${nbLocations.n} location(s). Supprimez ou réattribuez ces documents d'abord.`
     )
   }
   getDb().prepare('DELETE FROM clients WHERE id = ?').run(id)

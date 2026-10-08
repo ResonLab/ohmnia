@@ -312,6 +312,44 @@ CREATE TABLE IF NOT EXISTS ventes_caisse_paiements (
   ecriture_journal_id INTEGER
 );
 
+-- Agenda. Un événement va de `debut` à `fin` (`YYYY-MM-DD HH:MM`) ; une location se
+-- compte en jours entiers, bornes comprises (`YYYY-MM-DD`).
+CREATE TABLE IF NOT EXISTS evenements_agenda (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  titre TEXT NOT NULL,
+  debut TEXT NOT NULL,
+  fin TEXT NOT NULL,
+  lieu TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id INTEGER NOT NULL REFERENCES clients(id),
+  date_debut TEXT NOT NULL,
+  date_fin TEXT NOT NULL,
+  statut TEXT NOT NULL DEFAULT 'Réservée' CHECK (statut IN ('Réservée', 'Rendue', 'Annulée')),
+  notes TEXT NOT NULL DEFAULT '',
+  -- La facture créée depuis la location. Volontairement SANS clé étrangère : supprimer
+  -- ce brouillon ne doit pas casser la location, qui peut alors être refacturée.
+  facture_id INTEGER
+);
+
+-- Une location ne touche jamais au stock : le matériel revient. La référence est donc
+-- libre (sans clé étrangère), comme sur les lignes de facture.
+CREATE TABLE IF NOT EXISTS location_lignes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  reference_inventaire TEXT NOT NULL,
+  designation TEXT NOT NULL DEFAULT '',
+  quantite REAL NOT NULL DEFAULT 1,
+  prix_par_jour REAL NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_evenements_agenda_debut ON evenements_agenda(debut);
+CREATE INDEX IF NOT EXISTS idx_locations_date_debut ON locations(date_debut);
+CREATE INDEX IF NOT EXISTS idx_location_lignes_location ON location_lignes(location_id);
+
 CREATE INDEX IF NOT EXISTS idx_ventes_caisse_date ON ventes_caisse(date);
 CREATE INDEX IF NOT EXISTS idx_ventes_caisse_lignes_vente ON ventes_caisse_lignes(vente_id);
 CREATE INDEX IF NOT EXISTS idx_ventes_caisse_paiements_vente ON ventes_caisse_paiements(vente_id);
