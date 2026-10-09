@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type {
   ArticleInventaire,
   Client,
@@ -124,6 +124,10 @@ export default function Agenda({ ouvrirFacturation }: { ouvrirFacturation: () =>
   const [info, setInfo] = useState<string | null>(null)
   const [avertissements, setAvertissements] = useState<string[]>([])
 
+  // Le formulaire s'ouvre sous la grille et la liste : sans cela, un clic sur un élément du
+  // haut de l'écran ouvrait un formulaire hors de vue.
+  const refFormulaire = useRef<HTMLDivElement>(null)
+
   // Un formulaire modifié et non enregistré est un brouillon : on ne le perd pas en silence.
   const modifie = edition !== null && JSON.stringify(edition) !== instantane
   useGardeSortie(modifie)
@@ -180,6 +184,12 @@ export default function Agenda({ ouvrirFacturation }: { ouvrirFacturation: () =>
       annule = true
     }
   }, [cleDispo])
+
+  const typeEdition = edition?.type
+  const idEdition = edition?.id
+  useEffect(() => {
+    refFormulaire.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [typeEdition, idEdition])
 
   function ouvrir(formulaire: Formulaire): void {
     if (!peutQuitter()) return
@@ -495,7 +505,7 @@ export default function Agenda({ ouvrirFacturation }: { ouvrirFacturation: () =>
       </div>
 
       {edition && edition.type === 'evenement' && (
-        <div className="carte">
+        <div className="carte" ref={refFormulaire}>
           <h2>{t('agenda.typeEvenement')}</h2>
           <label>
             {t('agenda.titre')}
@@ -535,7 +545,7 @@ export default function Agenda({ ouvrirFacturation }: { ouvrirFacturation: () =>
       )}
 
       {edition && edition.type === 'location' && (
-        <div className="carte">
+        <div className="carte" ref={refFormulaire}>
           <h2>{t('agenda.typeLocation')}</h2>
           <label>
             {t('agenda.client')}
