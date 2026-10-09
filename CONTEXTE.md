@@ -108,7 +108,7 @@ src/
   preload/index.ts      pont sécurisé — seule porte entre interface et système
   renderer/src/
     App.tsx             menu, navigation, thème, langue, Ctrl+K, écran de conditions
-    pages/              19 écrans
+    pages/              20 écrans
     components/         11 composants (Modale, Camembert, BarresAnnuelles,
                         LogoOhmnia, ConditionsUtilisation, RechercheGlobale,
                         ConnexionServeur, ReglageMultipostes, PiedMiseAJour…)
@@ -966,3 +966,27 @@ plan : `docs/superpowers/plans/2026-10-06-caisse.md`.
   dans les écrans, sinon `tests/traductions.mjs` les prend pour du texte d'interface en dur.
 - **Piège** : les deux onglets de l'écran restent montés (cachés tour à tour) ; sinon un panier rempli
   disparaît quand on regarde le journal.
+
+## L'agenda (0.4.0)
+
+Demandé à l'oral par Colin le 2026-10-06. Spécification : `docs/superpowers/specs/2026-10-08-agenda-design.md`,
+plan : `docs/superpowers/plans/2026-10-08-agenda.md`. **Pas de synchronisation Google** (il n'en veut pas).
+
+- **Où** : `shared/agenda.ts` (calcul pur : jours, chevauchements, totaux, grille du mois),
+  `domaines/agenda.ts`, `ipc/agenda.ts`, écran `pages/Agenda.tsx`.
+- **Deux sortes d'éléments** : l'événement (date et heure, sans client) et la location (client obligatoire,
+  jours entiers bornes comprises, lignes {article, quantité, prix par jour}, statut Réservée / Rendue / Annulée).
+- **Une location ne touche jamais au stock** : le matériel revient. La disponibilité d'un article sur des
+  dates = son stock − ce qui est loué sur des dates qui se chevauchent (annulées exclues, la location
+  modifiée exclue). Dépasser prévient, n'empêche pas d'enregistrer. Une location « Rendue » compte encore
+  pour ses dates.
+- **La facture créée depuis une location n'a AUCUNE référence d'inventaire** : confirmer une facture retire du
+  stock les articles référencés, et le matériel loué revient. La location retient `facture_id` ; si on
+  supprime ce brouillon elle redevient facturable. La facture est une copie : la modifier ne change pas la
+  location, et inversement.
+- **Piège** : `creerBrouillonFacture` et `enregistrerFacture` ouvrent chacune leur transaction ; on ne peut
+  pas les imbriquer. `creerFactureDepuisLocation` supprime le brouillon à la main si une étape échoue.
+- **Piège** : `supprimerClient` compte aussi les locations ; sans cela l'utilisateur recevrait une erreur de
+  clé étrangère illisible.
+- **Piège** : les statuts se comparent aux constantes de `shared/agenda.ts` dans l'écran, sinon
+  `tests/traductions.mjs` les prend pour du texte d'interface en dur.
